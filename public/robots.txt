@@ -1,0 +1,56 @@
+# coregeth.com is the landing page for Core-Geth, the Ethereum Classic execution client.
+#
+# Every crawler is welcome, and so is every use of what it collects: search indexes,
+# answers from AI assistants, and training AI models. The page exists to send node
+# operators to the documentation and the repository, and nothing on it is private.
+#
+# "User-agent: *" already admits every crawler. The named groups below say the same
+# thing explicitly, for the crawlers whose operators read a named token, including the
+# tokens that control AI training: GPTBot, ClaudeBot, Google-Extended,
+# Applebot-Extended, meta-externalagent and CCBot.
+
+User-agent: *
+Allow: /
+
+# Search engines
+User-agent: Googlebot
+User-agent: Bingbot
+User-agent: Applebot
+User-agent: DuckDuckBot
+User-agent: Slurp
+User-agent: Baiduspider
+User-agent: YandexBot
+Allow: /
+
+# AI crawlers: explicitly permitted to crawl, index, answer from and train on this site
+User-agent: GPTBot
+User-agent: OAI-SearchBot
+User-agent: ChatGPT-User
+User-agent: ClaudeBot
+User-agent: Claude-SearchBot
+User-agent: Claude-User
+User-agent: Anthropic-AI
+User-agent: Claude-Web
+User-agent: Google-Extended
+User-agent: Applebot-Extended
+User-agent: PerplexityBot
+User-agent: Perplexity-User
+User-agent: meta-externalagent
+User-agent: meta-externalfetcher
+User-agent: meta-webindexer
+User-agent: CCBot
+User-agent: Cohere-AI
+User-agent: Bytespider
+User-agent: iaskspider
+User-agent: Omgilibot
+Allow: /
+
+# Link previews
+User-agent: facebookexternalhit
+User-agent: Twitterbot
+User-agent: LinkedInBot
+User-agent: Discordbot
+User-agent: Slackbot
+Allow: /
+
+Sitemap: https://coregeth.com/sitemap-index.xml

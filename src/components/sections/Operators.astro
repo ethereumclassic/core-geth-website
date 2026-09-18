@@ -1,0 +1,151 @@
+---
+import Icon from "@/components/Icon.astro";
+import SectionHead from "@/components/SectionHead.astro";
+import { DOCS, OPERATOR_ACTIONS } from "@/data/site";
+
+// A repository name in a step, cut after its slash: the one place a very narrow
+// screen may break it, where "core-geth" would otherwise break at its hyphen.
+const slugParts = (slug: string) =>
+  slug.split("/").map((part, i, parts) => (i < parts.length - 1 ? `${part}/` : part));
+---
+
+<section class="band band--surface" aria-labelledby="operators-title">
+  <div class="container operators">
+    <SectionHead
+      id="operators-title"
+      label="For node operators"
+      title="Do these three things."
+      em="three things"
+    >
+      <p class="lede">
+        If you run an Ethereum Classic node, a mining pool, an exchange or an RPC endpoint, these
+        come first. The operators page gives the reason for each.
+      </p>
+      <p class="then">
+        Then read <a href={DOCS.faq.href}>{DOCS.faq.title}</a>, the short version of the
+        documentation.
+      </p>
+    </SectionHead>
+    <ol class="steps" role="list">
+      {OPERATOR_ACTIONS.map((action, i) => (
+        <li>
+          <a class="step" href={DOCS.operators.href}>
+            <span class="step__number" aria-hidden="true">
+              {i + 1}
+            </span>
+            <span class="step__text">
+              {action.text}
+              {action.code && (
+                <code class="step__code">
+                  {slugParts(action.code).map((part) => (
+                    <span>{part}</span>
+                  ))}
+                </code>
+              )}
+            </span>
+            <Icon name="arrow" size={22} />
+          </a>
+        </li>
+      ))}
+    </ol>
+  </div>
+</section>
+
+<style>
+  /* The heading beside the three actions where there is room. */
+  .operators {
+    display: grid;
+    gap: clamp(2.25rem, 5vw, 3.5rem);
+  }
+
+  @media (min-width: 64rem) {
+    .operators {
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+      gap: 4.5rem;
+      align-items: center;
+    }
+  }
+
+  .then {
+    color: var(--text);
+  }
+
+  .then a {
+    font-weight: 650;
+  }
+
+  /* The operators page's three actions, numbered large in green: whole-row links
+     under a heavy rule. */
+  .steps {
+    display: grid;
+    padding: 0;
+    border-top: 2px solid var(--ink);
+    list-style: none;
+  }
+
+  .steps li {
+    border-bottom: 1px solid var(--hairline);
+  }
+
+  .step {
+    display: grid;
+    grid-template-columns: 3.75rem minmax(0, 1fr) auto;
+    gap: 0.75rem;
+    align-items: center;
+    padding-block: clamp(1.1rem, 2.5vw, 1.6rem);
+    color: var(--ink);
+    text-decoration: none;
+  }
+
+  .step__number {
+    color: var(--accent);
+    font-size: clamp(2.5rem, 5vw, 3.25rem);
+    font-variant-numeric: tabular-nums;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    line-height: 1;
+  }
+
+  .step__text {
+    font-size: clamp(1.15rem, 2.4vw, 1.5rem);
+    font-weight: 700;
+    line-height: 1.3;
+  }
+
+  /* Whole where it fits, which is every screen but the narrowest. The two parts
+     are atomic, so the only break the name can take is between them, and only
+     where the code may wrap at all. */
+  .step__code {
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  .step__code span {
+    display: inline-block;
+  }
+
+  @media (max-width: 22rem) {
+    .step__code {
+      white-space: normal;
+    }
+  }
+
+  .step :global(svg) {
+    color: var(--accent);
+    transition: transform 150ms ease;
+  }
+
+  .step:hover .step__text {
+    color: var(--accent);
+  }
+
+  .step:hover :global(svg) {
+    transform: translateX(3px);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .step :global(svg) {
+      transition: none;
+    }
+  }
+</style>

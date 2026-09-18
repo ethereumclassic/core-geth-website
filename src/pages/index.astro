@@ -1,0 +1,27 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import About from "@/components/sections/About.astro";
+import Guides from "@/components/sections/Guides.astro";
+import Hero from "@/components/sections/Hero.astro";
+import Operators from "@/components/sections/Operators.astro";
+import Repository from "@/components/sections/Repository.astro";
+import Security from "@/components/sections/Security.astro";
+import Support from "@/components/sections/Support.astro";
+import { getRepository } from "@/data/repository";
+
+// A landing page: what Core-Geth is, where its releases come from, what an operator
+// does first, which guide to start with, where the security records are, and how it
+// is funded. Each section is a few lines and a link to the page that says the rest.
+// The bands alternate white and grid, starting white under the hero.
+const facts = await getRepository();
+---
+
+<BaseLayout>
+  <Hero />
+  <About />
+  <Repository facts={facts} />
+  <Operators />
+  <Guides />
+  <Security />
+  <Support />
+</BaseLayout>

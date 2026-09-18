@@ -1,0 +1,87 @@
+---
+interface Props {
+  /** The heading's id, which the section names in aria-labelledby. */
+  id: string;
+  /** The pill above the heading. */
+  label: string;
+  title: string;
+  /** The part of the title set in green, as the social card sets its emphasis. */
+  em?: string;
+  size?: "large" | "medium";
+}
+
+// A section's opening: the card's hairline pill, then the heading set heavy and
+// tight like the hero's tagline. Anything in the slot follows as the lede.
+const { id, label, title, em, size = "large" } = Astro.props;
+
+const at = em ? title.indexOf(em) : -1;
+if (em && at < 0) {
+  throw new Error(`SectionHead: "${em}" is not part of the title "${title}"`);
+}
+// The title in runs, the emphasized one set in green. A repository name anywhere in
+// the title may break after its slash, and nowhere else.
+const runs = [
+  { text: em ? title.slice(0, at) : title, em: false },
+  ...(em ? [{ text: em, em: true }] : []),
+  { text: em ? title.slice(at + em.length) : "", em: false },
+].map((run) => ({ ...run, pieces: run.text.split("/") }));
+---
+
+<div class="head">
+  <p class="label">{label}</p>
+  <h2 id={id} class:list={["head__title", `head__title--${size}`]}>
+    {runs.map((run) => {
+      const text = run.pieces.map((piece, i) => (
+        <>
+          {i > 0 && (
+            <>
+              /<wbr />
+            </>
+          )}
+          {piece}
+        </>
+      ));
+      return run.em ? <em>{text}</em> : text;
+    })}
+  </h2>
+  <slot />
+</div>
+
+<style>
+  .head {
+    display: grid;
+    gap: 1.1rem;
+    justify-items: start;
+    max-width: 48rem;
+  }
+
+  /* A word wider than the screen breaks rather than widening the page. */
+  .head__title {
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.04;
+    overflow-wrap: anywhere;
+    text-wrap: balance;
+  }
+
+  .head__title--large {
+    font-size: clamp(2.25rem, 6.2vw, 4rem);
+  }
+
+  .head__title--medium {
+    font-size: clamp(1.85rem, 4.4vw, 2.75rem);
+  }
+
+  /* "ethereumclassic/", the longest word a heading holds, fits a 320px phone at
+     this size and not at the one above. */
+  @media (max-width: 22.5rem) {
+    .head__title--medium {
+      font-size: 1.6rem;
+    }
+  }
+
+  .head__title em {
+    color: var(--accent);
+    font-style: normal;
+  }
+</style>

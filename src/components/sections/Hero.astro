@@ -1,0 +1,153 @@
+---
+import { DOCS, SITE_NAME } from "@/data/site";
+---
+
+<section class="hero" aria-labelledby="hero-title">
+  <div class="container hero__inner">
+    <span class="bracket bracket--tl" aria-hidden="true"></span>
+    <span class="bracket bracket--tr" aria-hidden="true"></span>
+    <span class="bracket bracket--bl" aria-hidden="true"></span>
+    <span class="bracket bracket--br" aria-hidden="true"></span>
+    <div class="hero__text">
+      <h1 id="hero-title" class="hero__title">
+        {SITE_NAME}
+      </h1>
+      <p class="hero__tagline">
+        The <span class="accent">Ethereum Classic</span> execution client
+      </p>
+      <div class="hero__actions">
+        <a class="button button--primary" href={DOCS.installation.href}>
+          Install a node
+        </a>
+        <a class="button" href={DOCS.home.href}>
+          Read the documentation
+        </a>
+      </div>
+    </div>
+    <div class="mark" aria-hidden="true">
+      <img src="/logo.svg" alt="" width="256" height="256" />
+    </div>
+  </div>
+</section>
+
+<style>
+  /* The social card, live: the name set heavy and tight, the emphasis in green,
+     thin corner brackets, the mark in its rings, and a solid green base edge. */
+  .hero {
+    border-bottom: 0.5rem solid var(--accent);
+  }
+
+  .hero__inner {
+    position: relative;
+    display: grid;
+    gap: 2rem;
+    align-items: center;
+    padding: clamp(2.5rem, 8vw, 5.5rem) clamp(1rem, 4vw, 3rem);
+  }
+
+  @media (min-width: 56rem) {
+    .hero__inner {
+      grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+      gap: 3rem;
+    }
+  }
+
+  .bracket {
+    position: absolute;
+    width: 2.5rem;
+    height: 2.5rem;
+    border: 0 solid var(--hairline);
+  }
+
+  .bracket--tl {
+    top: 1rem;
+    left: 0;
+    border-top-width: 2px;
+    border-left-width: 2px;
+  }
+
+  .bracket--tr {
+    top: 1rem;
+    right: 0;
+    border-top-width: 2px;
+    border-right-width: 2px;
+  }
+
+  .bracket--bl {
+    bottom: 1rem;
+    left: 0;
+    border-bottom-width: 2px;
+    border-left-width: 2px;
+  }
+
+  .bracket--br {
+    right: 0;
+    bottom: 1rem;
+    border-right-width: 2px;
+    border-bottom-width: 2px;
+  }
+
+  .hero__title {
+    font-size: clamp(3.25rem, 14vw, 7rem);
+    font-weight: 800;
+    letter-spacing: -0.035em;
+    line-height: 0.95;
+  }
+
+  .hero__tagline {
+    max-width: 22ch;
+    text-wrap: balance;
+    margin-top: 1rem;
+    color: var(--ink);
+    font-size: clamp(1.5rem, 4.4vw, 2.5rem);
+    font-weight: 750;
+    letter-spacing: -0.015em;
+    line-height: 1.15;
+  }
+
+  .accent {
+    color: var(--accent);
+  }
+
+  .hero__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 2rem;
+  }
+
+  /* The prism mark given room: first on a narrow screen, beside the name on a
+     wide one, inside the card's two rings. */
+  .mark {
+    position: relative;
+    display: grid;
+    order: -1;
+    place-items: center;
+    justify-self: start;
+    width: clamp(9rem, 42vw, 20rem);
+    aspect-ratio: 1;
+    border: 2px solid var(--hairline);
+    border-radius: 50%;
+  }
+
+  .mark::before {
+    position: absolute;
+    inset: 9%;
+    border: 1px solid var(--hairline);
+    border-radius: 50%;
+    content: "";
+  }
+
+  .mark img {
+    position: relative;
+    width: 56%;
+    height: auto;
+  }
+
+  @media (min-width: 56rem) {
+    .mark {
+      order: 0;
+      justify-self: end;
+    }
+  }
+</style>

@@ -1,0 +1,33 @@
+---
+import Icon from "@/components/Icon.astro";
+
+interface Props {
+  text: string;
+  size?: number;
+}
+
+// Link text ending in an arrow. The last word and the arrow never separate, so a
+// wrapped line does not leave the arrow alone on a line of its own.
+const { text, size = 16 } = Astro.props;
+const cut = text.lastIndexOf(" ") + 1;
+const head = text.slice(0, cut);
+const tail = text.slice(cut);
+---
+
+{head}
+<span class="arrow-text">
+  {tail}
+  <Icon name="arrow" size={size} />
+</span>
+
+<style>
+  .arrow-text {
+    white-space: nowrap;
+  }
+
+  .arrow-text :global(svg) {
+    display: inline-block;
+    margin-left: 0.3em;
+    vertical-align: -0.12em;
+  }
+</style>

@@ -1,0 +1,86 @@
+---
+import ArrowText from "@/components/ArrowText.astro";
+import InlineCode from "@/components/InlineCode.astro";
+import RepositoryCard from "@/components/RepositoryCard.astro";
+import SectionHead from "@/components/SectionHead.astro";
+import type { RepositoryFacts } from "@/data/repository";
+import { DOCS, PREVIOUS_NAMESPACE, REPO, TRANSITION } from "@/data/site";
+
+interface Props {
+  facts: RepositoryFacts;
+}
+
+const { facts } = Astro.props;
+---
+
+<section class="band" aria-labelledby="repository-title">
+  <div class="container repository">
+    <SectionHead
+      id="repository-title"
+      label="The repository"
+      title={`Releases are published from ${REPO.slug}.`}
+      em={REPO.slug}
+      size="medium"
+    >
+      <p class="lede">
+        <InlineCode text={PREVIOUS_NAMESPACE} />
+      </p>
+    </SectionHead>
+    <div class="repository__grid">
+      <div class="repository__card bracketed">
+        <RepositoryCard facts={facts} />
+      </div>
+      <div class="notice">
+        <h3 class="notice__title">Services are moving</h3>
+        <p>
+          <InlineCode text={TRANSITION.lede} />
+        </p>
+        <p>{TRANSITION.advice}</p>
+        <a class="more" href={DOCS.transition.href}>
+          <ArrowText text="Where each service continues" />
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .repository {
+    display: grid;
+    gap: clamp(2.25rem, 5vw, 3.5rem);
+  }
+
+  .repository__grid {
+    display: grid;
+    gap: 2.5rem;
+    align-items: center;
+  }
+
+  @media (min-width: 60rem) {
+    .repository__grid {
+      grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+      gap: 3.5rem;
+    }
+  }
+
+  /* The card inside the social card's corner brackets. */
+  .repository__card {
+    padding: clamp(0.6rem, 2vw, 1rem);
+  }
+
+  /* The transition, marked with the hero's green edge turned on its side. */
+  .notice {
+    display: grid;
+    gap: 0.9rem;
+    padding-left: 1.25rem;
+    border-left: 0.3rem solid var(--accent);
+  }
+
+  .notice__title {
+    font-size: 1.3rem;
+  }
+
+  .notice code {
+    color: var(--ink);
+  }
+</style>

@@ -1,0 +1,11 @@
+---
+interface Props {
+  text: string;
+}
+
+// Text in src/data/site.ts marks code with backticks, as Markdown does, so the same
+// strings serve /llms.txt. Odd-numbered parts of the split are the code.
+const parts = Astro.props.text.split("`");
+---
+
+{parts.map((part, i) => (i % 2 ? <code>{part}</code> : part))}

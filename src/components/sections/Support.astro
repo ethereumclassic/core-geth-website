@@ -1,0 +1,48 @@
+---
+import SectionHead from "@/components/SectionHead.astro";
+import { DOCS, SUPPORT } from "@/data/site";
+---
+
+<section class="band" aria-labelledby="support-title">
+  <div class="container">
+    <div class="support bracketed">
+      <SectionHead
+        id="support-title"
+        label="Support this work"
+        title={SUPPORT.statement}
+        em="no protocol treasury"
+      />
+      <div class="support__body">
+        <p class="lede">{SUPPORT.body}</p>
+        <a class="button button--primary" href={DOCS.support.href}>
+          How to fund Core-Geth
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  /* The page closes the way the hero opens, inside the card's corner brackets:
+     the statement on the left, and on a wide screen what follows from it on the
+     right, level with its last line. */
+  .support {
+    display: grid;
+    gap: 1.75rem;
+    padding: clamp(2rem, 6vw, 4rem) clamp(1.25rem, 5vw, 4rem);
+  }
+
+  @media (min-width: 60rem) {
+    .support {
+      grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
+      gap: 4rem;
+      align-items: end;
+    }
+  }
+
+  .support__body {
+    display: grid;
+    gap: 1.5rem;
+    justify-items: start;
+  }
+</style>

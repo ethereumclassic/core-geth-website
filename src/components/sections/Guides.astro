@@ -1,0 +1,122 @@
+---
+import ArrowText from "@/components/ArrowText.astro";
+import SectionHead from "@/components/SectionHead.astro";
+import { DOCS, GUIDES } from "@/data/site";
+---
+
+<section class="band" aria-labelledby="guides-title">
+  <div class="container guides">
+    <SectionHead
+      id="guides-title"
+      label="Find your guide"
+      title="Start with the page for what you run."
+      em="what you run"
+      size="medium"
+    />
+    <ul class="cards" role="list">
+      {GUIDES.map((guide) => (
+        <li>
+          <a class="card" href={guide.href}>
+            <span class="card__role">{guide.role}</span>
+            <span class="visually-hidden">: </span>
+            <span class="card__start">
+              <span class="card__label">Start with</span>
+              <span class="visually-hidden"> </span>
+              <span class="card__page">
+                <ArrowText text={guide.title} size={14} />
+              </span>
+            </span>
+          </a>
+        </li>
+      ))}
+    </ul>
+    <a class="more" href={DOCS.guides.href}>
+      <ArrowText text="Every role, including private networks and building the client" />
+    </a>
+  </div>
+</section>
+
+<style>
+  .guides {
+    display: grid;
+    gap: clamp(2.25rem, 5vw, 3.5rem);
+  }
+
+  /* The documentation's "Choose your role" table as cards: who you are at the
+     top, where to start at the foot. */
+  .cards {
+    display: grid;
+    gap: 1rem;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* Side by side, cards share a height, so the ones with a short role get room
+     between it and the foot. */
+  @media (min-width: 36rem) {
+    .cards {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .card {
+      min-height: 9.5rem;
+    }
+  }
+
+  @media (min-width: 60rem) {
+    .cards {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+
+  /* White on the grid, like the card's stat boxes. On hover the border turns
+     green and the hero's green base edge appears under the card. */
+  .card {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    justify-content: space-between;
+    height: 100%;
+    padding: 1.25rem 1.35rem;
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius);
+    background: var(--surface);
+    text-decoration: none;
+    transition:
+      border-color 150ms ease,
+      box-shadow 150ms ease;
+  }
+
+  .card:hover {
+    border-color: var(--accent);
+    box-shadow: inset 0 -4px 0 var(--accent);
+  }
+
+  .card__role {
+    color: var(--ink);
+    font-size: 1.125rem;
+    font-weight: 650;
+    line-height: 1.35;
+  }
+
+  .card__start {
+    display: grid;
+    gap: 0.15rem;
+  }
+
+  .card__label {
+    color: var(--muted);
+    font-size: 0.875rem;
+  }
+
+  .card__page {
+    font-weight: 650;
+    line-height: 1.35;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .card {
+      transition: none;
+    }
+  }
+</style>

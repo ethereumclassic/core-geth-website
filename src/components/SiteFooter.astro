@@ -1,0 +1,77 @@
+---
+import { CLIENT_LICENSE, DISCORD_URL, DOCS, SECURITY_EMAIL } from "@/data/site";
+
+const [copying, copyingLesser] = CLIENT_LICENSE.files;
+const clientLicense = `Core-Geth is copyright © ${CLIENT_LICENSE.holders}, and licensed under ${CLIENT_LICENSE.names}:`;
+---
+
+<footer class="footer">
+  <div class="container footer__inner">
+    <div class="footer__legal">
+      <p>
+        {clientLicense} see <a href={copying.href}>{copying.label}</a> and{" "}
+        <a href={copyingLesser.href}>{copyingLesser.label}</a>.
+      </p>
+      <p>
+        Report a security issue: <a href={`mailto:${SECURITY_EMAIL}`}>{SECURITY_EMAIL}</a>
+      </p>
+    </div>
+    <ul class="footer__links" role="list">
+      <li>
+        <a href={DISCORD_URL}>Discord</a>
+      </li>
+      <li>
+        <a href={DOCS.home.href}>Documentation</a>
+      </li>
+    </ul>
+  </div>
+</footer>
+
+<style>
+  .footer {
+    border-top: 1px solid var(--bar-line);
+    background: var(--bar);
+    color: var(--bar-text);
+    font-size: 0.9rem;
+  }
+
+  /* The documentation's footer layout: the legal lines across the container on the
+     left, the links on the right. They stack on a narrow screen. */
+  .footer__inner {
+    display: grid;
+    gap: 1rem 3rem;
+    padding-block: 2rem 2.5rem;
+  }
+
+  @media (min-width: 56rem) {
+    .footer__inner {
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: start;
+    }
+  }
+
+  .footer__legal {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .footer a {
+    color: var(--bar-strong);
+  }
+
+  .footer a:hover {
+    color: var(--bar-accent);
+  }
+
+  .footer :focus-visible {
+    outline-color: var(--bar-accent);
+  }
+
+  .footer__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.5rem;
+    padding: 0;
+    list-style: none;
+  }
+</style>

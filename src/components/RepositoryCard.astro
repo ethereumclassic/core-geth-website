@@ -1,0 +1,186 @@
+---
+import Icon from "@/components/Icon.astro";
+import { formatAsOf, type RepositoryFacts } from "@/data/repository";
+import { REPO } from "@/data/site";
+
+interface Props {
+  facts: RepositoryFacts;
+}
+
+// The numbers are GitHub's as of the build, or of the committed snapshot when the
+// API could not be read; the card prints which date applies.
+const { facts } = Astro.props;
+const [owner, project] = REPO.slug.split("/");
+---
+
+<article class="repo" aria-labelledby="repo-name">
+  <div class="repo__head">
+    <Icon name="github" size={40} />
+    <h3 id="repo-name" class="repo__name">
+      <a href={REPO.url}>
+        <span class="repo__owner">{owner}/</span>
+        <wbr />
+        <span class="repo__project">{project}</span>
+      </a>
+    </h3>
+  </div>
+  <p class="repo__description">{facts.description}</p>
+  <dl class="repo__facts">
+    <div>
+      <dt>
+        <Icon name="star" size={14} />
+        Stars
+      </dt>
+      <dd>{facts.stars}</dd>
+    </div>
+    <div>
+      <dt>
+        <Icon name="fork" size={14} />
+        Forks
+      </dt>
+      <dd>{facts.forks}</dd>
+    </div>
+    <div>
+      <dt>
+        <Icon name="tag" size={14} />
+        Latest release
+      </dt>
+      <dd>
+        <a href={facts.release.url}>{facts.release.tag}</a>
+      </dd>
+    </div>
+  </dl>
+  <div class="repo__foot">
+    <a class="button button--primary" href={REPO.releasesUrl}>
+      All releases
+    </a>
+    <p class="repo__asof">
+      Read from GitHub on <time datetime={facts.asOf}>{formatAsOf(facts.asOf)}</time>.
+    </p>
+  </div>
+</article>
+
+<style>
+  .repo {
+    display: grid;
+    gap: 1.25rem;
+    padding: clamp(1.25rem, 4vw, 2rem);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius);
+    background: var(--surface);
+  }
+
+  /* On the narrowest screens the name drops below the mark instead of overflowing. */
+  .repo__head {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1rem;
+    align-items: center;
+    color: var(--ink);
+  }
+
+  .repo__head :global(svg) {
+    flex: none;
+  }
+
+  /* The name as GitHub sets it, owner light and repository heavy, in the
+     documentation's code face. */
+  .repo__name {
+    font-family: var(--font-mono);
+    font-size: clamp(1.35rem, 4.4vw, 1.9rem);
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.15;
+  }
+
+  .repo__name a {
+    color: var(--ink);
+    text-decoration: none;
+  }
+
+  .repo__name a:hover .repo__project {
+    color: var(--accent);
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+  }
+
+  .repo__owner {
+    color: var(--muted);
+    font-weight: 400;
+  }
+
+  .repo__description {
+    color: var(--text);
+  }
+
+  /* The card's stat boxes: the value large, its label small beneath it. Three in a
+     row where they fit; on a narrow screen the counts pair up and the release,
+     the widest value, takes the row below. */
+  .repo__facts {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+
+  .repo__facts > div:last-child {
+    grid-column: 1 / -1;
+  }
+
+  @media (min-width: 40rem) {
+    .repo__facts {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .repo__facts > div:last-child {
+      grid-column: auto;
+    }
+  }
+
+  .repo__facts > div {
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 0.3rem;
+    padding: 0.9rem 1.1rem;
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius);
+    background: var(--ground);
+  }
+
+  .repo__facts dt {
+    display: inline-flex;
+    gap: 0.35rem;
+    align-items: center;
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+
+  .repo__facts dd {
+    color: var(--ink);
+    font-size: 2rem;
+    font-variant-numeric: tabular-nums;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.1;
+  }
+
+  .repo__facts dd a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  .repo__facts dd a:hover {
+    text-decoration: underline;
+  }
+
+  .repo__foot {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1.25rem;
+    align-items: center;
+  }
+
+  .repo__asof {
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+</style>

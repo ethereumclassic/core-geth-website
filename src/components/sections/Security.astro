@@ -1,0 +1,117 @@
+---
+import ArrowText from "@/components/ArrowText.astro";
+import InlineCode from "@/components/InlineCode.astro";
+import SectionHead from "@/components/SectionHead.astro";
+import { RECORDS } from "@/data/site";
+---
+
+<section class="band band--surface" aria-labelledby="security-title">
+  <div class="container security">
+    <SectionHead
+      id="security-title"
+      label="Security and provenance"
+      title="How the client was exposed, and how it was fixed."
+      em="how it was fixed"
+      size="medium"
+    />
+    <ul class="records" role="list">
+      {RECORDS.map((record) => (
+        <li class="record">
+          <p class="record__label">{record.label}</p>
+          <h3 class="record__title">
+            <a href={record.page.href}>
+              <ArrowText text={record.page.title} size={18} />
+            </a>
+          </h3>
+          <p class="record__summary">
+            <InlineCode text={record.summary} />
+          </p>
+        </li>
+      ))}
+    </ul>
+  </div>
+</section>
+
+<style>
+  .security {
+    display: grid;
+    gap: clamp(2.25rem, 5vw, 3.5rem);
+  }
+
+  /* Three records, read left to right as one account, set like columns of a
+     printed page: a heavy rule across the top, a hairline between them, and each
+     column a link to its record. They stack, rule under rule, on a narrow screen. */
+  .records {
+    display: grid;
+    padding: 0;
+    border-top: 2px solid var(--ink);
+    list-style: none;
+  }
+
+  @media (min-width: 56rem) {
+    .records {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  .record {
+    position: relative;
+    display: grid;
+    gap: 0.6rem;
+    align-content: start;
+    padding: 1.5rem 0 1.75rem;
+    border-bottom: 1px solid var(--hairline);
+  }
+
+  @media (min-width: 56rem) {
+    .record {
+      padding: 1.75rem 2rem 2rem;
+      border-bottom: 0;
+      border-left: 1px solid var(--hairline);
+    }
+
+    .record:first-child {
+      padding-left: 0;
+      border-left: 0;
+    }
+
+    .record:last-child {
+      padding-right: 0;
+    }
+  }
+
+  .record__label {
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+  }
+
+  .record__title {
+    font-size: 1.4rem;
+    letter-spacing: -0.015em;
+  }
+
+  .record__title a {
+    color: var(--ink);
+    text-decoration: none;
+  }
+
+  /* The whole column answers a click, while the link's name stays the title. */
+  .record__title a::after {
+    position: absolute;
+    inset: 0;
+    content: "";
+  }
+
+  .record__title :global(svg) {
+    color: var(--accent);
+  }
+
+  .record:hover .record__title a {
+    color: var(--accent);
+  }
+
+  .record__summary {
+    color: var(--text);
+  }
+</style>

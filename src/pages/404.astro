@@ -1,0 +1,52 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { DOCS } from "@/data/site";
+
+// GitHub Pages serves this file for any path that does not exist, so it keeps the
+// site's header and footer and offers the two places a visitor is looking for.
+// Its canonical is /404.html, the one address where this content really lives.
+---
+
+<BaseLayout
+  title="Page not found"
+  description="There is no page at this address on coregeth.com. Go to the home page or to the Core-Geth documentation."
+  robots="noindex, follow"
+  path="/404.html"
+>
+  <section>
+    <div class="container not-found">
+      <h1 class="not-found__title">Page not found</h1>
+      <p>There is no page at this address on coregeth.com.</p>
+      <div class="not-found__actions">
+        <a class="button button--primary" href="/">
+          Go to the home page
+        </a>
+        <a class="button" href={DOCS.home.href}>
+          Read the documentation
+        </a>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .not-found {
+    display: grid;
+    gap: 1.25rem;
+    justify-items: start;
+    padding-block: clamp(3rem, 10vw, 6rem);
+  }
+
+  .not-found__title {
+    font-size: clamp(2.25rem, 8vw, 3.5rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+  }
+
+  .not-found__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 0.75rem;
+  }
+</style>

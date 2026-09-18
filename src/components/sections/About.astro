@@ -1,0 +1,179 @@
+---
+import ArrowText from "@/components/ArrowText.astro";
+import InlineCode from "@/components/InlineCode.astro";
+import SectionHead from "@/components/SectionHead.astro";
+import { ABOUT, DOCS, NETWORKS } from "@/data/site";
+---
+
+<section class="band band--surface about" aria-labelledby="about-title">
+  <div class="container about__inner">
+    <SectionHead id="about-title" label="About" title="What is Core-Geth?" em="Core-Geth">
+      <p class="lede">{ABOUT.definition}</p>
+    </SectionHead>
+    <div class="about__grid">
+      <div class="about__text">
+        <p>
+          <InlineCode text={ABOUT.upstream} />
+        </p>
+        <p>
+          <InlineCode text={ABOUT.oneNode} />
+        </p>
+        <a class="more" href={DOCS.history.href}>
+          <ArrowText text="Read the project history" />
+        </a>
+      </div>
+      <ul class="chains" role="list">
+        {NETWORKS.map((network) => (
+          <li class="chain">
+            <div class="chain__body">
+              <h3 class="chain__name">{network.name}</h3>
+              <p class="chain__id">
+                <span class="chain__id-label">Chain ID</span>
+                <span class="visually-hidden"> </span>
+                <span class="chain__id-value">{network.chainId}</span>
+              </p>
+              <p class="chain__role">{network.role}</p>
+              <a class="chain__link" href={network.guide.href}>
+                <ArrowText text={network.guide.title} size={14} />
+              </a>
+            </div>
+            <p class="chain__run">
+              <code>geth {network.flag}</code>
+            </p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </div>
+</section>
+
+<style>
+  /* The hero's green edge is this band's top. */
+  .about {
+    border-top: 0;
+  }
+
+  .about__inner {
+    display: grid;
+    gap: clamp(2.25rem, 5vw, 3.5rem);
+  }
+
+  /* The text beside the two networks where they fit; the networks pair up on a
+     tablet and stack on a phone. */
+  .about__grid {
+    display: grid;
+    gap: 2rem 1.5rem;
+  }
+
+  @media (min-width: 64rem) {
+    .about__grid {
+      grid-template-columns: minmax(0, 1.1fr) minmax(0, 2fr);
+      gap: 3rem;
+    }
+  }
+
+  .about__text {
+    display: grid;
+    gap: 1rem;
+    align-content: start;
+    max-width: 36rem;
+  }
+
+  .about__text code {
+    color: var(--ink);
+  }
+
+  .chains {
+    display: grid;
+    gap: 1rem;
+    padding: 0;
+    list-style: none;
+  }
+
+  @media (min-width: 40rem) {
+    .chains {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  /* One network, in the card's stat-box style over a patch of its grid: the chain
+     ID large, and the command that starts it on the documentation's dark bar. */
+  .chain {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius);
+    background-color: var(--ground);
+    background-image:
+      linear-gradient(to right, var(--grid) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--grid) 1px, transparent 1px);
+    background-position: -1px -1px;
+    background-size: 24px 24px;
+  }
+
+  .chain__body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    padding: 1.25rem 1.5rem 1.5rem;
+  }
+
+  .chain__id {
+    display: grid;
+    order: -1;
+  }
+
+  .chain__id-label {
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+
+  .chain__id-value {
+    color: var(--ink);
+    font-size: clamp(3.75rem, 8vw, 5rem);
+    font-variant-numeric: tabular-nums;
+    font-weight: 800;
+    letter-spacing: -0.045em;
+    line-height: 1;
+  }
+
+  .chain__name {
+    margin-top: 1rem;
+    font-size: 1.3rem;
+  }
+
+  .chain__role {
+    color: var(--muted);
+  }
+
+  .chain__role::first-letter {
+    text-transform: uppercase;
+  }
+
+  .chain__link {
+    margin-top: 1.25rem;
+    font-weight: 650;
+    text-decoration: none;
+  }
+
+  .chain__link:hover {
+    text-decoration: underline;
+  }
+
+  .chain__run {
+    padding: 0.85rem 1.5rem;
+    background: var(--bar);
+    color: var(--bar-strong);
+  }
+
+  .chain__run code {
+    font-size: 0.95rem;
+  }
+
+  /* The prompt is decoration: it is neither copied nor read aloud. */
+  .chain__run code::before {
+    color: var(--bar-accent);
+    content: "$ " / "";
+  }
+</style>

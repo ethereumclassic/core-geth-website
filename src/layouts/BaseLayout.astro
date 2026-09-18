@@ -1,0 +1,169 @@
+---
+// Self-hosted fonts: Noto Sans, the face the social card is set in, and Roboto
+// Mono, the documentation's code face. Nothing is loaded from another origin.
+import "@fontsource-variable/noto-sans";
+import "@fontsource-variable/roboto-mono";
+import "@/styles/global.css";
+import notoSansLatin from "@fontsource-variable/noto-sans/files/noto-sans-latin-wght-normal.woff2?url";
+import SiteFooter from "@/components/SiteFooter.astro";
+import SiteHeader from "@/components/SiteHeader.astro";
+import {
+  ABOUT,
+  CLIENT_LICENSE,
+  DOCS,
+  DOCS_SITE_NAME,
+  DOCS_URL,
+  HOME_TITLE,
+  PLATFORMS,
+  REPO,
+  SITE_DESCRIPTION,
+  SITE_NAME,
+  SITE_URL,
+  SOCIAL_CARD,
+  THEME_COLOR,
+} from "@/data/site";
+
+interface Props {
+  /** The page's title. Omit on the home page, which uses HOME_TITLE. */
+  title?: string;
+  description?: string;
+  /**
+   * Robots rules. The default lets search and answer engines index the page and show
+   * as much of it as they choose: a snippet of any length and a large image preview.
+   * Set "noindex, follow" on a page they should not list, such as the 404.
+   */
+  robots?: string;
+  /** The page's own path, for the canonical and og:url. Defaults to where it is built. */
+  path?: string;
+}
+
+const {
+  title,
+  description = SITE_DESCRIPTION,
+  robots = "index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1",
+  path = Astro.url.pathname,
+} = Astro.props;
+
+// The Open Graph and Twitter tags mirror the documentation's (overrides/main.html in
+// ethereumclassic/core-geth) tag for tag, so a link to either site previews the same way.
+const pageTitle = title ? `${title} - ${SITE_NAME}` : HOME_TITLE;
+const canonical = new URL(path, SITE_URL).href;
+const image = new URL(SOCIAL_CARD.path, SITE_URL).href;
+
+// Structured data for the site, the page and the client, derived from the same module
+// the page renders, so none of it can disagree with the page. `license` is the
+// client's, not this site's: it describes Core-Geth.
+const website = `${SITE_URL}/#website`;
+const software = `${SITE_URL}/#software`;
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "WebSite",
+      "@id": website,
+      name: SITE_NAME,
+      url: `${SITE_URL}/`,
+      description: SITE_DESCRIPTION,
+      inLanguage: "en",
+    },
+    {
+      "@type": "WebPage",
+      "@id": `${canonical}#webpage`,
+      url: canonical,
+      name: pageTitle,
+      description,
+      inLanguage: "en",
+      isPartOf: { "@id": website },
+      about: { "@id": software },
+    },
+    {
+      "@type": ["SoftwareApplication", "SoftwareSourceCode"],
+      "@id": software,
+      name: SITE_NAME,
+      description: ABOUT.definition,
+      url: `${SITE_URL}/`,
+      sameAs: [REPO.url, DOCS_URL],
+      codeRepository: REPO.url,
+      // A go-ethereum downstream, and built with the Go toolchain the audits measure.
+      programmingLanguage: "Go",
+      license: CLIENT_LICENSE.files.map((file) => file.href),
+      applicationCategory: "DeveloperApplication",
+      operatingSystem: PLATFORMS.join(", "),
+      downloadUrl: REPO.releasesUrl,
+      installUrl: DOCS.installation.href,
+      softwareHelp: { "@type": "WebSite", name: DOCS_SITE_NAME, url: DOCS_URL },
+      // The client costs nothing. Google's software app result requires offers.price,
+      // 0 for a free app, and also a rating or review, which this page does not have
+      // and will not invent. The price is stated anyway because it is true.
+      isAccessibleForFree: true,
+      offers: { "@type": "Offer", price: "0", priceCurrency: "USD" },
+    },
+  ],
+};
+// "<" is escaped so no string in the data can close the script element early.
+const jsonLdText = JSON.stringify(jsonLd).replaceAll("<", "\\u003c");
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{pageTitle}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+    <meta name="robots" content={robots} />
+    <meta name="color-scheme" content="light" />
+    <meta name="theme-color" content={THEME_COLOR} />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={SITE_NAME} />
+    <meta property="og:title" content={pageTitle} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={image} />
+    <meta property="og:image:width" content={String(SOCIAL_CARD.width)} />
+    <meta property="og:image:height" content={String(SOCIAL_CARD.height)} />
+    <meta property="og:image:alt" content={SOCIAL_CARD.alt} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={pageTitle} />
+    <meta name="twitter:description" content={description} />
+    <meta name="twitter:image" content={image} />
+    <meta name="twitter:image:alt" content={SOCIAL_CARD.alt} />
+
+    <link rel="icon" href="/favicon.png" type="image/png" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+    <link rel="preload" href={notoSansLatin} as="font" type="font/woff2" crossorigin />
+
+    <script is:inline type="application/ld+json" set:html={jsonLdText}></script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">
+      Skip to content
+    </a>
+    <SiteHeader />
+    <main id="main">
+      <slot />
+    </main>
+    <SiteFooter />
+  </body>
+</html>
+
+<style>
+  /* In CSS rather than a script, so it works with scripting off. */
+  .skip-link {
+    position: absolute;
+    top: -10rem;
+    left: var(--gutter);
+    z-index: 10;
+    padding: 0.6rem 1rem;
+    border-radius: var(--radius);
+    background: var(--accent);
+    color: var(--on-accent);
+    font-weight: 700;
+  }
+
+  .skip-link:focus {
+    top: 0.75rem;
+  }
+</style>
