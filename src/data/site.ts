@@ -265,8 +265,8 @@ export const OPERATOR_ACTIONS: readonly {
  * running" in the documentation's v1.13.0 record, counted by etcnodes.org on the date
  * in `measured`. By the maintainer's decision (2026-09-18) this is the one section that
  * states census figures, advisory counts and versions, each dated and sourced here. A
- * re-measure is an edit to this block: the shares, the total and the lede are computed
- * from the counts. `status` is the state each row carries in text as well as in color.
+ * re-measure is an edit to this block: the shares and the total are computed from the
+ * counts. `status` is the state each row carries in text as well as in color.
  * Backticks mark code.
  */
 const NETWORK_ROWS: readonly {
@@ -315,12 +315,14 @@ const NETWORK_ROWS: readonly {
 
 const networkTotal = NETWORK_ROWS.reduce((sum, row) => sum + row.nodes, 0);
 const networkShare = (nodes: number) => (nodes / networkTotal) * 100;
-const [oldest] = NETWORK_ROWS;
 const recommendedRows = NETWORK_ROWS.filter((row) => row.status === "recommended");
 const [recommended] = recommendedRows;
-if (!oldest || !recommended || recommendedRows.length !== 1) {
-  throw new Error("NETWORK_RUNNING needs rows, and exactly one recommended release");
+if (!recommended || recommendedRows.length !== 1) {
+  throw new Error("NETWORK_RUNNING needs exactly one recommended release");
 }
+// "v1.13.0" from the row, and its line, "v1.13.x".
+const recommendedRelease = recommended.running.replaceAll("`", "");
+const recommendedLine = recommendedRelease.replace(/\.\d+$/, ".x");
 
 export const NETWORK_RUNNING = {
   measured: { iso: "2026-09-17", text: "17 September 2026" },
@@ -328,9 +330,13 @@ export const NETWORK_RUNNING = {
   evidence: `${DOCS_URL}release-reports/v1.13.0-record/#what-the-network-is-running`,
   upgrade: { label: "Upgrade to v1.13.0", href: `${REPO.releasesUrl}/tag/v1.13.0` },
   total: networkTotal,
-  /** The framing above the table, in the record's terms: the oldest row's share, and
-   *  the release operators are being told to move off as the only one with nothing open. */
-  lede: `${Math.round(networkShare(oldest.nodes))}% of Core-Geth nodes run a release with ${oldest.state}. ${recommended.running}, the release operators are being told to move off, is the only one on this list with nothing open.`,
+  /** The line above the table: what the recommended release resolves, in the record's
+   *  words for its row, and the maintainer's recommendation to run it beside the current
+   *  nodes before moving a whole fleet to its line. The trial node takes no traffic: the
+   *  migration guide asks for one MESS setting per fleet, and `v1.12.x` runs MESS off where
+   *  `v1.13.0` turns it on. Check all of it against the documentation whenever the
+   *  recommended release changes. */
+  lede: `\`${recommendedRelease}\` resolves all six client CVEs, fixes the GraphQL limit and carries zero Go standard library advisories. Run a \`${recommendedRelease}\` node beside your current ones without sending it traffic, and when you are comfortable, move your whole fleet to the \`${recommendedLine}\` line.`,
   rows: NETWORK_ROWS.map((row) => ({ ...row, share: `${networkShare(row.nodes).toFixed(1)}%` })),
 } as const;
 

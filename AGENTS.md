@@ -187,7 +187,10 @@ Everything the site says is public copy.
   - The network table, "What the network is running" (2026-09-18): Core-Geth nodes by release, dated
     and sourced to etcnodes.org in its caption, with the documentation's record linked for the
     evidence of each row. A re-measure is an edit to `NETWORK_RUNNING` in `src/data/site.ts`; the
-    shares, the total and the lede are computed from its counts.
+    shares and the total are computed from its counts. The line above the table says what `v1.13.0`
+    resolves and recommends running one beside the current nodes, without sending it traffic so the
+    fleet keeps one MESS setting, before moving the whole fleet to the `v1.13.x` line: a
+    recommendation, never a rebuttal of anyone else's advice (maintainer decision, 2026-09-18).
 - **No blog, no newsletter form, no endpoint that collects an address.** The support section links the
   documentation's support page and carries no address.
 - **The footer states the client's license as the client's** (maintainer decision, 2026-09-17), in the

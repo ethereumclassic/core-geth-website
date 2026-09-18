@@ -136,7 +136,9 @@ Everything the site says is public copy.
   - The operators section's MESS action, which names `v1.13.0` as the release that ships MESS on
     (2026-09-18) and takes no position on the setting.
   - The network table (2026-09-18), dated and sourced to etcnodes.org in its caption, and
-    re-measured by editing `NETWORK_RUNNING` in `src/data/site.ts`.
+    re-measured by editing `NETWORK_RUNNING` in `src/data/site.ts`. The line above it recommends
+    running a `v1.13.0` node beside the current ones, without traffic so the fleet keeps one MESS
+    setting, before moving the whole fleet; it never rebuts anyone else's advice.
 - No blog, no newsletter form, no endpoint that collects an address.
 - The footer states the client's license as the client's (maintainer decision, 2026-09-17); this
   site is licensed separately.
