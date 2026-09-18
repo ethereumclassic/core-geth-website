@@ -1,0 +1,8 @@
+# Generated or machine-owned
+pnpm-lock.yaml
+dist/
+.astro/
+node_modules/
+
+# Local working files, never committed
+.local/

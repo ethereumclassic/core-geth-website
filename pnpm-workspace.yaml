@@ -1,0 +1,18 @@
+# pnpm settings for this repository.
+#
+# They live here rather than in .npmrc: a project .npmrc is ignored in this
+# repository, and pnpm reads its non-auth settings from this file on every major.
+
+# The release-age gate. pnpm refuses to resolve any version published in the last
+# 7 days (10080 minutes), so a malicious release is caught and pulled before it
+# can reach this project. Committed so the gate travels to every clone and every
+# CI runner: a machine-wide pnpm setting does not.
+minimumReleaseAge: 10080
+minimumReleaseAgeStrict: true
+
+# Dependency install scripts do not run unless listed. esbuild's only checks and
+# links its platform binary, which esbuild also finds through its optional
+# platform dependency, and the site builds without it. Listed here so pnpm
+# records that decision instead of asking at every install.
+ignoredBuiltDependencies:
+  - esbuild
