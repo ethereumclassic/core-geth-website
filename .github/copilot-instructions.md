@@ -127,7 +127,10 @@ Everything the site says is public copy.
 - Every claim about Core-Geth must already be published on docs.coregeth.com or in
   `ethereumclassic/core-geth`. Never from memory, and never from another client's site.
 - Never state CVE identifiers, advisory counts, version numbers, fork schedules or node census
-  figures. The repository card, read from GitHub at build time, is the one exception.
+  figures. The exceptions, each a maintainer decision:
+  - The repository card, read from GitHub at build time.
+  - The operators section's MESS action, which names `v1.13.0` as the release that ships MESS on
+    (2026-09-18) and takes no position on the setting.
 - No blog, no newsletter form, no endpoint that collects an address.
 - The footer states the client's license as the client's (maintainer decision, 2026-09-17); this
   site is licensed separately.

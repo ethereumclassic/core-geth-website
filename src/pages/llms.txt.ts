@@ -76,8 +76,10 @@ export const GET: APIRoute = () => {
     "",
     "## For node operators",
     "",
-    ...OPERATOR_ACTIONS.map(
-      (action) => `- ${action.text}${action.code ? `\`${action.code}\`` : ""}`,
+    ...OPERATOR_ACTIONS.map((action) =>
+      action.href
+        ? `- [${action.text}](${action.href}): ${action.detail ?? ""}`
+        : `- ${action.text}${action.code ? `\`${action.code}\`` : ""}`,
     ),
     entry(DOCS.operators),
     "",

@@ -8,8 +8,11 @@
  * owns it. Anything that changes with a release is deliberately absent: version
  * numbers, advisory counts, fork schedules and node figures belong to the pages that
  * maintain them, and a second copy here would go stale without anyone noticing. Link
- * the page instead. The one exception is the repository card, whose release tag and
- * counts are read from GitHub at build time (src/data/repository.ts).
+ * the page instead. The exceptions, each set where it is defined:
+ * - The repository card, whose release tag and counts are read from GitHub at build
+ *   time (src/data/repository.ts).
+ * - The MESS operator action, which names the release that ships MESS on, in the
+ *   maintainer's wording.
  */
 
 export const SITE_URL = "https://coregeth.com";
@@ -136,6 +139,11 @@ export const DOCS = {
     summary:
       "where the services the ETC Cooperative maintained continue as it winds down, including the public JSON-RPC endpoints and the peer discovery lists.",
   },
+  messSetting: {
+    href: `${DOCS_URL}operate/mess/#which-setting-fits-which-operator`,
+    title: "Which setting fits which operator",
+    summary: "the MESS trade for each kind of operator.",
+  },
   faq: {
     href: `${DOCS_URL}about/faq/`,
     title: "Questions and answers",
@@ -228,13 +236,27 @@ export const NETWORKS: readonly Network[] = [
 ];
 
 /**
- * The three actions the operators page opens with. Each links there, and the
- * reasons are left to that page. `code` is set in monospace after `text`.
+ * The four actions the operators page opens with ("Do these four things"). Each
+ * links there, and the reasons are left to that page, except the MESS setting: it
+ * links the MESS page's trade per operator type and states only what the operators
+ * page states, in the maintainer's wording. `code` is set in monospace after `text`;
+ * `detail` is a line beneath it, with backticks marking code.
  */
-export const OPERATOR_ACTIONS: readonly { text: string; code?: string }[] = [
+export const OPERATOR_ACTIONS: readonly {
+  text: string;
+  code?: string;
+  detail?: string;
+  href?: string;
+}[] = [
   { text: "Upgrade to the current release" },
   { text: "Rotate the P2P node key" },
   { text: "Track releases at ", code: REPO.slug },
+  {
+    text: "Decide the MESS setting",
+    detail:
+      "`v1.13.0` ships MESS on. It decides which of two competing chains a node prefers during a deep reorganization, and never whether a block is valid. Every node in one fleet should carry the same setting.",
+    href: DOCS.messSetting.href,
+  },
 ];
 
 /**

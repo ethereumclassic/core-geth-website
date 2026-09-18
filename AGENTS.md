@@ -173,7 +173,11 @@ Everything the site says is public copy.
   would need a citation, link the page that carries it instead.
 - **Never state CVE identifiers, advisory counts, version numbers, fork schedules or node census
   figures.** Maintained documentation pages carry them, and a second copy here goes stale silently.
-  The repository card is the one exception, because the build reads it from GitHub.
+  The exceptions, each a maintainer decision:
+  - The repository card, because the build reads it from GitHub.
+  - The operators section's MESS action names `v1.13.0` as the release that ships MESS on, in the
+    maintainer's wording (2026-09-18). It states only what the operators page states, links the MESS
+    page for the trade per operator type, and takes no position on the setting.
 - **No blog, no newsletter form, no endpoint that collects an address.** The support section links the
   documentation's support page and carries no address.
 - **The footer states the client's license as the client's** (maintainer decision, 2026-09-17), in the
