@@ -4,8 +4,8 @@ import InlineCode from "@/components/InlineCode.astro";
 import SectionHead from "@/components/SectionHead.astro";
 import { NETWORK_RUNNING } from "@/data/site";
 
-// The exposure table. The one section where color carries meaning, so its pill and
-// heading carry no green of their own, and every row states its status in words as
+// The exposure table. The one section where color carries meaning, so its heading
+// carries no green emphasis of its own, and every row states its status in words as
 // well as in color. The roles restate the table's semantics for the narrow layout,
 // where the rows stack and some browsers otherwise drop them.
 const { measured, source, evidence, upgrade, total, lede, rows } = NETWORK_RUNNING;
@@ -19,7 +19,6 @@ const { measured, source, evidence, upgrade, total, lede, rows } = NETWORK_RUNNI
         label="On the network"
         title="What the network is running."
         size="medium"
-        plain
       >
         <p class="lede">
           <InlineCode text={lede} />

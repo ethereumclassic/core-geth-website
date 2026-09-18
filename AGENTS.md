@@ -136,8 +136,8 @@ to tell that the two sites were built with different tools.
   2026-09-18). Green marks the recommended release, and `--exposed`, a muted red at the page green's
   OKLCH lightness and chroma turned to the hue of the mark's red, marks every other row. Color is
   never the only signal: each row also names its state in text, so the table reads the same in
-  greyscale, in a screenshot and to a screen reader. That section's pill and heading carry no green
-  of their own. No animation, no counting up and no chart there.
+  greyscale, in a screenshot and to a screen reader. That section's heading carries no green
+  emphasis of its own. No animation, no counting up and no chart there.
 - **Type:** Noto Sans, the face the social card is set in, heavy and tight for display; Roboto Mono,
   the documentation's code face, for repository names.
 - **Motifs:** hairline pill labels opening each section, thin corner brackets (`.bracketed`), a solid

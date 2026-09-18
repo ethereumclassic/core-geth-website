@@ -214,11 +214,6 @@ code {
   line-height: 1.3;
 }
 
-/* The pill without its green, in the section where green carries meaning. */
-.label--plain {
-  color: var(--muted);
-}
-
 .label::before {
   flex: none;
   width: 0.55rem;
