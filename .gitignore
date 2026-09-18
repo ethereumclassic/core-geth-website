@@ -1,0 +1,93 @@
+# core-geth-website
+#
+# This repository is public, and a push to main publishes the site. This file is
+# the gate between what stays on a contributor's machine and what reaches a clone.
+# Verify it by effect, never by reading the patterns:
+#
+#   git -c core.excludesFile=/dev/null check-ignore --no-index -q -- <path>
+#
+# Exit 0 means ignored. Calibrate against a path that must NOT be ignored, such
+# as README.md: a check that cannot report "not ignored" checks nothing.
+
+# ---- Build and dependency output ---------------------------------------------
+#
+# Build output is anchored to the repository root. An unanchored directory
+# pattern matches at every depth and silently ignores tracked source that happens
+# to share the name. node_modules/ is left unanchored because an install
+# directory is never source, at any depth.
+node_modules/
+/dist/
+/.astro/
+*.tsbuildinfo
+*.log
+
+# ---- Environment files ---------------------------------------------------------
+.env
+.env.*
+# An example file is a template and must reach a clone. End-anchored, so
+# .env.example.local stays ignored.
+!.env*.example
+# direnv exports secrets into the shell, and .env* does not match these.
+.envrc
+.direnv/
+
+# ---- Keys, certificates and credentials ----------------------------------------
+#
+# These apply at every depth on purpose: a key dropped anywhere in the tree is
+# still a key. A content directory named keystore or secrets is therefore never
+# committed, so give it another name.
+*.pem
+*.key
+*.p8
+*.p12
+*.pfx
+*.jks
+id_rsa
+id_ecdsa
+id_ed25519
+credentials.json
+service-account.json
+secrets/
+keystore/
+*.keystore
+wallet.json
+mnemonic.txt
+
+# ---- Package-registry auth -----------------------------------------------------
+#
+# A project .npmrc is where a registry auth token lives. Ignored with no
+# carve-out: this project's pnpm settings belong in pnpm-workspace.yaml.
+.npmrc
+.yarnrc
+.yarnrc.yml
+
+# ---- Claude Code ------------------------------------------------------------------
+#
+# .claude/ is TRACKED, so repo-local agents, skills and rules travel with the
+# repository. Only machine-local and agent-written state is held back. Do not
+# replace this with a blanket .claude/ ignore: an agent inside an ignored
+# directory never reaches a clone.
+.claude/settings.local.json
+.claude/worktrees/
+.claude/agent-memory-local/
+.claude/launch.json
+.claude/scheduled_tasks.json
+.claude/**/*.local.*
+.claude/**/*-local/
+CLAUDE.local.md
+
+# ---- Local working material -------------------------------------------------------
+.local/
+SESSION_NOTES.md
+PLANNING.md
+SCRATCH.md
+*.scratch.*
+*.draft.*
+
+# ---- Editor and OS ------------------------------------------------------------------
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
