@@ -100,6 +100,13 @@ jq -n --arg asOf "$(date -u +%F)" \
 Never add a client-side call to the GitHub API or a third-party badge service: either would expose
 every visitor's address to a party the project does not control.
 
+**Every link to a release uses GitHub's latest-release address, `REPO.latestUrl`, never a tag**: the
+card's release link, the upgrade button and the JSON-LD `downloadUrl`. A new release is then where
+they land the moment it ships, before a build refreshes the tag the card and header show. The two
+documentation links that name `v1.13.0` stay pinned, because each cites that release's own record:
+the release report behind "The solution", and the record holding the evidence for the dated network
+table.
+
 ## Design contract
 
 **docs.coregeth.com is the design source.** A reader arriving from a search result should not be able

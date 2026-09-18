@@ -50,6 +50,9 @@ export const REPO = {
   slug: "ethereumclassic/core-geth",
   url: "https://github.com/ethereumclassic/core-geth",
   releasesUrl: "https://github.com/ethereumclassic/core-geth/releases",
+  /** GitHub's address for the newest release: a link to it lands on a release the moment
+   *  it ships, where a tag link would keep pointing at the old one. */
+  latestUrl: "https://github.com/ethereumclassic/core-geth/releases/latest",
 } as const;
 
 /**
@@ -328,7 +331,7 @@ export const NETWORK_RUNNING = {
   measured: { iso: "2026-09-17", text: "17 September 2026" },
   source: { label: "etcnodes.org", href: "https://etcnodes.org" },
   evidence: `${DOCS_URL}release-reports/v1.13.0-record/#what-the-network-is-running`,
-  upgrade: { label: "Upgrade to v1.13.0", href: `${REPO.releasesUrl}/tag/v1.13.0` },
+  upgrade: { label: "Upgrade to the latest release", href: REPO.latestUrl },
   total: networkTotal,
   /** The line above the table: what the recommended release resolves, in the record's
    *  words for its row, and the maintainer's recommendation to run it beside the current

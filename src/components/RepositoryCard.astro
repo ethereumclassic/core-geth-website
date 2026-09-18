@@ -8,7 +8,9 @@ interface Props {
 }
 
 // The numbers are GitHub's as of the build, or of the committed snapshot when the
-// API could not be read; the card prints which date applies.
+// API could not be read; the card prints which date applies. The release link is
+// GitHub's latest-release address, so it lands on a newer release as soon as one
+// ships, before the next build updates the tag shown.
 const { facts } = Astro.props;
 const [owner, project] = REPO.slug.split("/");
 ---
@@ -46,7 +48,7 @@ const [owner, project] = REPO.slug.split("/");
         Latest release
       </dt>
       <dd>
-        <a href={facts.release.url}>{facts.release.tag}</a>
+        <a href={REPO.latestUrl}>{facts.release.tag}</a>
       </dd>
     </div>
   </dl>

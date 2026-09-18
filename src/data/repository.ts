@@ -17,7 +17,7 @@ export interface RepositoryFacts {
   description: string;
   stars: number;
   forks: number;
-  release: { tag: string; url: string };
+  release: { tag: string };
   /** The UTC date these values were read from GitHub, as YYYY-MM-DD. */
   asOf: string;
   source: "github" | "snapshot";
@@ -25,11 +25,9 @@ export interface RepositoryFacts {
 
 const API = `https://api.github.com/repos/${REPO.slug}`;
 
-// A release tag is interpolated into a link, so only a plain version tag is
-// accepted. Anything else is treated as a bad response and the snapshot is used.
+// A release tag is shown on the card and in the header, so only a plain version tag
+// is accepted. Anything else is treated as a bad response and the snapshot is used.
 const RELEASE_TAG = /^v\d+\.\d+\.\d+(?:-[0-9A-Za-z.]+)?$/;
-
-const releaseUrl = (tag: string) => `${REPO.releasesUrl}/tag/${tag}`;
 
 const isCount = (value: unknown): value is number =>
   Number.isSafeInteger(value) && Number(value) >= 0;
@@ -61,7 +59,7 @@ async function fromGitHub(): Promise<RepositoryFacts> {
     description,
     stars,
     forks,
-    release: { tag, url: releaseUrl(tag) },
+    release: { tag },
     asOf: new Date().toISOString().slice(0, 10),
     source: "github",
   };
@@ -76,7 +74,7 @@ function fromSnapshot(reason: unknown): RepositoryFacts {
     description: snapshot.description,
     stars: snapshot.stars,
     forks: snapshot.forks,
-    release: { tag: snapshot.releaseTag, url: releaseUrl(snapshot.releaseTag) },
+    release: { tag: snapshot.releaseTag },
     asOf: snapshot.asOf,
     source: "snapshot",
   };

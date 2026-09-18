@@ -80,6 +80,9 @@ tests pass. `pnpm lint`, `pnpm format:check` and `pnpm build` are the whole gate
   GitHub API during the build, never in the browser, and falls back to
   `src/data/repository-snapshot.json` when the API cannot be read. Never add a client-side GitHub
   call or a third-party badge.
+- Every link to a release uses GitHub's latest-release address, `REPO.latestUrl`, never a tag, so a
+  new release is where it lands. The docs links naming `v1.13.0` (the release report and the record)
+  stay pinned, because each cites that release's own record.
 - `src/styles/global.css` holds the palette tokens. `public/` is served at the domain root, so
   everything in it is public. `dist/` and `.astro/` are build output, never edited or committed.
 

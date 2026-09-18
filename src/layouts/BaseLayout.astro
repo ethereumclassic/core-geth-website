@@ -89,7 +89,7 @@ const jsonLd = {
       license: CLIENT_LICENSE.files.map((file) => file.href),
       applicationCategory: "DeveloperApplication",
       operatingSystem: PLATFORMS.join(", "),
-      downloadUrl: REPO.releasesUrl,
+      downloadUrl: REPO.latestUrl,
       installUrl: DOCS.installation.href,
       softwareHelp: { "@type": "WebSite", name: DOCS_SITE_NAME, url: DOCS_URL },
       // The client costs nothing. Google's software app result requires offers.price,
