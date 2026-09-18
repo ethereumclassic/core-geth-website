@@ -8,11 +8,13 @@ interface Props {
   /** The part of the title set in green, as the social card sets its emphasis. */
   em?: string;
   size?: "large" | "medium";
+  /** A neutral pill, for the section where green carries meaning. */
+  plain?: boolean;
 }
 
 // A section's opening: the card's hairline pill, then the heading set heavy and
 // tight like the hero's tagline. Anything in the slot follows as the lede.
-const { id, label, title, em, size = "large" } = Astro.props;
+const { id, label, title, em, size = "large", plain = false } = Astro.props;
 
 const at = em ? title.indexOf(em) : -1;
 if (em && at < 0) {
@@ -28,7 +30,7 @@ const runs = [
 ---
 
 <div class="head">
-  <p class="label">{label}</p>
+  <p class:list={["label", { "label--plain": plain }]}>{label}</p>
   <h2 id={id} class:list={["head__title", `head__title--${size}`]}>
     {runs.map((run) => {
       const text = run.pieces.map((piece, i) => (

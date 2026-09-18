@@ -125,6 +125,12 @@ to tell that the two sites were built with different tools.
 - **Green is the only accent.** On the page it is the card's `#157f4a` with 4% of the ink mixed in,
   `#157b48`, because the card's own green reaches only 4.31:1 where a link crosses a grid line. On
   the near-black bar it is the mark's `#00a651`, the green that reaches 4.5:1 there.
+- **Color carries meaning in one section only: the network table** (maintainer decision,
+  2026-09-18). Green marks the recommended release, and `--exposed`, a muted red at the page green's
+  OKLCH lightness and chroma turned to the hue of the mark's red, marks every other row. Color is
+  never the only signal: each row also names its state in text, so the table reads the same in
+  greyscale, in a screenshot and to a screen reader. That section's pill and heading carry no green
+  of their own. No animation, no counting up and no chart there.
 - **Type:** Noto Sans, the face the social card is set in, heavy and tight for display; Roboto Mono,
   the documentation's code face, for repository names.
 - **Motifs:** hairline pill labels opening each section, thin corner brackets (`.bracketed`), a solid
@@ -178,6 +184,10 @@ Everything the site says is public copy.
   - The operators section's MESS action names `v1.13.0` as the release that ships MESS on, in the
     maintainer's wording (2026-09-18). It states only what the operators page states, links the MESS
     page for the trade per operator type, and takes no position on the setting.
+  - The network table, "What the network is running" (2026-09-18): Core-Geth nodes by release, dated
+    and sourced to etcnodes.org in its caption, with the documentation's record linked for the
+    evidence of each row. A re-measure is an edit to `NETWORK_RUNNING` in `src/data/site.ts`; the
+    shares, the total and the lede are computed from its counts.
 - **No blog, no newsletter form, no endpoint that collects an address.** The support section links the
   documentation's support page and carries no address.
 - **The footer states the client's license as the client's** (maintainer decision, 2026-09-17), in the

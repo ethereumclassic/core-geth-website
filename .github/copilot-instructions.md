@@ -93,6 +93,10 @@ tests pass. `pnpm lint`, `pnpm format:check` and `pnpm build` are the whole gate
   documentation's near-black bar for the header and footer. Green is the only accent: `#157b48` on
   the page (the card's `#157f4a` with 4% of the ink mixed in, so a link reaches 4.5:1 where it crosses
   a grid line), the mark's `#00a651` on the near-black bar.
+- Color carries meaning in one section only, the network table (maintainer decision, 2026-09-18):
+  green for the recommended release, `--exposed` (a muted red at the green's lightness and chroma,
+  in the mark's red hue) for every other row. Each row also names its state in text; no animation,
+  no counting up, no chart.
 - Noto Sans, the card's face, heavy and tight for display; Roboto Mono for repository names.
 - Hairline pill labels opening each section, thin corner brackets (`.bracketed`), a solid green base
   edge under the hero, the card's stat boxes, and the prism mark inside its two rings.
@@ -131,6 +135,8 @@ Everything the site says is public copy.
   - The repository card, read from GitHub at build time.
   - The operators section's MESS action, which names `v1.13.0` as the release that ships MESS on
     (2026-09-18) and takes no position on the setting.
+  - The network table (2026-09-18), dated and sourced to etcnodes.org in its caption, and
+    re-measured by editing `NETWORK_RUNNING` in `src/data/site.ts`.
 - No blog, no newsletter form, no endpoint that collects an address.
 - The footer states the client's license as the client's (maintainer decision, 2026-09-17); this
   site is licensed separately.

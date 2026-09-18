@@ -4,7 +4,7 @@ import SectionHead from "@/components/SectionHead.astro";
 import { DOCS, GUIDES } from "@/data/site";
 ---
 
-<section class="band" aria-labelledby="guides-title">
+<section class="band band--surface" aria-labelledby="guides-title">
   <div class="container guides">
     <SectionHead
       id="guides-title"
@@ -69,8 +69,9 @@ import { DOCS, GUIDES } from "@/data/site";
     }
   }
 
-  /* White on the grid, like the card's stat boxes. On hover the border turns
-     green and the hero's green base edge appears under the card. */
+  /* The card's ground on the white band, like the repository card's stat boxes.
+     On hover the border turns green and the hero's green base edge appears under
+     the card. */
   .card {
     display: flex;
     flex-direction: column;
@@ -80,7 +81,7 @@ import { DOCS, GUIDES } from "@/data/site";
     padding: 1.25rem 1.35rem;
     border: 1px solid var(--hairline);
     border-radius: var(--radius);
-    background: var(--surface);
+    background: var(--ground);
     text-decoration: none;
     transition:
       border-color 150ms ease,

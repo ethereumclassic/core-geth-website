@@ -10,7 +10,7 @@ const slugParts = (slug: string) =>
   slug.split("/").map((part, i, parts) => (i < parts.length - 1 ? `${part}/` : part));
 ---
 
-<section class="band band--surface" aria-labelledby="operators-title">
+<section class="band" aria-labelledby="operators-title">
   <div class="container operators">
     <SectionHead
       id="operators-title"

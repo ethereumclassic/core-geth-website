@@ -1,0 +1,322 @@
+---
+import ArrowText from "@/components/ArrowText.astro";
+import InlineCode from "@/components/InlineCode.astro";
+import SectionHead from "@/components/SectionHead.astro";
+import { NETWORK_RUNNING } from "@/data/site";
+
+// The exposure table. The one section where color carries meaning, so its pill and
+// heading carry no green of their own, and every row states its status in words as
+// well as in color. The roles restate the table's semantics for the narrow layout,
+// where the rows stack and some browsers otherwise drop them.
+const { measured, source, evidence, upgrade, total, lede, rows } = NETWORK_RUNNING;
+---
+
+<section class="band band--surface" aria-labelledby="network-title">
+  <div class="container network">
+    <div class="network__head">
+      <SectionHead
+        id="network-title"
+        label="On the network"
+        title="What the network is running."
+        size="medium"
+        plain
+      >
+        <p class="lede">
+          <InlineCode text={lede} />
+        </p>
+      </SectionHead>
+      <a class="button button--primary network__upgrade" href={upgrade.href}>
+        {upgrade.label}
+      </a>
+    </div>
+
+    <table class="census" role="table">
+      <caption>
+        {"Core-Geth nodes by release on "}
+        <time datetime={measured.iso}>{measured.text}</time>
+        {`, ${total} in all. Source: `}
+        <a href={source.href}>{source.label}</a>
+        {". "}
+        <a class="census__evidence" href={evidence}>
+          <ArrowText text="The evidence for each row" size={14} />
+        </a>
+      </caption>
+      <thead role="rowgroup">
+        <tr role="row">
+          <th scope="col" role="columnheader">
+            Running
+          </th>
+          <th scope="col" role="columnheader" class="census__num">
+            Nodes
+          </th>
+          <th scope="col" role="columnheader" class="census__num">
+            Share
+          </th>
+          <th scope="col" role="columnheader">
+            State
+          </th>
+        </tr>
+      </thead>
+      <tbody role="rowgroup">
+        {rows.map((row) => (
+          <tr role="row" class:list={["census__row", `census__row--${row.status}`]}>
+            <th scope="row" role="rowheader" class="census__running" data-label="Running">
+              <span class="census__release">
+                <InlineCode text={row.running} />
+              </span>
+              <span class="visually-hidden">, </span>
+              <span class="status">{row.status}</span>
+            </th>
+            <td role="cell" class="census__num census__nodes" data-label="Nodes">
+              {row.nodes}
+            </td>
+            <td role="cell" class="census__num census__share" data-label="Share">
+              {row.share}
+            </td>
+            <td role="cell" class="census__state" data-label="State">
+              {row.state}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<style>
+  .network {
+    display: grid;
+    gap: clamp(2rem, 4vw, 3rem);
+  }
+
+  /* The heading and lede on the left, the upgrade on the right, level with the
+     lede's last line. They stack on a narrow screen, the button under the lede. */
+  .network__head {
+    display: grid;
+    gap: 1.5rem 3rem;
+    align-items: end;
+  }
+
+  @media (min-width: 56rem) {
+    .network__head {
+      grid-template-columns: minmax(0, 1fr) auto;
+    }
+  }
+
+  .network__upgrade {
+    justify-self: start;
+  }
+
+  /* Each row carries its state three ways: a bar at its left edge, a faint tint, and
+     a pill that names it. Greyscale, a screenshot or a screen reader keeps the word. */
+  .census__row--exposed {
+    --state: var(--exposed);
+    --state-tint: var(--exposed-tint);
+  }
+
+  .census__row--recommended {
+    --state: var(--accent);
+    --state-tint: var(--recommended-tint);
+  }
+
+  .census {
+    width: 100%;
+    border-top: 2px solid var(--ink);
+    border-collapse: collapse;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .census caption {
+    padding-top: 1rem;
+    caption-side: bottom;
+    color: var(--muted);
+    font-size: 0.95rem;
+    text-align: left;
+  }
+
+  .census__evidence {
+    font-weight: 650;
+    text-decoration: none;
+    white-space: nowrap;
+  }
+
+  .census__evidence:hover {
+    text-decoration: underline;
+  }
+
+  .census thead th {
+    padding: 0.7rem 1rem;
+    border-bottom: 1px solid var(--hairline);
+    color: var(--muted);
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-align: left;
+  }
+
+  .census tbody th,
+  .census tbody td {
+    padding: 0.95rem 1rem;
+    border-bottom: 1px solid var(--hairline);
+    background: var(--state-tint);
+    text-align: left;
+    vertical-align: middle;
+  }
+
+  .census tbody th {
+    border-left: 0.3rem solid var(--state);
+  }
+
+  /* Written against the cells themselves so they outrank the rules above: Astro's
+     scoping adds an attribute to every part of a selector, and the general cell rules
+     would otherwise win. */
+  .census thead th.census__num,
+  .census tbody td.census__num {
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  .census__running {
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  .census__release {
+    margin-right: 0.6rem;
+    font-size: 1.05rem;
+  }
+
+  .census__nodes {
+    color: var(--ink);
+    font-size: 1.1rem;
+    font-weight: 700;
+  }
+
+  .census__share {
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  .census__state {
+    color: var(--text);
+  }
+
+  /* The card's pill, in the row's state: its word, its color and a dot. */
+  .status {
+    display: inline-flex;
+    gap: 0.4rem;
+    align-items: center;
+    padding: 0.1rem 0.6rem 0.1rem 0.5rem;
+    border: 1px solid color-mix(in srgb, var(--state) 40%, var(--surface));
+    border-radius: 999px;
+    background: var(--surface);
+    color: var(--state);
+    font-family: var(--font-sans);
+    font-size: 0.85rem;
+    font-weight: 650;
+    line-height: 1.4;
+    white-space: nowrap;
+  }
+
+  .status::before {
+    flex: none;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background: currentColor;
+    content: "";
+  }
+
+  /* Narrow screens: each row becomes a card, its release and state on top, the
+     counts beneath, then what it carries. The column names ride along as labels,
+     drawn for the eye and hidden from screen readers, which have the headers. */
+  @media (max-width: 40rem) {
+    .census,
+    .census tbody,
+    .census tr,
+    .census th,
+    .census td {
+      display: block;
+    }
+
+    .census thead {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+
+    /* A column, so the caption can keep its place under the rows. */
+    .census {
+      display: flex;
+      flex-direction: column;
+      border-top: 0;
+    }
+
+    .census caption {
+      display: block;
+      order: 1;
+    }
+
+    .census tbody {
+      display: grid;
+      gap: 0.75rem;
+    }
+
+    .census tbody tr {
+      display: grid;
+      grid-template-areas:
+        "running running"
+        "nodes share"
+        "state state";
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.6rem 1rem;
+      padding: 1rem 1.1rem;
+      border-left: 0.3rem solid var(--state);
+      border-radius: 0 var(--radius) var(--radius) 0;
+      background: var(--state-tint);
+    }
+
+    .census tbody th,
+    .census tbody td {
+      padding: 0;
+      border: 0;
+      background: none;
+      text-align: left;
+    }
+
+    .census tbody th {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+      justify-content: space-between;
+      grid-area: running;
+    }
+
+    .census tbody td.census__num {
+      text-align: left;
+    }
+
+    .census__nodes {
+      grid-area: nodes;
+    }
+
+    .census__share {
+      grid-area: share;
+    }
+
+    .census__state {
+      grid-area: state;
+    }
+
+    .census td::before {
+      display: block;
+      color: var(--muted);
+      font-size: 0.8rem;
+      font-weight: 600;
+      content: attr(data-label) / "";
+    }
+  }
+</style>

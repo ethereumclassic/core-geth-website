@@ -14,6 +14,13 @@
   The card's green, #157f4a, reaches 4.77:1 on the ground but 4.31:1 where a link
   crosses a grid line, so the accent is that green with 4% of the ink mixed in,
   #157b48: 4.54:1 on a grid line, and no visible difference.
+
+  One section uses color for meaning, and only one: the network table. There the
+  accent marks the recommended release and --exposed marks releases with open
+  issues. --exposed is the accent's OKLCH lightness and chroma turned to the hue of
+  the mark's red, #ED1C24, so the two states carry the same weight and the red
+  belongs to the mark's palette: 5.97:1 on white. Every row also states its status
+  in text, so neither color is the only signal.
 */
 
 :root {
@@ -28,6 +35,11 @@
   --muted: #56615b;
   --accent: #157b48;
   --on-accent: #ffffff;
+
+  /* The network table's two states, and a faint tint of each for its status pill. */
+  --exposed: #a14841;
+  --exposed-tint: #f7f0f0;
+  --recommended-tint: #ecf4f0;
 
   /* Equal to THEME_COLOR in src/data/site.ts. */
   --bar: #14151a;
@@ -200,6 +212,11 @@ code {
   color: var(--accent);
   font-size: 0.95rem;
   line-height: 1.3;
+}
+
+/* The pill without its green, in the section where green carries meaning. */
+.label--plain {
+  color: var(--muted);
 }
 
 .label::before {

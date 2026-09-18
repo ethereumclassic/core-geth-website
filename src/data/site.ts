@@ -13,6 +13,7 @@
  *   time (src/data/repository.ts).
  * - The MESS operator action, which names the release that ships MESS on, in the
  *   maintainer's wording.
+ * - NETWORK_RUNNING, the network table, dated and sourced where it is set.
  */
 
 export const SITE_URL = "https://coregeth.com";
@@ -258,6 +259,80 @@ export const OPERATOR_ACTIONS: readonly {
     href: DOCS.messSetting.href,
   },
 ];
+
+/**
+ * What the network is running: Core-Geth nodes by release, from "What the network is
+ * running" in the documentation's v1.13.0 record, counted by etcnodes.org on the date
+ * in `measured`. By the maintainer's decision (2026-09-18) this is the one section that
+ * states census figures, advisory counts and versions, each dated and sourced here. A
+ * re-measure is an edit to this block: the shares, the total and the lede are computed
+ * from the counts. `status` is the state each row carries in text as well as in color.
+ * Backticks mark code.
+ */
+const NETWORK_ROWS: readonly {
+  running: string;
+  nodes: number;
+  status: "exposed" | "recommended";
+  state: string;
+}[] = [
+  {
+    running: "`v1.12.20` and older",
+    nodes: 158,
+    status: "exposed",
+    state: "all six client CVEs open",
+  },
+  {
+    running: "`v1.12.21`",
+    nodes: 50,
+    status: "exposed",
+    state: "two CVEs closed, four open, Go 1.21",
+  },
+  {
+    running: "`v1.12.22`",
+    nodes: 165,
+    status: "exposed",
+    state: "CVEs backported, one only partly, plus a sync regression",
+  },
+  {
+    running: "`v1.12.23`",
+    nodes: 138,
+    status: "exposed",
+    state: "55 to 61 Go advisories, no GraphQL limit, regression unfixed",
+  },
+  {
+    running: "`v1.12.24`",
+    nodes: 4,
+    status: "exposed",
+    state: "an unreleased development build, not a release",
+  },
+  {
+    running: "`v1.13.0`",
+    nodes: 9,
+    status: "recommended",
+    state: "recommended client, zero Go advisories",
+  },
+];
+
+const networkTotal = NETWORK_ROWS.reduce((sum, row) => sum + row.nodes, 0);
+const networkShare = (nodes: number) => (nodes / networkTotal) * 100;
+const [oldest] = NETWORK_ROWS;
+const recommendedRows = NETWORK_ROWS.filter((row) => row.status === "recommended");
+const [recommended] = recommendedRows;
+if (!oldest || !recommended || recommendedRows.length !== 1) {
+  throw new Error("NETWORK_RUNNING needs rows, and exactly one recommended release");
+}
+
+export const NETWORK_RUNNING = {
+  measured: { iso: "2026-09-17", text: "17 September 2026" },
+  source: { label: "etcnodes.org", href: "https://etcnodes.org" },
+  evidence: `${DOCS_URL}release-reports/v1.13.0-record/#what-the-network-is-running`,
+  upgrade: { label: "Upgrade to v1.13.0", href: `${REPO.releasesUrl}/tag/v1.13.0` },
+  total: networkTotal,
+  /** The framing above the table, in the record's terms: the oldest row's share, and
+   *  the release operators are being told to move off as the only one with nothing open. */
+  lede: `${Math.round(networkShare(oldest.nodes))}% of Core-Geth nodes run a release with ${oldest.state}. ${recommended.running}, the release operators are being told to move off, is the only one on this list with nothing open.`,
+  rows: NETWORK_ROWS.map((row) => ({ ...row, share: `${networkShare(row.nodes).toFixed(1)}%` })),
+} as const;
 
 /**
  * What Core-Geth is. The definition and the upstream line are the documentation
