@@ -168,7 +168,15 @@ decision, 2026-09-18).
 - The Open Graph and Twitter tags are the documentation's set, tag for tag (`overrides/main.html` in
   `ethereumclassic/core-geth`). Add none there that the documentation does not carry.
 - The sitemap is `@astrojs/sitemap`'s: the home page only, dated with the build. The build reads the
-  repository card from GitHub, so every build changes the page and the date is true.
+  repository card from GitHub, so every build changes the page and the date is true. Nothing schedules
+  a build, so that date tracks real deploys; adding a scheduled rebuild would restamp an unchanged
+  page, so drop `lastmod` from `astro.config.mjs` if one is ever added.
+- **`/sitemap.xml` is an alias, `src/pages/sitemap.xml.ts`**, because the integration cannot write
+  that name: `filenameBase` renames the stem of both its files and keeps the `-index` suffix. The
+  alias is a sitemap index pointing at the generated `sitemap-0.xml`, so it lists no URL of its own
+  and adding a page cannot leave it stale. A build that ever writes `sitemap-1.xml` (the integration
+  splits at 45,000 URLs) must be listed there too. `robots.txt` names the integration's own index,
+  and that is the one to submit to a search engine.
 - The JSON-LD describes the site, the page and the client. Google's software app result also requires
   a rating or review; this page has none and invents none.
 
