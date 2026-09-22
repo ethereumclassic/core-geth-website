@@ -103,8 +103,8 @@ every visitor's address to a party the project does not control.
 **Every link to a release uses GitHub's latest-release address, `REPO.latestUrl`, never a tag**: the
 card's release link, the upgrade button and the JSON-LD `downloadUrl`. A new release is then where
 they land the moment it ships, before a build refreshes the tag the card and header show. The two
-documentation links that name `v1.13.0` stay pinned, because each cites that release's own record:
-the release report behind "The solution", and the record holding the evidence for the dated network
+documentation links that name a version stay that way, because a release report is a version-specific
+document: the report behind "The solution", and the record holding the evidence for the dated network
 table.
 
 ## Design contract
@@ -194,17 +194,23 @@ Everything the site says is public copy.
   would need a citation, link the page that carries it instead.
 - **Never state CVE identifiers, advisory counts, version numbers, fork schedules or node census
   figures.** Maintained documentation pages carry them, and a second copy here goes stale silently.
-  The exceptions, each a maintainer decision:
+- **Where the site recommends a version it names the release line, never a patch** (maintainer
+  decision, 2026-09-22): `RECOMMENDED_LINE` in `src/data/site.ts`, one constant every sentence reads,
+  and every download links `REPO.latestUrl`. A patch then ships without touching this repository. Two
+  things are exempt because a version is what they are about: the network table's rows, a census of
+  exact releases counted on a date, and a link to a release report. The build fails if the table's
+  recommended row leaves the line.
+  The exceptions to the no-versions rule, each a maintainer decision:
   - The repository card, because the build reads it from GitHub.
-  - The operators section's MESS action names `v1.13.0` as the release that ships MESS on, in the
+  - The operators section's MESS action names the recommended line as what ships MESS on, in the
     maintainer's wording (2026-09-18). It states only what the operators page states, links the MESS
     page for the trade per operator type, and takes no position on the setting.
   - The network table, "What the network is running" (2026-09-18): Core-Geth nodes by release, dated
     and sourced to etcnodes.org in its caption, with the documentation's record linked for the
     evidence of each row. A re-measure is an edit to `NETWORK_RUNNING` in `src/data/site.ts`; the
-    shares and the total are computed from its counts. The line above the table says what `v1.13.0`
-    resolves and recommends running one beside the current nodes, without sending it traffic so the
-    fleet keeps one MESS setting, before moving the whole fleet to the `v1.13.x` line: a
+    shares and the total are computed from its counts. The line above the table says what the
+    recommended line resolves and recommends running one node on it beside the current ones, without
+    sending it traffic so the fleet keeps one MESS setting, before moving the whole fleet across: a
     recommendation, never a rebuttal of anyone else's advice (maintainer decision, 2026-09-18).
 - **No blog, no newsletter form, no endpoint that collects an address.** The support section links the
   documentation's support page and carries no address.

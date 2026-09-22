@@ -56,6 +56,16 @@ export const REPO = {
 } as const;
 
 /**
+ * The release line the page recommends, never a single release: a patch inside the
+ * line then ships without editing the site, because every download link is
+ * `REPO.latestUrl` and the card reads its version from GitHub at build time. The
+ * network table is the one place an exact release is named, since its rows are a
+ * census counted on a date. `NETWORK_RUNNING` fails the build if its recommended row
+ * leaves this line.
+ */
+export const RECOMMENDED_LINE = "v1.13";
+
+/**
  * The repository releases used to come from: the one the March 2026 security audit
  * audited, and the one the project history says went unfunded and unmaintained.
  */
@@ -257,8 +267,7 @@ export const OPERATOR_ACTIONS: readonly {
   { text: "Track releases at ", code: REPO.slug },
   {
     text: "Decide the MESS setting",
-    detail:
-      "`v1.13.0` ships MESS on. It decides which of two competing chains a node prefers during a deep reorganization, and never whether a block is valid. Every node in one fleet should carry the same setting.",
+    detail: `\`${RECOMMENDED_LINE}\` ships MESS on. It decides which of two competing chains a node prefers during a deep reorganization, and never whether a block is valid. Every node in one fleet should carry the same setting.`,
     href: DOCS.messSetting.href,
   },
 ];
@@ -323,9 +332,10 @@ const [recommended] = recommendedRows;
 if (!recommended || recommendedRows.length !== 1) {
   throw new Error("NETWORK_RUNNING needs exactly one recommended release");
 }
-// "v1.13.0" from the row, and its line, "v1.13.x".
-const recommendedRelease = recommended.running.replaceAll("`", "");
-const recommendedLine = recommendedRelease.replace(/\.\d+$/, ".x");
+// The census names one release; the page recommends its line, so the two must agree.
+if (!recommended.running.replaceAll("`", "").startsWith(`${RECOMMENDED_LINE}.`)) {
+  throw new Error(`the recommended row is outside ${RECOMMENDED_LINE}`);
+}
 
 export const NETWORK_RUNNING = {
   measured: { iso: "2026-09-17", text: "17 September 2026" },
@@ -333,13 +343,13 @@ export const NETWORK_RUNNING = {
   evidence: `${DOCS_URL}release-reports/v1.13.0-record/#what-the-network-is-running`,
   upgrade: { label: "Upgrade to the latest release", href: REPO.latestUrl },
   total: networkTotal,
-  /** The line above the table: what the recommended release resolves, in the record's
-   *  words for its row, and the maintainer's recommendation to run it beside the current
-   *  nodes before moving a whole fleet to its line. The trial node takes no traffic: the
+  /** The line above the table: what the recommended line resolves, in the record's words
+   *  for the release it measured, and the maintainer's recommendation to run one beside the
+   *  current nodes before moving a whole fleet across. The trial node takes no traffic: the
    *  migration guide asks for one MESS setting per fleet, and `v1.12.x` runs MESS off where
-   *  `v1.13.0` turns it on. Check all of it against the documentation whenever the
-   *  recommended release changes. */
-  lede: `\`${recommendedRelease}\` resolves all six client CVEs, fixes the GraphQL limit and carries zero Go standard library advisories. Run a \`${recommendedRelease}\` node beside your current ones without sending it traffic, and when you are comfortable, move your whole fleet to the \`${recommendedLine}\` line.`,
+   *  this line turns it on. Check all of it against the documentation whenever the
+   *  recommended line changes. */
+  lede: `The \`${RECOMMENDED_LINE}\` line resolves all six client CVEs, fixes the GraphQL limit and carries zero Go standard library advisories. Run a \`${RECOMMENDED_LINE}\` node beside your current ones without sending it traffic, and when you are comfortable, move your whole fleet to it.`,
   rows: NETWORK_ROWS.map((row) => ({ ...row, share: `${networkShare(row.nodes).toFixed(1)}%` })),
 } as const;
 

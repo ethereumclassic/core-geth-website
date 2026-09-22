@@ -137,14 +137,19 @@ Everything the site says is public copy.
 - Every claim about Core-Geth must already be published on docs.coregeth.com or in
   `ethereumclassic/core-geth`. Never from memory, and never from another client's site.
 - Never state CVE identifiers, advisory counts, version numbers, fork schedules or node census
-  figures. The exceptions, each a maintainer decision:
+  figures.
+- Where the site recommends a version it names the release line, never a patch (maintainer decision,
+  2026-09-22): `RECOMMENDED_LINE` in `src/data/site.ts`, read by every sentence that names it, with
+  every download linking `REPO.latestUrl`. The network table's rows and links to a release report are
+  exempt, because a version is what each of those is about.
+  The exceptions to the no-versions rule, each a maintainer decision:
   - The repository card, read from GitHub at build time.
-  - The operators section's MESS action, which names `v1.13.0` as the release that ships MESS on
+  - The operators section's MESS action, which names the recommended line as what ships MESS on
     (2026-09-18) and takes no position on the setting.
   - The network table (2026-09-18), dated and sourced to etcnodes.org in its caption, and
     re-measured by editing `NETWORK_RUNNING` in `src/data/site.ts`. The line above it recommends
-    running a `v1.13.0` node beside the current ones, without traffic so the fleet keeps one MESS
-    setting, before moving the whole fleet; it never rebuts anyone else's advice.
+    running a node on the recommended line beside the current ones, without traffic so the fleet
+    keeps one MESS setting, before moving the whole fleet; it never rebuts anyone else's advice.
 - No blog, no newsletter form, no endpoint that collects an address.
 - The footer states the client's license as the client's (maintainer decision, 2026-09-17); this
   site is licensed separately.
