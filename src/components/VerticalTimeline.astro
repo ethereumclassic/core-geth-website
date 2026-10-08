@@ -1,0 +1,183 @@
+---
+import ArrowText from "@/components/ArrowText.astro";
+import InlineCode from "@/components/InlineCode.astro";
+import { NAMESPACE_TONES } from "@/data/site";
+import type { HistoryEntry } from "@/data/site";
+
+interface Props {
+  entries: readonly HistoryEntry[];
+  /** Names the list to assistive technology, since the rail itself carries no label. */
+  label: string;
+}
+
+// A history too long for the horizontal timeline the home page uses for three records:
+// a rule down the left, a node per entry, and a card beside it. An ordered list, because
+// the order is the point, and the rule and nodes are drawn rather than written, so a
+// reader with no CSS gets the list and loses only the rail.
+const { entries, label } = Astro.props;
+---
+
+<ol class="rail" aria-label={label}>
+  {entries.map((entry) => (
+    <li class:list={["rail__item", entry.current && "rail__item--current"]}>
+      <span class="rail__node" aria-hidden="true" />
+      <div class="rail__card">
+        <p class="rail__when">
+          {entry.iso ? <time datetime={entry.iso}>{entry.when}</time> : entry.when}
+        </p>
+        <h3 class="rail__title">
+          <InlineCode text={entry.title} />
+        </h3>
+        <p class="rail__body">
+          <InlineCode text={entry.body} />
+        </p>
+        {entry.quote && (
+          <figure class="quote">
+            <blockquote>
+              <p>
+                {entry.quote.kicker && (
+                  <span class="quote__kicker">{`${entry.quote.kicker}: `}</span>
+                )}
+                {`\u201C${entry.quote.text}\u201D `}
+                <span>{`- ${entry.quote.attribution}`}</span>
+              </p>
+            </blockquote>
+            <figcaption>
+              {entry.quote.href ? (
+                <a href={entry.quote.href}>{entry.quote.source}</a>
+              ) : (
+                entry.quote.source
+              )}
+            </figcaption>
+          </figure>
+        )}
+        {entry.link && (
+          // A link whose label is a repository name carries its namespace tone, the same
+          // as one inside prose: the rule is about the name, not about where it sits.
+          <a class:list={["rail__link", NAMESPACE_TONES[entry.link.label]]} href={entry.link.href}>
+            <ArrowText text={entry.link.label} size={14} />
+          </a>
+        )}
+        {entry.cta && (
+          <a class="button button--primary rail__cta" href={entry.cta.href}>
+            {entry.cta.label}
+          </a>
+        )}
+      </div>
+    </li>
+  ))}
+</ol>
+
+<style>
+  .rail {
+    position: relative;
+    display: grid;
+    gap: 1.25rem;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* The rule runs the height of the list, behind the nodes. */
+  .rail::before {
+    position: absolute;
+    top: 0.5rem;
+    bottom: 0.5rem;
+    left: 0.4375rem;
+    width: 1px;
+    background: var(--hairline);
+    content: "";
+  }
+
+  .rail__item {
+    position: relative;
+    padding-left: 2.25rem;
+  }
+
+  .rail__node {
+    position: absolute;
+    top: 0.45rem;
+    left: 0;
+    width: 0.9375rem;
+    height: 0.9375rem;
+    border: 2px solid var(--hairline);
+    border-radius: 50%;
+    background: var(--ground);
+  }
+
+  /* The entries this project continues from are the green ones, and each says so in its
+     own words as well, so the color is never the only signal. */
+  .rail__item--current .rail__node {
+    border-color: var(--accent);
+    background: var(--accent);
+    box-shadow: 0 0 0 4px var(--accent-ring);
+  }
+
+  .rail__card {
+    display: grid;
+    gap: 0.4rem;
+    justify-items: start;
+  }
+
+  .rail__when {
+    margin: 0;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+
+  .rail__item--current .rail__when {
+    color: var(--accent);
+  }
+
+  .rail__title {
+    margin: 0;
+    color: var(--ink);
+    font-size: 1.15rem;
+    font-weight: 750;
+    letter-spacing: -0.01em;
+  }
+
+  .rail__body {
+    margin: 0;
+    color: var(--text);
+    line-height: 1.65;
+    text-wrap: pretty;
+  }
+
+  /* A quotation sits under the entry's prose, never inside it: the paragraph is read
+     whole, and the source then speaks in its own block. The quotation marks are drawn in
+     CSS so the text stays quotable without them. */
+  /* The entry a reader can act on carries the same button the sections use, so the
+     end of the record is also where the upgrade is. */
+  .rail__cta {
+    justify-self: start;
+    max-width: 100%;
+    margin-top: 0.35rem;
+    overflow-wrap: anywhere;
+  }
+
+  .rail__link {
+    font-size: 0.95rem;
+    font-weight: 650;
+    text-decoration: none;
+  }
+
+  .rail__link:hover {
+    text-decoration: underline;
+  }
+
+  @media (min-width: 46rem) {
+    .rail {
+      gap: 1.75rem;
+    }
+
+    .rail__item {
+      padding-left: 2.75rem;
+    }
+  }
+</style>

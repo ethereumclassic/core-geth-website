@@ -1,0 +1,117 @@
+---
+interface Props {
+  /** The pill above the heading, as every section on the home page carries one. */
+  label: string;
+  title: string;
+  /** The part of the title set in green, as the social card sets its emphasis. */
+  em?: string;
+}
+
+// The hero every page but the home page opens with: the grid behind it, corner brackets,
+// the mark in its two rings, and the green base edge. The home page has its own, which
+// sets the wordmark itself rather than a page title.
+//
+// The band is the grid tone, so a page reads hero, white, grid, white down the page, the
+// same alternation the home page uses under its hero.
+const { label, title, em } = Astro.props;
+
+const at = em ? title.indexOf(em) : -1;
+if (em && at < 0) {
+  throw new Error(`PageHero: "${em}" is not part of the title "${title}"`);
+}
+const before = em ? title.slice(0, at) : title;
+const after = em ? title.slice(at + em.length) : "";
+---
+
+<section class="band page-hero">
+  <div class="container page-hero__inner bracketed">
+    <div class="page-hero__text">
+      <p class="label">{label}</p>
+      <h1 class="page-hero__title">
+        {before}
+        {em && <em>{em}</em>}
+        {after}
+      </h1>
+      <slot />
+    </div>
+    <div class="mark" aria-hidden="true">
+      <img src="/logo.svg" alt="" width="256" height="256" />
+    </div>
+  </div>
+</section>
+
+<style>
+  .page-hero {
+    border-bottom: 0.5rem solid var(--accent);
+  }
+
+  .page-hero__inner {
+    position: relative;
+    display: grid;
+    gap: 2rem;
+    align-items: center;
+    padding: clamp(2rem, 5vw, 3.5rem) clamp(1rem, 4vw, 3rem);
+  }
+
+  @media (min-width: 56rem) {
+    .page-hero__inner {
+      grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+      gap: 3rem;
+    }
+  }
+
+  .page-hero__text {
+    display: grid;
+    gap: 1.1rem;
+    justify-items: start;
+    min-width: 0;
+  }
+
+  .page-hero__title {
+    margin: 0;
+    font-size: clamp(2rem, 5vw, 3.25rem);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+    text-wrap: pretty;
+  }
+
+  .page-hero__title em {
+    color: var(--accent);
+    font-style: normal;
+  }
+
+  /* The prism given room inside its two rings, as the social card sets it. */
+  .mark {
+    position: relative;
+    display: grid;
+    order: -1;
+    place-items: center;
+    justify-self: start;
+    width: clamp(7rem, 32vw, 14rem);
+    aspect-ratio: 1;
+    border: 2px solid var(--hairline);
+    border-radius: 50%;
+  }
+
+  .mark::before {
+    position: absolute;
+    inset: 9%;
+    border: 1px solid var(--hairline);
+    border-radius: 50%;
+    content: "";
+  }
+
+  .mark img {
+    position: relative;
+    width: 56%;
+    height: auto;
+  }
+
+  @media (min-width: 56rem) {
+    .mark {
+      order: 0;
+      justify-self: end;
+    }
+  }
+</style>

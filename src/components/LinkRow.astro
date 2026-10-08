@@ -1,0 +1,91 @@
+---
+import ArrowText from "@/components/ArrowText.astro";
+import Icon from "@/components/Icon.astro";
+
+export interface RowLink {
+  label: string;
+  href: string;
+  /** The subject of the destination, drawn beside the label. Decorative. */
+  icon?: "mail" | "law" | "shield-lock" | "checklist" | "book" | "download" | "heart" | "github";
+  /** A class on the link itself, for a repository name that carries a namespace tone. */
+  tone?: string;
+}
+
+interface Props {
+  links: readonly RowLink[];
+  /** Names the row to assistive technology, since it carries no heading. */
+  label: string;
+}
+
+// A run of links reads as one long sentence when they sit side by side, which is what
+// two arrow links in a table caption did. This gives each one an icon, a gap wide enough
+// to separate them and, where there is room, a hairline between them.
+const { links, label } = Astro.props;
+---
+
+<ul class="linkrow" role="list" aria-label={label}>
+  {links.map((link) => (
+    <li class="linkrow__item">
+      <a class:list={["linkrow__link", link.tone]} href={link.href}>
+        {link.icon && <Icon name={link.icon} size={15} />}
+        <ArrowText text={link.label} size={14} />
+      </a>
+    </li>
+  ))}
+</ul>
+
+<style>
+  .linkrow {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  /* `flex: none`, because the row sits inside a table caption on one page, where the
+     available width resolves oddly and a shrinkable item collapsed to its longest word,
+     breaking the icon onto a line of its own. */
+  .linkrow__item {
+    flex: none;
+    max-width: 100%;
+  }
+
+  /* The hairline is the separator where the row stays on one line; the gap carries it
+     once the row wraps, so a wrapped item never starts with a rule hanging off it. */
+  @media (min-width: 40rem) {
+    .linkrow__item + .linkrow__item {
+      padding-left: 1.25rem;
+      margin-left: 1.25rem;
+      border-left: 1px solid var(--hairline);
+    }
+  }
+
+  @media (max-width: 39.999rem) {
+    .linkrow {
+      gap: 0.85rem 1.5rem;
+    }
+  }
+
+  /* The link stays inline, like every other `.more` link on the site. Making it a flex
+     container turns the label and the arrow that must stay with it into separate flex
+     items, which either doubles the space between them or eats it, depending on the gap. */
+  .linkrow__link {
+    font-weight: 650;
+    text-decoration: none;
+  }
+
+  .linkrow__link:hover {
+    text-decoration: underline;
+  }
+
+  /* `display: inline-block` against the global `svg { display: block }`, which is what
+     put the icon on a line of its own above the label. */
+  .linkrow__link :global(svg) {
+    display: inline-block;
+    margin-right: 0.4rem;
+    vertical-align: -0.16em;
+    opacity: 0.85;
+  }
+</style>

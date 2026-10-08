@@ -1,0 +1,115 @@
+---
+import InlineCode from "@/components/InlineCode.astro";
+
+export interface Stat {
+  /** The eyebrow above the figure, in the mono face. */
+  label: string;
+  /** The figure itself, set large. Already formatted by the caller. */
+  value: string;
+  /** One line saying what the figure is of. */
+  caption: string;
+  /** Tints the tile where the figure is the one the section is arguing about. */
+  tone?: "exposed" | "recommended";
+}
+
+interface Props {
+  stats: readonly Stat[];
+  /** Names the group to assistive technology, since the tiles carry no heading. */
+  label: string;
+}
+
+// A row of measured figures, in the same stat-box shape the repository card uses: an
+// eyebrow, the figure in the display face, and a line saying what it counts. Every value
+// is computed by the caller from the data the section already shows, so a tile cannot
+// disagree with the table under it.
+const { stats, label } = Astro.props;
+---
+
+<dl class="stats" aria-label={label}>
+  {stats.map((stat) => (
+    <div class:list={["stat", stat.tone && `stat--${stat.tone}`]}>
+      <dt class="stat__label">{stat.label}</dt>
+      <dd class="stat__value">{stat.value}</dd>
+      <p class="stat__caption">
+        <InlineCode text={stat.caption} />
+      </p>
+    </div>
+  ))}
+</dl>
+
+<style>
+  .stats {
+    display: grid;
+    gap: 1px;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    border: 1px solid var(--hairline);
+    background: var(--hairline);
+  }
+
+  @media (min-width: 40rem) {
+    .stats {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: 64rem) {
+    .stats {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+  }
+
+  /* One hairline between tiles rather than a border each: the grid's gap is the rule. */
+  .stat {
+    display: grid;
+    gap: 0.3rem;
+    align-content: start;
+    padding: 1.25rem 1.35rem 1.4rem;
+    background: var(--surface);
+  }
+
+  .stat--exposed {
+    background: var(--exposed-tint);
+  }
+
+  .stat--recommended {
+    background: var(--recommended-tint);
+  }
+
+  .stat__label {
+    margin: 0;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .stat__value {
+    margin: 0;
+    color: var(--ink);
+    font-size: clamp(1.9rem, 4vw, 2.5rem);
+    font-weight: 800;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.03em;
+    line-height: 1;
+  }
+
+  .stat--exposed .stat__value {
+    color: var(--exposed);
+  }
+
+  .stat--recommended .stat__value {
+    color: var(--accent);
+  }
+
+  .stat__caption {
+    margin: 0.15rem 0 0;
+    color: var(--text);
+    font-size: 0.9rem;
+    line-height: 1.5;
+    text-wrap: pretty;
+  }
+</style>
