@@ -1,0 +1,656 @@
+---
+import ArrowText from "@/components/ArrowText.astro";
+import InlineCode from "@/components/InlineCode.astro";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import PageHero from "@/components/PageHero.astro";
+import SectionHead from "@/components/SectionHead.astro";
+import { getDownloads } from "@/data/release-assets";
+import { formatAsOf, getRepository } from "@/data/repository";
+import { DOCS, DOCS_URL, REPO } from "@/data/site";
+
+// Every file the latest release published, read from GitHub at build time rather than
+// listed by hand, behind one tab per platform. The tabs are radio inputs and CSS: this
+// site ships no client-side JavaScript, so every panel is in the HTML, and a browser
+// without `:has()`, or a reader with no CSS at all, gets all of them rather than none.
+const downloads = await getDownloads();
+
+// Every command names a real release, even when the API cannot be reached: the asset list
+// comes from the release, and the tag falls back to the repository snapshot, which is what
+// the repository card already shows. A build that lost the API still publishes commands a
+// reader can run; only the file table, which cannot be known without the API, degrades.
+const facts = await getRepository();
+const releaseTag = downloads?.tag ?? facts.release.tag;
+
+// The archive the verification commands name: the Linux client archive, whose file name
+// follows the release pipeline's own scheme when the asset list is unavailable.
+const example =
+  downloads?.groups
+    .find((group) => group.id === "linux")
+    ?.files.find((file) => file.arch === "x86-64")?.name ?? `core-geth-linux-${releaseTag}.zip`;
+
+const assetBase = `https://github.com/${REPO.slug}/releases/download/${releaseTag}`;
+
+const verifyExample = `# Check a downloaded archive, and where it came from
+sha256sum -c ${example}.sha256   # macOS: shasum -a 256 -c
+# ${example}: OK
+
+gh attestation verify ${example} --repo ${REPO.slug}
+# Loaded digest sha256:... for file://${example}
+# Loaded 1 attestation from GitHub API
+# \u2713 Verification succeeded!
+#
+# - Attestation #1
+#   - Build repo:..... ${REPO.slug}
+#   - Build workflow:. .github/workflows/release-packages.yml@refs/tags/${releaseTag}`;
+
+type Panel = {
+  id: string;
+  label: string;
+  /** Each block a reader runs in order, with `after` for what the block leaves them to do. */
+  steps: readonly { title: string; code: string; after?: string }[];
+  guide: { label: string; href: string };
+};
+
+// One panel per platform the project publishes for, plus source. Every command is the one
+// its linked guide gives, with that guide's version comment dropped, because this page
+// names no version of its own. There is no iOS or Android tab: no release publishes a
+// mobile artifact to put in one.
+//
+// No block carries a `$` or `>` prompt: a reader selects the whole block and pastes it
+// into a shell, so a prompt would have to be stripped line by line first. Expected output
+// is a comment for the same reason.
+const PANELS: readonly Panel[] = [
+  {
+    id: "linux",
+    label: "Linux",
+    steps: [
+      {
+        title: "From nothing to a running node",
+        code: `# 1. Download the release and its checksum
+curl -LO ${assetBase}/core-geth-linux-${releaseTag}.zip
+curl -LO ${assetBase}/core-geth-linux-${releaseTag}.zip.sha256
+
+# 2. Check it, then unpack and install
+sha256sum -c core-geth-linux-${releaseTag}.zip.sha256   # core-geth-linux-${releaseTag}.zip: OK
+unzip core-geth-linux-${releaseTag}.zip
+sudo install -m 0755 geth /usr/local/bin/geth
+geth version
+
+# 3. Start a node on Ethereum Classic
+geth --classic`,
+        after:
+          "For the Mordor test network, run `geth --mordor` instead. On an Arm board, put `arm64`, `arm7`, `arm6` or `arm5` where the file name says `linux`, matching what `uname -m` prints. `sha256sum -c` must print `OK`: if it prints `FAILED`, delete the file and download it again rather than running it.",
+      },
+    ],
+    guide: { label: "Linux users guide", href: `${DOCS_URL}getting-started/run/linux/` },
+  },
+  {
+    id: "macos",
+    label: "macOS",
+    steps: [
+      {
+        title: "From nothing to a running node",
+        code: `# 1. Download the release and its checksum
+curl -LO ${assetBase}/core-geth-osx-arm64-${releaseTag}.zip
+curl -LO ${assetBase}/core-geth-osx-arm64-${releaseTag}.zip.sha256
+
+# 2. Check it, then unpack and install
+shasum -a 256 -c core-geth-osx-arm64-${releaseTag}.zip.sha256   # core-geth-osx-arm64-${releaseTag}.zip: OK
+unzip core-geth-osx-arm64-${releaseTag}.zip
+sudo install -m 0755 geth /usr/local/bin/geth
+geth version
+
+# 3. Start a node on Ethereum Classic
+geth --classic`,
+        after: `For the Mordor test network, run \`geth --mordor\` instead. On an Intel Mac, use \`core-geth-osx-${releaseTag}.zip\`. macOS has no \`sha256sum\`, so \`shasum -a 256 -c\` reads the same file. macOS also blocks a binary carrying the quarantine attribute: browsers set it and \`curl\` does not, so the commands above avoid it, and \`xattr -d com.apple.quarantine geth\` clears it from a browser download.`,
+      },
+    ],
+    guide: { label: "macOS users guide", href: `${DOCS_URL}getting-started/run/macos/` },
+  },
+  {
+    id: "windows",
+    label: "Windows",
+    steps: [
+      {
+        title: "From nothing to a running node",
+        code: `# 1. Download the release and its checksum, in PowerShell
+Invoke-WebRequest "${assetBase}/core-geth-win64-${releaseTag}.zip" -OutFile "core-geth-win64-${releaseTag}.zip"
+Invoke-WebRequest "${assetBase}/core-geth-win64-${releaseTag}.zip.sha256" -OutFile "core-geth-win64-${releaseTag}.zip.sha256"
+
+# 2. Compare these two lines, then unpack
+(Get-FileHash "core-geth-win64-${releaseTag}.zip" -Algorithm SHA256).Hash
+Get-Content "core-geth-win64-${releaseTag}.zip.sha256"
+Expand-Archive "core-geth-win64-${releaseTag}.zip" -DestinationPath C:\\core-geth
+
+# 3. Start a node on Ethereum Classic
+cd C:\\core-geth
+.\\geth.exe version
+.\\geth.exe --classic`,
+        after:
+          "For the Mordor test network, run `.\\geth.exe --mordor` instead. PowerShell has no equivalent of `sha256sum -c`, so compare those two lines yourself: `Get-FileHash` prints uppercase hex and the `.sha256` file holds lowercase followed by the file name, and the letters must match; the case does not.",
+      },
+    ],
+    guide: { label: "Windows users guide", href: `${DOCS_URL}getting-started/run/windows/` },
+  },
+  {
+    id: "containers",
+    label: "Containers",
+    steps: [
+      {
+        title: "From nothing to a running node",
+        code: `# 1. Pull the published image and check that it runs
+docker pull ghcr.io/${REPO.slug}:latest
+docker run --rm ghcr.io/${REPO.slug}:latest version
+
+# 2. Start a node, keeping the chain in a named volume
+docker run -d --name core-geth-classic \\
+    --restart unless-stopped --stop-timeout 300 \\
+    -v core-geth-classic:/root \\
+    -p 30303:30303 -p 30303:30303/udp \\
+    ghcr.io/${REPO.slug}:latest --classic`,
+        after:
+          "The volume is mounted at `/root`, so the chain survives the container being replaced. For Mordor, run the same command with `core-geth-mordor` as the container and volume name and `--mordor` as the flag.",
+      },
+    ],
+    guide: { label: "Docker users guide", href: `${DOCS_URL}getting-started/run/docker/` },
+  },
+  {
+    id: "source",
+    label: "Source",
+    steps: [
+      {
+        title: "Build the latest release",
+        code: `# 1. Clone the repository and check out the release
+git clone https://github.com/${REPO.slug}.git
+cd core-geth
+git checkout ${releaseTag}
+
+# 2. Build the node, then confirm it
+make geth
+./build/bin/geth --help`,
+      },
+      {
+        title: "Build what is in development",
+        code: `# The same, from main: clone, build, confirm
+git clone https://github.com/${REPO.slug}.git
+cd core-geth
+make geth
+./build/bin/geth --help`,
+      },
+    ],
+    guide: { label: "Build from source", href: `${DOCS_URL}developers/build-from-source/` },
+  },
+];
+
+const groupFor = (id: string) => downloads?.groups.find((group) => group.id === id);
+---
+
+<BaseLayout
+  title="Download Core-Geth for Ethereum Classic: Linux, macOS, Windows"
+  crumb="Downloads"
+  description="Download Core-Geth for Linux, macOS, Windows, Arm or Docker, or build from source. Every release carries a checksum and a build attestation you can verify."
+  path="/downloads/"
+>
+  <PageHero label="Core-Geth downloads" title="Get the Core-Geth client." em="Core-Geth">
+    <p class="lede">
+      Download a release for Linux, macOS or Windows, run it as a container, or build it from
+      source. Every archive and image is published with a checksum and a build attestation, so you
+      can confirm what you downloaded before you run it.
+    </p>
+    <div class="downloads__actions">
+      <a class="button button--primary" href={REPO.latestUrl}>
+        The latest release
+      </a>
+      <a class="button" href={DOCS.installation.href}>
+        Installation guide
+      </a>
+    </div>
+    {downloads && (
+      <p class="downloads__meta">
+        {`Latest release ${downloads.tag}, published ${formatAsOf(downloads.published)}. `}
+        <a href={downloads.notes}>Release notes</a>
+        {" · "}
+        <a href={REPO.releasesUrl}>All releases</a>
+      </p>
+    )}
+  </PageHero>
+
+  <section class="band band--surface" aria-labelledby="install-title">
+    <div class="container downloads__install">
+      <SectionHead
+        id="install-title"
+        label="Install Core-Geth"
+        title="How to download, install, and run the Core-Geth client"
+        em="download, install, and run"
+      >
+        <p class="lede">
+          Each block takes the build most machines need: the x86-64 archive on Linux, Apple Silicon
+          on macOS, the published image for containers. The note under each block says what to
+          change for another architecture. For the full version of any step, and the cases these
+          blocks leave out, read <a href={DOCS.installation.href}>the installation guide</a> on
+          docs.coregeth.com. Check an archive against its checksum and its build attestation before
+          you run it: <a href="#verify">both commands</a> are at the foot of this page.
+        </p>
+      </SectionHead>
+      <fieldset class="tabs">
+        <legend class="visually-hidden">Choose your platform</legend>
+        <div class="tabs__bar">
+          {PANELS.map((panel, index) => (
+            <Fragment>
+              <input
+                class="tabs__input visually-hidden"
+                type="radio"
+                name="platform"
+                id={`tab-${panel.id}`}
+                checked={index === 0}
+              />
+              <label class="tabs__label" for={`tab-${panel.id}`}>
+                {panel.label}
+              </label>
+            </Fragment>
+          ))}
+        </div>
+
+        {PANELS.map((panel) => {
+          const group = groupFor(panel.id);
+          return (
+            <div class="panel" id={`panel-${panel.id}`}>
+              <h3 class="panel__heading">{panel.label}</h3>
+              {panel.id === "source" && (
+                <p class="panel__note">
+                  Building needs Go 1.26 or later and a C compiler. Checking out the release tag
+                  builds the same source the published archives were built from; a binary built from{" "}
+                  <code>main</code> prints <code>unstable</code> as its release stage until a
+                  release is prepared. To build with the exact Go toolchain the releases use, run{" "}
+                  <code>go run build/ci.go install -dlgo</code> in place of <code>make geth</code>.
+                </p>
+              )}
+              {panel.id === "source" && (
+                <a class="source-repo" href={REPO.url}>
+                  github.com/{REPO.slug.split("/")[0]}/<wbr />
+                  {REPO.slug.split("/")[1]}
+                </a>
+              )}
+
+              {panel.steps.map((step) => (
+                <Fragment>
+                  <h4 class="panel__step">{step.title}</h4>
+                  <div class="shell-wrap">
+                    <pre class="shell"><code>{step.code}</code></pre>
+                  </div>
+                  {step.after && (
+                    <p class="panel__note">
+                      <InlineCode text={step.after} />
+                    </p>
+                  )}
+                </Fragment>
+              ))}
+              <a class="more" href={panel.guide.href}>
+                <ArrowText text={panel.guide.label} />
+              </a>
+
+              {group && (
+                <Fragment>
+                  <h4 class="panel__step panel__files">Every file in this release</h4>
+                  {group.note && (
+                    <p class="panel__note">
+                      <InlineCode text={group.note} />
+                    </p>
+                  )}
+                  <table class="data-table files">
+                    <thead>
+                      <tr>
+                        <th scope="col">File</th>
+                        <th scope="col">Your machine</th>
+                        <th scope="col" class="files__num">
+                          Size
+                        </th>
+                        <th scope="col">Checksum</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {group.files.map((file) => (
+                        <tr>
+                          <th scope="row">
+                            <a class="files__name" href={file.href}>
+                              {file.name}
+                            </a>
+                          </th>
+                          <td>
+                            <InlineCode text={file.machine} />
+                          </td>
+                          <td class="files__num">{file.size}</td>
+                          <td>
+                            {file.checksum ? <a href={file.checksum}>sha256</a> : "none published"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </Fragment>
+              )}
+
+              {!group && panel.id !== "source" && (
+                <p class="panel__note">
+                  The file list could not be read at build time. Every file is on{" "}
+                  <a href={REPO.latestUrl}>the release itself</a>, with its checksum beside it.
+                </p>
+              )}
+            </div>
+          );
+        })}
+      </fieldset>
+
+      <p class="downloads__note">
+        An <code>alltools</code> archive is the same client with the rest of the tools beside it:{" "}
+        <code>abigen</code>, <code>clef</code>, <code>evm</code>, <code>rlpdump</code> and the
+        others. To run a node, take the plain archive.
+      </p>
+    </div>
+  </section>
+
+  <section class="band" id="verify">
+    <div class="container downloads__group">
+      <h2>Verify what you downloaded</h2>
+      <p class="lede">
+        Two checks, and they answer different questions. The checksum says the file arrived intact.
+        The attestation says which workflow built it, from which commit, which is the question a
+        checksum cannot answer.
+      </p>
+      <div class="shell-wrap">
+        <pre class="shell"><code>{verifyExample}</code></pre>
+      </div>
+      <p>
+        <code>sha256sum -c</code> must print <code>OK</code>. If it prints <code>FAILED</code>,
+        delete the file and download it again rather than running it. Between the lines above, the
+        attestation check also prints the policy it enforced: the repository, the workflow identity
+        and the OIDC issuer it requires before it will succeed.
+      </p>
+      <h3>What every release carries</h3>
+      <ul class="plain" role="list">
+        <li>
+          <strong>A checksum beside every file.</strong> A <code>.sha256</code> is published with
+          each archive and each image tarball.
+        </li>
+        <li>
+          <strong>A build attestation on every archive and image.</strong> It is minted against a
+          short-lived certificate issued to the workflow run itself, and records which workflow, at
+          which commit, produced the file, so each one traces to the run that built it rather than
+          resting on anyone's word.
+        </li>
+        <li>
+          <strong>Provenance for the container images.</strong> Recorded for the published image
+          index and for each image tarball.
+        </li>
+      </ul>
+      <p>
+        On a first run Windows names the publisher as unknown, and macOS blocks a downloaded binary
+        until it is allowed. The <a href={DOCS.installation.href}>installation guide</a> says how to
+        check an archive and proceed.
+      </p>
+      <a class="more" href={`${DOCS_URL}audits/2026-09-release-pipeline/`}>
+        <ArrowText text="How the release artifacts are built and checked" />
+      </a>
+    </div>
+  </section>
+</BaseLayout>
+
+<script is:inline>
+  // The copy button on each code block, and the only script this site ships beyond the
+  // JSON-LD in the head. Maintainer decision, 2026-10-07.
+  //
+  // It is `is:inline` so Astro leaves it in the page rather than bundling it to a file:
+  // one small script, no extra request, and `dist` stays free of JavaScript files. The
+  // button is created here rather than rendered in the markup, so a reader with no
+  // JavaScript, or a browser without the clipboard API, sees no button that cannot work.
+  (function () {
+    if (!navigator.clipboard) return;
+    for (const wrap of document.querySelectorAll(".shell-wrap")) {
+      const code = wrap.querySelector("pre.shell > code");
+      if (!code) continue;
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "copy";
+      button.textContent = "Copy";
+      // The label is the button's text, so a change of state is announced rather than
+      // hidden behind a fixed aria-label.
+      button.setAttribute("aria-live", "polite");
+      let reset;
+      button.addEventListener("click", function () {
+        navigator.clipboard.writeText(code.textContent).then(
+          function () {
+            button.textContent = "Copied";
+            button.classList.add("copy--done");
+          },
+          function () {
+            button.textContent = "Copy failed";
+          },
+        );
+        clearTimeout(reset);
+        reset = setTimeout(function () {
+          button.textContent = "Copy";
+          button.classList.remove("copy--done");
+        }, 2000);
+      });
+      wrap.appendChild(button);
+    }
+  })();
+</script>
+
+<style>
+  .downloads__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 0.25rem;
+  }
+
+  .downloads__meta,
+  .downloads__note,
+  .panel__note {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.95rem;
+    line-height: 1.6;
+  }
+
+  .downloads__note {
+    padding-top: 2rem;
+  }
+
+  /* The band's opening head, then the tabs, with the band's own rhythm between them. */
+  .downloads__install {
+    display: grid;
+    gap: 2.5rem;
+  }
+
+  .downloads__group {
+    display: grid;
+    gap: 1.1rem;
+    justify-items: start;
+  }
+
+  .downloads__group h2 {
+    margin: 0;
+    font-size: clamp(1.4rem, 3vw, 1.9rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+
+  .downloads__group h3 {
+    margin: 0.5rem 0 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+  }
+
+  .downloads__group p {
+    margin: 0;
+    color: var(--text);
+    line-height: 1.65;
+    text-wrap: pretty;
+  }
+
+  /* The tab strip: radio inputs and labels, so choosing a platform needs no script. The
+     fieldset carries no frame of its own; the strip and the panel below it share one. */
+  .tabs {
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .tabs__bar {
+    display: flex;
+    flex-wrap: wrap;
+    border: 1px solid var(--hairline);
+    border-bottom: 0;
+    background: var(--surface);
+  }
+
+  .tabs__label {
+    flex: 1 1 auto;
+    padding: 0.8rem 1.25rem;
+    border-right: 1px solid var(--hairline);
+    color: var(--muted);
+    font-size: 0.95rem;
+    font-weight: 650;
+    text-align: center;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  .tabs__label:last-of-type {
+    border-right: 0;
+  }
+
+  .tabs__label:hover {
+    color: var(--ink);
+    background: var(--ground);
+  }
+
+  .panel {
+    display: grid;
+    gap: 1.1rem;
+    justify-items: start;
+    padding: 2rem clamp(1rem, 3vw, 2rem);
+    border: 1px solid var(--hairline);
+    background: var(--surface);
+  }
+
+  .panel + .panel {
+    border-top: 0;
+  }
+
+  .panel__heading {
+    margin: 0;
+    font-size: clamp(1.4rem, 3vw, 1.9rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+
+  .panel__step {
+    margin: 0.4rem 0 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+  }
+
+  /* The source the client is built from, named once and set large: the documentation's
+     code face for a repository name, in the page's green. It may break after the slash
+     and nowhere else, so it never widens the panel. */
+  .source-repo {
+    max-width: 100%;
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-size: clamp(1.1rem, 3.2vw, 1.75rem);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    text-decoration: none;
+    overflow-wrap: anywhere;
+  }
+
+  .source-repo:hover {
+    text-decoration: underline;
+  }
+
+  /* The full list is reference below the actionable part, so it gets a rule above it. */
+  .panel__files {
+    width: 100%;
+    margin-top: 1.4rem;
+    padding-top: 1.75rem;
+    border-top: 1px solid var(--hairline);
+  }
+
+  /* With `:has()` the checked radio shows its panel. Without it, or with CSS off
+     entirely, every panel stays visible: the page loses the tabs, never the content. */
+  @supports selector(:has(*)) {
+    .panel {
+      display: none;
+    }
+
+    .tabs:has(#tab-linux:checked) #panel-linux,
+    .tabs:has(#tab-macos:checked) #panel-macos,
+    .tabs:has(#tab-windows:checked) #panel-windows,
+    .tabs:has(#tab-containers:checked) #panel-containers,
+    .tabs:has(#tab-source:checked) #panel-source {
+      display: grid;
+    }
+
+    .tabs__input:checked + .tabs__label {
+      color: var(--bar-strong);
+      background: var(--accent);
+    }
+
+    .tabs__input:focus-visible + .tabs__label {
+      outline: 2px solid var(--accent);
+      outline-offset: -4px;
+    }
+  }
+
+  /* The file name is what ends up on disk, so it is set in the documentation's code
+     face and is allowed to wrap rather than widening the table. */
+  .files__name {
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    overflow-wrap: anywhere;
+  }
+
+  .files__num {
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  .plain {
+    display: grid;
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    color: var(--text);
+    line-height: 1.6;
+  }
+
+  .plain strong {
+    color: var(--ink);
+  }
+
+  .more {
+    font-weight: 650;
+    text-decoration: none;
+  }
+
+  .more:hover {
+    text-decoration: underline;
+  }
+
+  @media (max-width: 36rem) {
+    .tabs__label {
+      flex: 1 1 40%;
+      padding: 0.7rem 0.75rem;
+      border-bottom: 1px solid var(--hairline);
+    }
+
+    .files__num {
+      text-align: left;
+    }
+  }
+</style>

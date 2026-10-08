@@ -1,0 +1,380 @@
+---
+import ArrowText from "@/components/ArrowText.astro";
+import Icon from "@/components/Icon.astro";
+import InlineCode from "@/components/InlineCode.astro";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import PageHero from "@/components/PageHero.astro";
+import SectionHead from "@/components/SectionHead.astro";
+import { DOCS, DOCS_URL, SPONSOR, SPONSOR_EMAIL } from "@/data/site";
+
+// Who maintains the client, who has paid for it, and how to sponsor it. The shape and
+// most of the wording are the discovery lists' support page, scoped to the client. The
+// routes stay published in one place, the documentation's support page: this page states
+// them in short and links there, and names the sponsorship address that page names.
+const supportHref = `${DOCS_URL}support/`;
+---
+
+<BaseLayout
+  title="Sponsor Core-Geth: funding Ethereum Classic's client"
+  crumb="Sponsor"
+  description="Who maintains Core-Geth and who has funded it, from ETCDEV to the Ethereum Classic DAO, why a client with no long-term funding needs sponsors, and how to help."
+  path="/sponsor/"
+>
+  <PageHero
+    label="Sponsor Core-Geth"
+    title="The Core-Geth client is a public good, and someone has to maintain and pay for it."
+    em="public good"
+  >
+    <p class="lede">
+      <InlineCode text={SPONSOR.intro} />
+    </p>
+    <div class="sponsor__actions">
+      <a class="button button--primary" href={`mailto:${SPONSOR_EMAIL}`}>
+        Write to {SPONSOR_EMAIL}
+      </a>
+      <a class="button" href={supportHref}>
+        The routes in full
+      </a>
+    </div>
+  </PageHero>
+
+  <section class="band band--surface" aria-labelledby="maintainers-title">
+    <div class="container sponsor__band">
+      <SectionHead
+        id="maintainers-title"
+        label="Maintainers and funding"
+        title={SPONSOR.maintainers.heading}
+        size="medium"
+      >
+        <p class="lede">
+          <InlineCode text={SPONSOR.maintainers.lede} />
+        </p>
+      </SectionHead>
+
+      <ul class="entities" role="list">
+        {SPONSOR.maintainers.entities.map((entity) => (
+          <li class="entity">
+            <p class="entity__label">
+              <span class="entity__mark" aria-hidden="true">
+                <Icon name={entity.icon} size={15} />
+              </span>
+              {entity.label}
+            </p>
+            <h3 class="entity__name">
+              <InlineCode text={entity.name} />
+            </h3>
+            {"handle" in entity && <p class="entity__handle">{entity.handle}</p>}
+            <p class="entity__body">
+              <InlineCode text={entity.body} />
+            </p>
+            <a class="button entity__cta" href={entity.cta.href}>
+              {entity.cta.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+
+      <div class="sponsor__note">
+        <p class="sponsor__note-label">How it got here</p>
+        <p class="sponsor__history">
+          <InlineCode text={SPONSOR.maintainers.history} />
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="container sponsor__band">
+      <h2>{SPONSOR.funders.heading}</h2>
+      <table class="data-table funders">
+        <thead>
+          <tr>
+            <th scope="col">Years</th>
+            <th scope="col">Organization</th>
+          </tr>
+        </thead>
+        <tbody>
+          {SPONSOR.funders.rows.map((row) => (
+            <tr>
+              <th scope="row">{row.years}</th>
+              <td>{row.organization}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <p>{SPONSOR.funders.note}</p>
+      <a class="more" href={DOCS.history.href}>
+        <ArrowText text="How the work passed between them" />
+      </a>
+    </div>
+  </section>
+
+  <section class="band band--surface">
+    <div class="container sponsor__band">
+      <h2>{SPONSOR.why.heading}</h2>
+      {SPONSOR.why.body.map((paragraph, i) => (
+        <p class:list={[i === 0 && "lede"]}>
+          <InlineCode text={paragraph} />
+        </p>
+      ))}
+    </div>
+  </section>
+
+  <section class="band">
+    <div class="container sponsor__pair">
+      <div>
+        <h2>{SPONSOR.pays.heading}</h2>
+        <p>{SPONSOR.pays.body}</p>
+        <a class="more" href={DOCS.securityAudit.href}>
+          <ArrowText text="The audits" />
+        </a>
+      </div>
+      <div>
+        <h2>{SPONSOR.notBuy.heading}</h2>
+        <p>{SPONSOR.notBuy.body}</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="band band--surface">
+    <div class="container sponsor__band">
+      <h2>{SPONSOR.routes.heading}</h2>
+      <ul class="routes" role="list">
+        {SPONSOR.routes.items.map((item) => (
+          <li>
+            <h3>{item.title}</h3>
+            <p>
+              <InlineCode text={item.body} />
+            </p>
+          </li>
+        ))}
+      </ul>
+      <p class="sponsor__address">
+        Write to <a href={`mailto:${SPONSOR_EMAIL}`}>{SPONSOR_EMAIL}</a>. The documentation's
+        support page is where these routes are published, and the one to check any other against.
+      </p>
+      <a class="more" href={supportHref}>
+        <ArrowText text="Support this work" />
+      </a>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .sponsor__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    min-width: 0;
+    margin-top: 0.5rem;
+  }
+
+  /* The address is one long token, so without this the button cannot shrink below it and
+     sets the width of the whole hero, pushing the page sideways on a narrow screen. */
+  .sponsor__actions .button {
+    overflow-wrap: anywhere;
+  }
+
+  .sponsor__band {
+    display: grid;
+    gap: 1.1rem;
+    justify-items: start;
+  }
+
+  .sponsor__band h2,
+  .sponsor__pair h2 {
+    margin: 0;
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+
+  /* The maintainer and the organization, each given a panel and a route of its own: a
+     sponsor is dealing with an entity, so the entity is a thing on the page rather than
+     a word underlined in the middle of a paragraph. */
+  .entities {
+    display: grid;
+    gap: 1.5rem;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  @media (min-width: 52rem) {
+    .entities {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 2rem;
+    }
+  }
+
+  /* The hero's green base edge, carried onto the cards: the same motif, applied to both
+     so it stays decoration and never becomes a second thing color means. */
+  .entity {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: flex-start;
+    padding: 1.5rem;
+    border: 1px solid var(--hairline);
+    border-top: 2px solid var(--ink);
+    border-bottom: 3px solid var(--accent);
+    background: var(--ground);
+  }
+
+  .entity__label {
+    display: inline-flex;
+    gap: 0.55rem;
+    align-items: center;
+    margin: 0;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  /* The mark in its own square, the way the prism sits inside its rings. */
+  .entity__mark {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 1.9rem;
+    height: 1.9rem;
+    border: 1px solid var(--hairline);
+    color: var(--accent);
+    background: var(--surface);
+  }
+
+  .entity__name {
+    margin: 0;
+    color: var(--ink);
+    font-size: clamp(1.3rem, 2.5vw, 1.6rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+
+  /* The GitHub team handle, in the code face: a name a reader can search for, not a link,
+     because a closed team's page is a login wall for anyone outside the organization. */
+  .entity__handle {
+    margin: -0.15rem 0 0;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    overflow-wrap: anywhere;
+  }
+
+  /* The label is one long token, so without this the button cannot shrink below it and
+     sets the width of the panel, pushing the page sideways on a narrow screen. */
+  .entity__cta {
+    max-width: 100%;
+    /* The column is flex, so this pushes the button to the foot of the card and the two
+       buttons line up however far the bodies differ in length. */
+    margin-top: auto;
+    padding-top: 0.6rem;
+    overflow-wrap: anywhere;
+  }
+
+  /* The closing note reads as a footnote to the cards rather than as more body text:
+     a rule above it and the band's eyebrow treatment on its label. */
+  .sponsor__note {
+    display: grid;
+    gap: 0.6rem;
+    width: 100%;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--hairline);
+  }
+
+  .sponsor__note-label {
+    margin: 0;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .sponsor__band p,
+  .sponsor__pair p {
+    margin: 0;
+    color: var(--text);
+    line-height: 1.65;
+    text-wrap: pretty;
+  }
+
+  /* Who paid, and when. A short table rather than a timeline: four rows of two values
+     are a record, and the page's argument is in the paragraphs around it. */
+  .funders {
+    max-width: 32rem;
+  }
+
+  /* The years are the quiet column here and the organization is the loud one, which is
+     the reverse of the base. */
+  .funders tbody th {
+    color: var(--muted);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  .funders tbody td {
+    color: var(--ink);
+    font-weight: 650;
+  }
+
+  .routes {
+    display: grid;
+    gap: 1.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  @media (min-width: 52rem) {
+    .routes {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 2rem;
+    }
+  }
+
+  .routes h3 {
+    margin: 0 0 0.45rem;
+    color: var(--ink);
+    font-size: 1.05rem;
+    font-weight: 700;
+  }
+
+  .sponsor__address {
+    padding-top: 0.25rem;
+  }
+
+  .sponsor__pair {
+    display: grid;
+    gap: 2.5rem;
+  }
+
+  @media (min-width: 52rem) {
+    .sponsor__pair {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 3rem;
+    }
+  }
+
+  .sponsor__pair div {
+    display: grid;
+    gap: 1.1rem;
+    align-content: start;
+    justify-items: start;
+  }
+
+  .more {
+    font-weight: 650;
+    text-decoration: none;
+  }
+
+  .more:hover {
+    text-decoration: underline;
+  }
+</style>

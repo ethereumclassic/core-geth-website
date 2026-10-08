@@ -13,5 +13,11 @@ import sitemap from "@astrojs/sitemap";
 export default defineConfig({
   site: "https://coregeth.com",
   output: "static",
-  integrations: [sitemap({ lastmod: new Date() })],
+  // coregeth.com/discord is the project's own short link for the community channel. It
+  // forwards to ethereumclassic.com/discord rather than to an invite code, so the invite
+  // stays maintained in one place and this site never holds a stale one. A static build
+  // emits an HTML page that refreshes, with a canonical link to the target.
+  redirects: { "/discord": "https://ethereumclassic.com/discord" },
+  // The redirect is not a page of this site, so it is kept out of the sitemap.
+  integrations: [sitemap({ lastmod: new Date(), filter: (page) => !page.endsWith("/discord/") })],
 });

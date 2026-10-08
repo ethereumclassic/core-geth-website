@@ -1,0 +1,301 @@
+---
+import ArrowText from "@/components/ArrowText.astro";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import InlineCode from "@/components/InlineCode.astro";
+import LinkRow from "@/components/LinkRow.astro";
+import Network from "@/components/sections/Network.astro";
+import PageHero from "@/components/PageHero.astro";
+import Records from "@/components/sections/Records.astro";
+import SectionHead from "@/components/SectionHead.astro";
+import StatStrip from "@/components/StatStrip.astro";
+import VerticalTimeline from "@/components/VerticalTimeline.astro";
+import {
+  AUDITS,
+  DISCLOSURE,
+  EXPOSED_LINE,
+  NETWORK_RUNNING,
+  RECOMMENDED_LINE,
+  RELEASE_TIMELINE,
+  REPO,
+  SECURITY_EMAIL,
+  SECURITY_POLICY_URL,
+} from "@/data/site";
+
+// Every figure in the strip is computed from the census the page already shows, so a
+// tile cannot disagree with the table under it, and a re-measure moves both at once.
+const exposedNodes = NETWORK_RUNNING.rows
+  .filter((row) => row.status === "exposed")
+  .reduce((sum, row) => sum + row.nodes, 0);
+const recommendedNodes = NETWORK_RUNNING.rows
+  .filter((row) => row.status === "recommended")
+  .reduce((sum, row) => sum + row.nodes, 0);
+const percent = (nodes: number) => `${((nodes / NETWORK_RUNNING.total) * 100).toFixed(1)}%`;
+
+// Two kinds of document sit in one index, and the split is told from the address rather
+// than written down twice: the stat tile and the audits lede both read these, so neither
+// can be left behind when one is published.
+const reportCount = AUDITS.filter((audit) => audit.href.includes("release-reports")).length;
+const auditCount = AUDITS.length - reportCount;
+const SPELLED = ["no", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"];
+const spell = (count: number) => SPELLED[count] ?? String(count);
+const reportWord = reportCount === 1 ? "report" : "reports";
+// The tile says what the documents are about, because "seven" on its own does not. The
+// audits cover the exposed line and the work that replaced it; the reports are the
+// recommended line's. Both strings read the same counts, so neither can drift.
+const auditsAndReportsLong = `${spell(auditCount)} audits covering the ${EXPOSED_LINE} line and the work that replaced it, and ${spell(reportCount)} ${RECOMMENDED_LINE} release ${reportWord}`;
+
+const CENSUS_STATS = [
+  {
+    label: "Nodes measured",
+    value: NETWORK_RUNNING.total.toLocaleString("en-US"),
+    caption: `Core-Geth nodes seen on ${NETWORK_RUNNING.measured.text}, counted by ${NETWORK_RUNNING.source.label}.`,
+  },
+  {
+    label: "On an exposed release",
+    value: percent(exposedNodes),
+    caption: `${exposedNodes} nodes running a release with a client CVE still open.`,
+    tone: "exposed" as const,
+  },
+  {
+    label: `On the ${RECOMMENDED_LINE} line`,
+    value: percent(recommendedNodes),
+    caption: `${recommendedNodes} nodes running the line with every client CVE patched.`,
+    tone: "recommended" as const,
+  },
+  {
+    label: "Audits and reports",
+    value: String(AUDITS.length),
+    caption: `${auditsAndReportsLong[0]?.toUpperCase()}${auditsAndReportsLong.slice(1)}. Every finding on this page is measured, dated and linked to one of them.`,
+  },
+];
+
+// What the audits found, what the releases fixed, and what the network is still running.
+// The census lives here rather than on the home page: it is a dated measurement a reader
+// wants after deciding to run the client, and here it sits beside the audits that explain
+// each row.
+---
+
+<BaseLayout
+  title={`Core-Geth ${EXPOSED_LINE} security audits and the ${RECOMMENDED_LINE} upgrade`}
+  crumb="Security"
+  description={`The 2026 security audits of Core-Geth ${EXPOSED_LINE}: the CVEs found, what was used against the ETC Cooperative's bootnodes, and what upgrading to ${RECOMMENDED_LINE} fixes.`}
+  path="/security/"
+>
+  <PageHero
+    label="What the audits found"
+    title="Core-Geth security, measured and published"
+    em="measured and published"
+  >
+    <p class="lede">
+      {`The ${EXPOSED_LINE} line went 21 months without security maintenance, and in March 2026 two of the flaws that gap left open were used against the ETC Cooperative's bootnodes. The ${RECOMMENDED_LINE} line closes all six flaws the audits found, those two among them. Every finding on this page is measured, dated and linked to the audit that records it, so nothing here has to be taken on trust.`}
+    </p>
+    <div class="security__actions">
+      <a class="button button--primary" href={REPO.latestUrl}>
+        Upgrade to the latest release
+      </a>
+      <a class="button" href="#audits">
+        The audits
+      </a>
+    </div>
+  </PageHero>
+
+  <Records tone="surface" />
+
+  <section class="band" aria-labelledby="timeline-title">
+    <div class="container security__band">
+      <SectionHead
+        id="timeline-title"
+        label="The Core-Geth release record"
+        title="Every release since the gap, in order"
+        em="since the gap"
+        size="medium"
+      >
+        <p class="lede">
+          The 21 months between June 2024 and February 2026 are the gap. Everything after February
+          2026 is the work that closed it, and each entry names the repository that published it:
+          what <code class="namespace--previous">etclabscore/core-geth</code> cut as an emergency
+          patch, and what was built, tested and released in{" "}
+          <code class="namespace--current">ethereumclassic/core-geth</code>. Every release in this
+          timeline but the last is still exposed, and each entry says what it left open.
+        </p>
+      </SectionHead>
+      <VerticalTimeline entries={RELEASE_TIMELINE} label="Releases since the maintenance gap" />
+    </div>
+  </section>
+
+  <Network tone="surface">
+    <StatStrip stats={CENSUS_STATS} label="What the network is running, in figures" />
+  </Network>
+
+  <section class="band" aria-labelledby="audits-title" id="audits">
+    <div class="container security__band">
+      <SectionHead
+        id="audits-title"
+        label="The Core-Geth audits"
+        title="Everything this project found, published in full"
+        em="published in full"
+        size="medium"
+      >
+        <p class="lede">
+          {`Each one is a page on the documentation site, carrying its method, its raw measurements and what they returned. The ${spell(auditCount)} audits examine the ${EXPOSED_LINE} line and the work that replaced it: that line's client code, the Go toolchain its binaries inherit, its dependency tree, and the archives it published. The ${spell(reportCount)} reports cover ${RECOMMENDED_LINE}.0, down to what is still open in it. Every figure on this page is taken from one of them.`}
+        </p>
+      </SectionHead>
+      <ul class="audits" role="list">
+        {AUDITS.map((audit) => (
+          <li class="audit">
+            <h3 class="audit__title">
+              <a href={audit.href}>{audit.title}</a>
+            </h3>
+            <p class="audit__date">
+              <time datetime={audit.date.iso}>{audit.date.text}</time>
+            </p>
+            <p class="audit__summary">
+              <InlineCode text={audit.summary} />
+            </p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <section class="band band--surface" aria-labelledby="disclosure-title">
+    <div class="container security__band">
+      <SectionHead
+        id="disclosure-title"
+        label="How disclosure was handled"
+        title={DISCLOSURE.heading}
+        em="before they were published"
+        size="medium"
+      />
+      {DISCLOSURE.body.map((paragraph, i) => (
+        <p class:list={[i === 0 ? "lede" : "security__paragraph"]}>
+          <InlineCode text={paragraph} />
+        </p>
+      ))}
+      <a class="more" href={DISCLOSURE.link.href}>
+        <ArrowText text={DISCLOSURE.link.label} />
+      </a>
+    </div>
+  </section>
+
+  <section class="band" aria-labelledby="report-title">
+    <div class="container security__band">
+      <SectionHead
+        id="report-title"
+        label="Reporting a vulnerability"
+        title="Found something? Report it privately"
+        em="privately"
+        size="medium"
+      >
+        <p class="lede">
+          A vulnerability goes to the security address or to the repository's private advisories,
+          never to a public issue or channel, so a fix can ship before the flaw is known. Ethereum
+          Classic's core developers read both routes, and they are the people maintaining the
+          client, so a report reaches someone who can cut the release that closes it. The release
+          timeline above shows how quickly that has happened since February 2026.
+        </p>
+      </SectionHead>
+      <LinkRow
+        label="Where to report a vulnerability"
+        links={[
+          { label: SECURITY_EMAIL, href: `mailto:${SECURITY_EMAIL}`, icon: "mail" },
+          { label: "The security policy", href: SECURITY_POLICY_URL, icon: "law" },
+          {
+            label: "Private advisories",
+            href: `${REPO.url}/security/advisories`,
+            icon: "shield-lock",
+          },
+        ]}
+      />
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .security__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    min-width: 0;
+    margin-top: 0.25rem;
+  }
+
+  .security__band {
+    display: grid;
+    gap: 2rem;
+    justify-items: start;
+  }
+
+  .security__paragraph {
+    margin: 0;
+    color: var(--text);
+    line-height: 1.65;
+    text-wrap: pretty;
+  }
+
+  /* One card per audit, two across where there is room: a list of what exists, with what
+     each one covers, never what it concluded. */
+  .audits {
+    display: grid;
+    gap: 1.75rem;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  @media (min-width: 52rem) {
+    .audits {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 2rem 3rem;
+    }
+  }
+
+  .audit {
+    display: grid;
+    gap: 0.4rem;
+    padding-top: 1rem;
+    border-top: 2px solid var(--ink);
+  }
+
+  .audit__title {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 750;
+    letter-spacing: -0.01em;
+  }
+
+  .audit__title a {
+    text-decoration: none;
+  }
+
+  .audit__title a:hover {
+    text-decoration: underline;
+  }
+
+  .audit__date {
+    margin: 0;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.72rem;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .audit__summary {
+    margin: 0;
+    color: var(--text);
+    line-height: 1.6;
+    text-wrap: pretty;
+  }
+
+  .more {
+    font-weight: 650;
+    text-decoration: none;
+  }
+
+  .more:hover {
+    text-decoration: underline;
+  }
+</style>

@@ -1,0 +1,170 @@
+---
+import ArrowText from "@/components/ArrowText.astro";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import InlineCode from "@/components/InlineCode.astro";
+import LinkRow from "@/components/LinkRow.astro";
+import PageHero from "@/components/PageHero.astro";
+import SectionHead from "@/components/SectionHead.astro";
+import VerticalTimeline from "@/components/VerticalTimeline.astro";
+import {
+  CODE_LINEAGE,
+  DOCS,
+  ORGANIZATIONS,
+  REPO,
+  REPOSITORY_MOVE,
+  REPOSITORY_MOVE_QUOTE,
+} from "@/data/site";
+
+// Where this client came from and who has carried it, drawn from the documentation's
+// project history. The page exists so the lineage can be read in one place, dated and
+// in order, rather than as a paragraph that sends the reader somewhere else to find out.
+---
+
+<BaseLayout
+  title="About Core-Geth: an Ethereum Classic client's history"
+  crumb="About"
+  description="Core-Geth's lineage: forked from multi-geth in 2020, funded by ETC Labs then the ETC Cooperative, and since 2024 in the ethereumclassic GitHub organization."
+  path="/about/"
+>
+  <PageHero
+    label="About Core-Geth"
+    title="Where Core-Geth came from, and who carries it"
+    em="who carries it"
+  >
+    <p class="lede">
+      Core-Geth has outlived every organization that funded it before the Ethereum Classic DAO. This
+      page is the lineage: the code it descends from, the organizations that led and funded the
+      work, and the move into the <code class="namespace--current">ethereumclassic</code> GitHub
+      organization.
+    </p>
+    <div class="about__actions">
+      <a class="button button--primary" href={DOCS.history.href}>
+        The full project history
+      </a>
+      <a class="button" href="/security/">
+        Security and provenance
+      </a>
+    </div>
+  </PageHero>
+
+  <section class="band band--surface" aria-labelledby="code-title">
+    <div class="container about__band">
+      <SectionHead
+        id="code-title"
+        label="The Core-Geth code"
+        title="Core-Geth's code lineage"
+        em="code lineage"
+        size="medium"
+      >
+        <p class="lede">
+          Core-Geth holds Ethereum Classic's chain rules as configuration rather than as code
+          branches, which is why one binary serves several networks: adding a network means writing
+          a chain configuration, not forking the client. It inherited that design from multi-geth,
+          the client it was forked from in 2020.
+        </p>
+      </SectionHead>
+      <VerticalTimeline entries={CODE_LINEAGE} label="The code this client descends from" />
+    </div>
+  </section>
+
+  <section class="band" aria-labelledby="orgs-title">
+    <div class="container about__band">
+      <SectionHead
+        id="orgs-title"
+        label="The organizations behind Core-Geth"
+        title="Who led the work, and who paid for it"
+        em="who paid for it"
+        size="medium"
+      >
+        <p class="lede">
+          Whether this client is maintained has always depended on an organization choosing to pay
+          for it, and each one handed the work on as it left. Ethereum Classic's core developers
+          maintain it today, in the <code class="namespace--current">ethereumclassic</code>{" "}
+          organization, with the Ethereum Classic DAO as the legal entity behind them and the funder
+          of last resort.
+        </p>
+      </SectionHead>
+      <VerticalTimeline
+        entries={ORGANIZATIONS}
+        label="The organizations that led and funded the work"
+      />
+      <a class="more" href="/sponsor/">
+        <ArrowText text="Why it needs sponsors, and how to sponsor it" />
+      </a>
+    </div>
+  </section>
+
+  <section class="band band--surface" aria-labelledby="repo-title">
+    <div class="container about__band">
+      <SectionHead
+        id="repo-title"
+        label="The Core-Geth repository"
+        title={`Releases are published from ${REPO.slug}`}
+        em={REPO.slug}
+        size="medium"
+      />
+      {REPOSITORY_MOVE.body.map((paragraph, i) => (
+        <p class:list={[i === 0 ? "lede" : "about__paragraph"]}>
+          <InlineCode text={paragraph} />
+        </p>
+      ))}
+      <figure class="quote">
+        <blockquote>
+          <p>
+            {REPOSITORY_MOVE_QUOTE.kicker && (
+              <span class="quote__kicker">{`${REPOSITORY_MOVE_QUOTE.kicker}: `}</span>
+            )}
+            {`\u201C${REPOSITORY_MOVE_QUOTE.text}\u201D `}
+            <span>{`- ${REPOSITORY_MOVE_QUOTE.attribution}`}</span>
+          </p>
+        </blockquote>
+        <figcaption>
+          {REPOSITORY_MOVE_QUOTE.href ? (
+            <a href={REPOSITORY_MOVE_QUOTE.href}>{REPOSITORY_MOVE_QUOTE.source}</a>
+          ) : (
+            REPOSITORY_MOVE_QUOTE.source
+          )}
+        </figcaption>
+      </figure>
+      <LinkRow
+        label="Where the work and the services are now"
+        links={[
+          { label: REPO.slug, href: REPO.url, icon: "github", tone: "namespace--current" },
+          { label: "Where each service continues", href: DOCS.transition.href, icon: "book" },
+        ]}
+      />
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .about__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    min-width: 0;
+    margin-top: 0.25rem;
+  }
+
+  .about__band {
+    display: grid;
+    gap: 2rem;
+    justify-items: start;
+  }
+
+  .about__paragraph {
+    margin: 0;
+    color: var(--text);
+    line-height: 1.65;
+    text-wrap: pretty;
+  }
+
+  .more {
+    font-weight: 650;
+    text-decoration: none;
+  }
+
+  .more:hover {
+    text-decoration: underline;
+  }
+</style>
