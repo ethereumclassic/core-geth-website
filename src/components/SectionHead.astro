@@ -31,16 +31,19 @@ const runs = [
   <p class="label">{label}</p>
   <h2 id={id} class:list={["head__title", `head__title--${size}`]}>
     {runs.map((run) => {
-      const text = run.pieces.map((piece, i) => (
-        <>
-          {i > 0 && (
-            <>
-              /<wbr />
-            </>
-          )}
-          {piece}
-        </>
-      ));
+      // An array of children, not a fragment per piece: a multi-line fragment leaves a
+      // space between its expressions, which is invisible next to a word and shows as
+      // "Core-Geth ." where the run after the emphasis is a period.
+      const text = run.pieces.flatMap((piece, i) =>
+        i > 0
+          ? [
+              <>
+                /<wbr />
+              </>,
+              piece,
+            ]
+          : [piece],
+      );
       return run.em ? <em>{text}</em> : text;
     })}
   </h2>
@@ -48,11 +51,12 @@ const runs = [
 </div>
 
 <style>
+  /* No measure cap: a heading fills the band's width before it wraps. The lede under it
+     keeps its own 40rem measure, which is what a paragraph needs and a heading does not. */
   .head {
     display: grid;
     gap: 1.1rem;
     justify-items: start;
-    max-width: 48rem;
   }
 
   /* A word wider than the screen breaks rather than widening the page. */
@@ -61,7 +65,7 @@ const runs = [
     letter-spacing: -0.03em;
     line-height: 1.04;
     overflow-wrap: anywhere;
-    text-wrap: balance;
+    text-wrap: pretty;
   }
 
   .head__title--large {

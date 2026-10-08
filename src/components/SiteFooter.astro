@@ -1,29 +1,51 @@
 ---
-import { CLIENT_LICENSE, DISCORD_URL, DOCS, SECURITY_EMAIL } from "@/data/site";
+import {
+  CLIENT_LICENSE,
+  FOOTER_GROUPS,
+  SECURITY_EMAIL,
+  SITE_NAME,
+  TAGLINE_SHORT,
+} from "@/data/site";
 
 const [copying, copyingLesser] = CLIENT_LICENSE.files;
-const clientLicense = `Core-Geth is copyright © ${CLIENT_LICENSE.holders}, and licensed under ${CLIENT_LICENSE.names}:`;
+
+// The documentation's footer is the model: the routes, then the security address, then the
+// license. The mark and the name sit first so the bar closes the page the way the header
+// opens it.
 ---
 
 <footer class="footer">
   <div class="container footer__inner">
-    <div class="footer__legal">
-      <p>
-        {clientLicense} see <a href={copying.href}>{copying.label}</a> and{" "}
-        <a href={copyingLesser.href}>{copyingLesser.label}</a>.
-      </p>
-      <p>
-        Report a security issue: <a href={`mailto:${SECURITY_EMAIL}`}>{SECURITY_EMAIL}</a>
+    <div class="footer__brand">
+      <a class="footer__home" href="/">
+        <img src="/logo.svg" alt="" width="28" height="28" />
+        <span>{SITE_NAME}</span>
+      </a>
+      <p class="footer__tagline">{TAGLINE_SHORT}</p>
+      <p class="footer__security">
+        Report a security issue privately: <a href={`mailto:${SECURITY_EMAIL}`}>{SECURITY_EMAIL}</a>
       </p>
     </div>
-    <ul class="footer__links" role="list">
-      <li>
-        <a href={DISCORD_URL}>Discord</a>
-      </li>
-      <li>
-        <a href={DOCS.home.href}>Documentation</a>
-      </li>
-    </ul>
+    {FOOTER_GROUPS.map((group) => (
+      <nav class="footer__group" aria-label={group.heading}>
+        <p class="footer__heading">{group.heading}</p>
+        <ul role="list">
+          {group.links.map((link) => (
+            <li>
+              <a href={link.href}>{link.label}</a>
+            </li>
+          ))}
+        </ul>
+      </nav>
+    ))}
+  </div>
+  <div class="container footer__legal">
+    <p>
+      {`${SITE_NAME} is copyright © ${CLIENT_LICENSE.holders}, and licensed under ${CLIENT_LICENSE.names}: see `}
+      <a href={copying.href}>{copying.label}</a>
+      {" and "}
+      <a href={copyingLesser.href}>{copyingLesser.label}</a>.
+    </p>
   </div>
 </footer>
 
@@ -35,43 +57,93 @@ const clientLicense = `Core-Geth is copyright © ${CLIENT_LICENSE.holders}, and 
     font-size: 0.9rem;
   }
 
-  /* The documentation's footer layout: the legal lines across the container on the
-     left, the links on the right. They stack on a narrow screen. */
+  /* The name and the security address on the left, then the route groups. They stack one
+     per row on a phone and sit in two columns on a tablet. */
   .footer__inner {
     display: grid;
-    gap: 1rem 3rem;
-    padding-block: 2rem 2.5rem;
+    gap: 2rem 3rem;
+    padding-block: 2.75rem 2rem;
   }
 
-  @media (min-width: 56rem) {
+  @media (min-width: 38rem) {
     .footer__inner {
-      grid-template-columns: minmax(0, 1fr) auto;
-      align-items: start;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
     }
   }
 
-  .footer__legal {
+  @media (min-width: 62rem) {
+    .footer__inner {
+      grid-template-columns: minmax(0, 1.4fr) repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  .footer__brand {
     display: grid;
     gap: 0.75rem;
+    align-content: start;
+  }
+
+  .footer__home {
+    display: inline-flex;
+    gap: 0.55rem;
+    align-items: center;
+    justify-self: start;
+    color: var(--bar-strong);
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    text-decoration: none;
+  }
+
+  .footer__tagline {
+    max-width: 24ch;
+    margin: 0;
+  }
+
+  .footer__security {
+    margin: 0;
+  }
+
+  .footer__heading {
+    margin: 0 0 0.75rem;
+    color: var(--bar-strong);
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .footer__group ul {
+    display: grid;
+    gap: 0.5rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .footer__legal {
+    padding-block: 1.25rem 2.5rem;
+    border-top: 1px solid var(--bar-line);
+  }
+
+  .footer__legal p {
+    margin: 0;
+    color: var(--bar-text);
+    font-size: 0.82rem;
+    line-height: 1.6;
   }
 
   .footer a {
     color: var(--bar-strong);
+    text-decoration: none;
   }
 
   .footer a:hover {
     color: var(--bar-accent);
+    text-decoration: underline;
   }
 
   .footer :focus-visible {
     outline-color: var(--bar-accent);
-  }
-
-  .footer__links {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.5rem 1.5rem;
-    padding: 0;
-    list-style: none;
   }
 </style>
