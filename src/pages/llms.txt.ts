@@ -10,9 +10,11 @@ import {
   OPERATOR_ACTIONS,
   PREVIOUS_NAMESPACE,
   RECORDS,
+  RELEASE_TIMELINE,
   REPO,
   SITE_NAME,
   SITE_URL,
+  SPONSOR,
   TRANSITION,
 } from "@/data/site";
 
@@ -45,17 +47,20 @@ const wrap = (text: string, prefix = "", width = 110): string =>
 
 const entry = (page: DocPage): string => `- [${page.title}](${page.href}): ${page.summary}`;
 
+/** A link in this file is read away from the site, so a site-relative href is spelled out. */
+const absolute = (href: string): string => (href.startsWith("/") ? `${SITE_URL}${href}` : href);
+
 export const GET: APIRoute = () => {
   const text = [
     `# ${SITE_NAME}`,
     "",
     wrap(
-      `${SITE_NAME} is the Ethereum Classic execution client, maintained at [github.com/${REPO.slug}](${REPO.url}) in the Ethereum Classic community's GitHub organization. ${ABOUT.definition} ${ABOUT.upstream}`,
+      `${SITE_NAME} is a production execution client for the Ethereum Classic network, maintained at [github.com/${REPO.slug}](${REPO.url}) in the \`ethereumclassic\` GitHub organization. ${ABOUT.definition} ${ABOUT.maintained}`,
       "> ",
     ),
     "",
     wrap(
-      `${SITE_URL}/ is the project's landing page. The documentation at ${DOCS.home.href} is where to install, run and operate a node, and where the audits and release records are published.`,
+      `${SITE_URL}/ is the project's landing page, ${SITE_URL}/downloads/ lists every file the latest release published and how to verify one, ${SITE_URL}/security/ carries the audits and what the network is running, ${SITE_URL}/about/ carries the project's lineage, and ${SITE_URL}/sponsor/ says who maintains and funds the client and how to sponsor it. The documentation at ${DOCS.home.href} is where to install, run and operate a node, and where the audits and release records are published.`,
     ),
     "",
     "## Networks",
@@ -70,6 +75,12 @@ export const GET: APIRoute = () => {
     "## Releases",
     "",
     `- [${REPO.slug}](${REPO.releasesUrl}): where releases are published. ${PREVIOUS_NAMESPACE}`,
+    `- [Downloads](${SITE_URL}/downloads/): every archive and container image the latest release published, for Linux, macOS, Windows and Arm, with the checksum beside each one.`,
+    `- [The latest release](${REPO.latestUrl}): the address every download on this site links, so it resolves to whatever is current.`,
+    "",
+    wrap(
+      `Every archive and image is published with a \`.sha256\` checksum and a GitHub build attestation, minted against a short-lived certificate issued to the workflow run, recording which workflow built the file from which commit. Check them with \`sha256sum -c\` and \`gh attestation verify\`. On a first run Windows names the publisher as unknown, and macOS blocks a downloaded binary until it is allowed.`,
+    ),
     "",
     wrap(TRANSITION.lede),
     "",
@@ -84,18 +95,21 @@ export const GET: APIRoute = () => {
     ),
     "",
     ...NETWORK_RUNNING.rows.map(
-      (row) => `- ${row.running}: ${row.nodes} nodes, ${row.share}, ${row.status}: ${row.state}`,
+      (row) =>
+        `- ${row.running}: ${row.nodes} nodes, ${row.share}, ${row.status}: ${row.summary}. ${row.detail}`,
     ),
+    `- [What the network is running](${SITE_URL}/security/): this table, the audits behind it, and how to report a security issue.`,
     `- [The evidence for each row](${NETWORK_RUNNING.evidence})`,
     `- [${NETWORK_RUNNING.upgrade.label}](${NETWORK_RUNNING.upgrade.href})`,
     "",
     "## For node operators",
     "",
-    ...OPERATOR_ACTIONS.map((action) =>
-      action.href
-        ? `- [${action.text}](${action.href}): ${action.detail ?? ""}`
-        : `- ${action.text}${action.code ? `\`${action.code}\`` : ""}`,
-    ),
+    ...OPERATOR_ACTIONS.map((action) => {
+      const name = action.href
+        ? `[${action.text}](${action.href})`
+        : `${action.text}${action.code ? `\`${action.code}\`` : ""}`;
+      return action.detail ? `- ${name}: ${action.detail}` : `- ${name}`;
+    }),
     entry(DOCS.operators),
     "",
     "## Start here",
@@ -109,16 +123,38 @@ export const GET: APIRoute = () => {
     "",
     "## Security and provenance",
     "",
+    `- [Security and provenance](${SITE_URL}/security/): what the audits found, what the releases fixed, and which releases the network still runs.`,
+    `- [About Core-Geth](${SITE_URL}/about/): the code's lineage, the organizations that led and funded it, and the move to the \`ethereumclassic\` organization.`,
     ...RECORDS.map(
       (record) =>
         `- ${record.label}: [${record.page.title}](${record.page.href}). ${record.summary}`,
     ),
     "",
+    "Every release and event since the gap, in order, each naming the repository it came from:",
+    "",
+    ...RELEASE_TIMELINE.map((item) => {
+      const quote = item.quote ? ` "${item.quote.text}" (${item.quote.source}).` : "";
+      return `- ${item.when}, ${item.title.replaceAll("`", "")}: ${item.body}${quote}`;
+    }),
+    "",
+    "## Who maintains and funds this",
+    "",
+    wrap(SPONSOR.intro.replaceAll("`", "")),
+    "",
+    wrap(SPONSOR.maintainers.history),
+    "",
+    ...SPONSOR.funders.rows.map((row) => `- ${row.years}: ${row.organization}`),
+    "",
+    wrap(SPONSOR.funders.note),
+    "",
+    `- [Sponsor Core-Geth](${SITE_URL}/sponsor/): who maintains it, who has funded it, and how to sponsor it.`,
+    entry(DOCS.support),
+    "",
     "## Contact and support",
     "",
     ...CONTACT.map(
       (item) =>
-        `- ${item.heading}: ${item.body} ${item.links.map((link) => `[${link.label}](${link.href})`).join(", ")}`,
+        `- ${item.heading}: ${item.body} ${item.links.map((link) => `[${link.label}](${absolute(link.href)})`).join(", ")}`,
     ),
     entry(DOCS.support),
     "",

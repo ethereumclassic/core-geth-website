@@ -24,8 +24,17 @@ import {
 } from "@/data/site";
 
 interface Props {
-  /** The page's title. Omit on the home page, which uses HOME_TITLE. */
+  /**
+   * The page's title. Omit on the home page, which uses HOME_TITLE. A title that already
+   * names the client is used as written, so a page can carry the terms a reader searches
+   * for without the brand appearing in it twice.
+   */
   title?: string;
+  /**
+   * The short label for this page in the breadcrumb, such as "Downloads". Omit on the
+   * home page and on anything that should not carry one.
+   */
+  crumb?: string;
   description?: string;
   /**
    * Robots rules. The default lets search and answer engines index the page and show
@@ -39,6 +48,7 @@ interface Props {
 
 const {
   title,
+  crumb,
   description = SITE_DESCRIPTION,
   robots = "index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1",
   path = Astro.url.pathname,
@@ -46,7 +56,11 @@ const {
 
 // The Open Graph and Twitter tags mirror the documentation's (overrides/main.html in
 // ethereumclassic/core-geth) tag for tag, so a link to either site previews the same way.
-const pageTitle = title ? `${title} - ${SITE_NAME}` : HOME_TITLE;
+const pageTitle = title
+  ? title.includes(SITE_NAME)
+    ? title
+    : `${title} - ${SITE_NAME}`
+  : HOME_TITLE;
 const canonical = new URL(path, SITE_URL).href;
 const image = new URL(SOCIAL_CARD.path, SITE_URL).href;
 
@@ -75,7 +89,20 @@ const jsonLd = {
       inLanguage: "en",
       isPartOf: { "@id": website },
       about: { "@id": software },
+      ...(crumb ? { breadcrumb: { "@id": `${canonical}#breadcrumb` } } : {}),
     },
+    ...(crumb
+      ? [
+          {
+            "@type": "BreadcrumbList",
+            "@id": `${canonical}#breadcrumb`,
+            itemListElement: [
+              { "@type": "ListItem", position: 1, name: SITE_NAME, item: `${SITE_URL}/` },
+              { "@type": "ListItem", position: 2, name: crumb, item: canonical },
+            ],
+          },
+        ]
+      : []),
     {
       "@type": ["SoftwareApplication", "SoftwareSourceCode"],
       "@id": software,

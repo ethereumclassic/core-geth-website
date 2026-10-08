@@ -1,4 +1,5 @@
-# coregeth.com is the landing page for Core-Geth, the Ethereum Classic execution client.
+# coregeth.com is the landing page for Core-Geth, a production execution client for the
+# Ethereum Classic network.
 #
 # Every crawler is welcome, and so is every use of what it collects: search indexes,
 # answers from AI assistants, and training AI models. The page exists to send node
@@ -53,4 +54,4 @@ User-agent: Discordbot
 User-agent: Slackbot
 Allow: /
 
-Sitemap: https://coregeth.com/sitemap-index.xml
+Sitemap: https://coregeth.com/sitemap.xml
