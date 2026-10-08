@@ -2,18 +2,18 @@
 import ArrowText from "@/components/ArrowText.astro";
 import InlineCode from "@/components/InlineCode.astro";
 import SectionHead from "@/components/SectionHead.astro";
-import { ABOUT, DOCS, NETWORKS } from "@/data/site";
+import { ABOUT, CAPABILITIES, DOCS, NETWORKS } from "@/data/site";
 ---
 
 <section class="band band--surface about" aria-labelledby="about-title">
   <div class="container about__inner">
-    <SectionHead id="about-title" label="About" title="What is Core-Geth?" em="Core-Geth">
+    <SectionHead id="about-title" label="About Core-Geth" title="What is Core-Geth?" em="Core-Geth">
       <p class="lede">{ABOUT.definition}</p>
     </SectionHead>
     <div class="about__grid">
       <div class="about__text">
         <p>
-          <InlineCode text={ABOUT.upstream} />
+          <InlineCode text={ABOUT.maintained} />
         </p>
         <p>
           <InlineCode text={ABOUT.oneNode} />
@@ -44,6 +44,20 @@ import { ABOUT, DOCS, NETWORKS } from "@/data/site";
         ))}
       </ul>
     </div>
+    <ul class="capabilities" role="list">
+      {CAPABILITIES.map((item) => (
+        <li class="capability">
+          <h3 class="capability__heading">{item.heading}</h3>
+          <p class="capability__body">
+            <InlineCode text={item.body} />
+          </p>
+          <p class="capability__evidence">{item.evidence}</p>
+          <a class="capability__link" href={item.link.href}>
+            <ArrowText text={item.link.label} size={14} />
+          </a>
+        </li>
+      ))}
+    </ul>
   </div>
 </section>
 
@@ -58,6 +72,64 @@ import { ABOUT, DOCS, NETWORKS } from "@/data/site";
     gap: clamp(2.25rem, 5vw, 3.5rem);
   }
 
+  /* What the client does, under the definition: two rows of three on a wide screen, one
+     column on a phone, each item a claim and the page that carries it. */
+  .capabilities {
+    display: grid;
+    gap: 1.75rem 2.5rem;
+    margin: 0;
+    padding: 1.75rem 0 0;
+    border-top: 1px solid var(--hairline);
+    list-style: none;
+  }
+
+  @media (min-width: 40rem) {
+    .capabilities {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (min-width: 62rem) {
+    .capabilities {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+
+  .capability__heading {
+    margin: 0 0 0.4rem;
+    color: var(--ink);
+    font-size: 1rem;
+    font-weight: 700;
+  }
+
+  .capability__body {
+    margin: 0 0 0.6rem;
+    color: var(--text);
+    font-size: 0.95rem;
+    line-height: 1.55;
+  }
+
+  /* The claim in its shortest checkable form: the flags and the numbers a reader would
+     grep for, in the documentation's code face, under the sentence that explains them. */
+  .capability__evidence {
+    margin: 0;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+  }
+
+  .capability__link {
+    font-size: 0.9rem;
+    font-weight: 650;
+    text-decoration: none;
+  }
+
+  .capability__link:hover {
+    text-decoration: underline;
+  }
+
   /* The text beside the two networks where they fit; the networks pair up on a
      tablet and stack on a phone. */
   .about__grid {
@@ -67,7 +139,7 @@ import { ABOUT, DOCS, NETWORKS } from "@/data/site";
 
   @media (min-width: 64rem) {
     .about__grid {
-      grid-template-columns: minmax(0, 1.1fr) minmax(0, 2fr);
+      grid-template-columns: minmax(0, 1.5fr) minmax(0, 1.9fr);
       gap: 3rem;
     }
   }
@@ -76,10 +148,12 @@ import { ABOUT, DOCS, NETWORKS } from "@/data/site";
     display: grid;
     gap: 1rem;
     align-content: start;
-    max-width: 36rem;
   }
 
-  .about__text :global(code) {
+  /* Ink weight for inline code, which would otherwise inherit the muted body color.
+     A repository name keeps its namespace tone: this rule is scoped, so it outranks
+     the global tone rule unless it says not to. */
+  .about__text :global(code:not(.namespace--current, .namespace--previous)) {
     color: var(--ink);
   }
 

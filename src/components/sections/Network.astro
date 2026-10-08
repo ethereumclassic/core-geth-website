@@ -1,5 +1,5 @@
 ---
-import ArrowText from "@/components/ArrowText.astro";
+import LinkRow from "@/components/LinkRow.astro";
 import InlineCode from "@/components/InlineCode.astro";
 import SectionHead from "@/components/SectionHead.astro";
 import { NETWORK_RUNNING } from "@/data/site";
@@ -8,16 +8,25 @@ import { NETWORK_RUNNING } from "@/data/site";
 // carries no green emphasis of its own, and every row states its status in words as
 // well as in color. The roles restate the table's semantics for the narrow layout,
 // where the rows stack and some browsers otherwise drop them.
-const { measured, source, evidence, upgrade, total, lede, rows } = NETWORK_RUNNING;
+interface Props {
+  /** The band's tone, so the page it sits in keeps alternating. */
+  tone?: "grid" | "surface";
+}
+
+const { tone = "surface" } = Astro.props;
+const { measured, source, evidence, goAdvisories, upgrade, total, lede, rows } = NETWORK_RUNNING;
 ---
 
-<section class="band band--surface" aria-labelledby="network-title">
+<section
+  class:list={["band", tone === "surface" && "band--surface"]}
+  aria-labelledby="network-title"
+>
   <div class="container network">
     <div class="network__head">
       <SectionHead
         id="network-title"
-        label="On the network"
-        title="What the network is running."
+        label="Ethereum Classic nodes"
+        title="Most Ethereum Classic nodes are running an exposed release"
         size="medium"
       >
         <p class="lede">
@@ -28,6 +37,7 @@ const { measured, source, evidence, upgrade, total, lede, rows } = NETWORK_RUNNI
         {upgrade.label}
       </a>
     </div>
+    <slot />
 
     <table class="census" role="table">
       <caption>
@@ -35,10 +45,14 @@ const { measured, source, evidence, upgrade, total, lede, rows } = NETWORK_RUNNI
         <time datetime={measured.iso}>{measured.text}</time>
         {`, ${total} in all. Source: `}
         <a href={source.href}>{source.label}</a>
-        {". "}
-        <a class="census__evidence" href={evidence}>
-          <ArrowText text="The evidence for each row" size={14} />
-        </a>
+        {"."}
+        <LinkRow
+          label="Where the figures in this table come from"
+          links={[
+            { label: "The evidence for each row", href: evidence, icon: "checklist" },
+            { label: goAdvisories.label, href: goAdvisories.href, icon: "book" },
+          ]}
+        />
       </caption>
       <thead role="rowgroup">
         <tr role="row">
@@ -52,30 +66,54 @@ const { measured, source, evidence, upgrade, total, lede, rows } = NETWORK_RUNNI
             Share
           </th>
           <th scope="col" role="columnheader">
-            State
+            Carries
           </th>
         </tr>
       </thead>
       <tbody role="rowgroup">
         {rows.map((row) => (
-          <tr role="row" class:list={["census__row", `census__row--${row.status}`]}>
-            <th scope="row" role="rowheader" class="census__running" data-label="Running">
-              <span class="census__release">
-                <InlineCode text={row.running} />
-              </span>
-              <span class="visually-hidden">, </span>
-              <span class="status">{row.status}</span>
-            </th>
-            <td role="cell" class="census__num census__nodes" data-label="Nodes">
-              {row.nodes}
-            </td>
-            <td role="cell" class="census__num census__share" data-label="Share">
-              {row.share}
-            </td>
-            <td role="cell" class="census__state" data-label="State">
-              {row.state}
-            </td>
-          </tr>
+          <>
+            <tr role="row" class:list={["census__row", `census__row--${row.status}`]}>
+              <th scope="row" role="rowheader" class="census__running" data-label="Running">
+                <span class="census__release">
+                  <InlineCode text={row.running} />
+                </span>
+                <span class="visually-hidden">, </span>
+                <span class="status">{row.status}</span>
+              </th>
+              <td role="cell" class="census__num census__nodes" data-label="Nodes">
+                {row.nodes}
+              </td>
+              <td role="cell" class="census__num census__share" data-label="Share">
+                {row.share}
+              </td>
+              <td role="cell" class="census__state" data-label="Carries">
+                <InlineCode text={row.summary} />
+              </td>
+            </tr>
+            <tr
+              role="row"
+              class:list={["census__row", `census__row--${row.status}`, "census__detail-row"]}
+            >
+              <td role="cell" colspan="4" class="census__detail">
+                <details class="census__more" open>
+                  <summary>
+                    {"What "}
+                    <InlineCode text={row.running} />
+                    {" carries"}
+                  </summary>
+                  <p>
+                    <InlineCode text={row.detail} />
+                  </p>
+                  {row.status === "recommended" && (
+                    <a class="button button--primary census__cta" href={upgrade.href}>
+                      {upgrade.label}
+                    </a>
+                  )}
+                </details>
+              </td>
+            </tr>
+          </>
         ))}
       </tbody>
     </table>
@@ -90,15 +128,17 @@ const { measured, source, evidence, upgrade, total, lede, rows } = NETWORK_RUNNI
 
   /* The heading and lede on the left, the upgrade on the right, level with the
      lede's last line. They stack on a narrow screen, the button under the lede. */
+  /* The lede runs the band's width and the call sits under it. Set beside the button it
+     broke at about 60% of the measure, which read as four short lines. */
   .network__head {
     display: grid;
-    gap: 1.5rem 3rem;
-    align-items: end;
+    gap: 1.5rem;
+    justify-items: start;
   }
 
   @media (min-width: 56rem) {
     .network__head {
-      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 1.75rem;
     }
   }
 
@@ -133,14 +173,9 @@ const { measured, source, evidence, upgrade, total, lede, rows } = NETWORK_RUNNI
     text-align: left;
   }
 
-  .census__evidence {
-    font-weight: 650;
-    text-decoration: none;
-    white-space: nowrap;
-  }
-
-  .census__evidence:hover {
-    text-decoration: underline;
+  /* The row sits under the sentence rather than running on from it. */
+  .census caption :global(.linkrow) {
+    margin-top: 0.55rem;
   }
 
   .census thead th {
@@ -155,7 +190,6 @@ const { measured, source, evidence, upgrade, total, lede, rows } = NETWORK_RUNNI
   .census tbody th,
   .census tbody td {
     padding: 0.95rem 1rem;
-    border-bottom: 1px solid var(--hairline);
     background: var(--state-tint);
     text-align: left;
     vertical-align: middle;
@@ -163,6 +197,61 @@ const { measured, source, evidence, upgrade, total, lede, rows } = NETWORK_RUNNI
 
   .census tbody th {
     border-left: 0.3rem solid var(--state);
+  }
+
+  /* A release is two rows, its tally and what it carries, so the rule sits under the
+     pair rather than between them, and the state bar runs down both. */
+  .census__detail {
+    padding-top: 0;
+    border-bottom: 1px solid var(--hairline);
+    border-left: 0.3rem solid var(--state);
+  }
+
+  .census__more summary {
+    display: inline-flex;
+    gap: 0.4rem;
+    align-items: center;
+    color: var(--muted);
+    font-size: 0.85rem;
+    font-weight: 600;
+    list-style: none;
+    cursor: pointer;
+  }
+
+  .census__more summary::-webkit-details-marker {
+    display: none;
+  }
+
+  .census__more summary::after {
+    width: 0.33rem;
+    height: 0.33rem;
+    border-right: 2px solid currentColor;
+    border-bottom: 2px solid currentColor;
+    transform: translateY(-0.1rem) rotate(45deg);
+    content: "";
+  }
+
+  .census__more[open] summary::after {
+    transform: translateY(0.06rem) rotate(-135deg);
+  }
+
+  .census__more summary:hover {
+    color: var(--ink);
+  }
+
+  /* The same call as the one above the table, placed where an operator reaches the row
+     that answers what to run. */
+  .census__cta {
+    margin-top: 0.9rem;
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+  }
+
+  .census__more p {
+    margin: 0.5rem 0 0;
+    color: var(--text);
+    font-size: 0.92rem;
+    line-height: 1.55;
   }
 
   /* Written against the cells themselves so they outrank the rules above: Astro's
@@ -316,6 +405,23 @@ const { measured, source, evidence, upgrade, total, lede, rows } = NETWORK_RUNNI
       font-size: 0.8rem;
       font-weight: 600;
       content: attr(data-label) / "";
+    }
+
+    /* A release is one card here too: the detail row closes the grid gap above it and
+       rounds the bottom, so the pair reads as a single block rather than two. */
+    .census tbody tr.census__detail-row {
+      display: block;
+      margin-top: -0.75rem;
+      padding-top: 0;
+      border-top-right-radius: 0;
+    }
+
+    .census tbody tr:not(.census__detail-row) {
+      border-bottom-right-radius: 0;
+    }
+
+    .census td.census__detail::before {
+      content: none;
     }
   }
 </style>

@@ -4,7 +4,7 @@ import InlineCode from "@/components/InlineCode.astro";
 import RepositoryCard from "@/components/RepositoryCard.astro";
 import SectionHead from "@/components/SectionHead.astro";
 import type { RepositoryFacts } from "@/data/repository";
-import { DOCS, PREVIOUS_NAMESPACE, REPO, TRANSITION } from "@/data/site";
+import { DOCS, NAMESPACE_TONES, PREVIOUS_NAMESPACE, REPO, TRANSITION } from "@/data/site";
 
 interface Props {
   facts: RepositoryFacts;
@@ -17,13 +17,13 @@ const { facts } = Astro.props;
   <div class="container repository">
     <SectionHead
       id="repository-title"
-      label="The repository"
+      label="The Core-Geth repository"
       title={`Releases are published from ${REPO.slug}.`}
       em={REPO.slug}
       size="medium"
     >
       <p class="lede">
-        <InlineCode text={PREVIOUS_NAMESPACE} />
+        <InlineCode text={PREVIOUS_NAMESPACE} tones={NAMESPACE_TONES} />
       </p>
     </SectionHead>
     <div class="repository__grid">
@@ -35,7 +35,9 @@ const { facts } = Astro.props;
         <p>
           <InlineCode text={TRANSITION.lede} />
         </p>
-        <p>{TRANSITION.advice}</p>
+        <p>
+          <InlineCode text={TRANSITION.advice} />
+        </p>
         <a class="more" href={DOCS.transition.href}>
           <ArrowText text="Where each service continues" />
         </a>
@@ -58,7 +60,7 @@ const { facts } = Astro.props;
 
   @media (min-width: 60rem) {
     .repository__grid {
-      grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+      grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
       gap: 3.5rem;
     }
   }
@@ -80,7 +82,10 @@ const { facts } = Astro.props;
     font-size: 1.3rem;
   }
 
-  .notice :global(code) {
+  /* Ink weight for inline code, which would otherwise inherit the muted body color.
+     A repository name keeps its namespace tone: this rule is scoped, so it outranks
+     the global tone rule unless it says not to. */
+  .notice :global(code:not(.namespace--current, .namespace--previous)) {
     color: var(--ink);
   }
 </style>

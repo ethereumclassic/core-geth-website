@@ -1,0 +1,137 @@
+---
+import ArrowText from "@/components/ArrowText.astro";
+import InlineCode from "@/components/InlineCode.astro";
+import SectionHead from "@/components/SectionHead.astro";
+import { RECORDS } from "@/data/site";
+
+interface Props {
+  /** The band's tone, so the page it sits in keeps alternating. */
+  tone?: "grid" | "surface";
+  /** The home page routes on to the security page; the security page is already there. */
+  cta?: { label: string; href: string };
+}
+
+// The three records as one account on the shared horizontal timeline: the dormancy, the
+// attack, the fix. Used on the home page, where it routes on, and at the top of
+// /security/, where the rest of the page is what it routes to.
+//
+// **One section with one heading, rendered the same on both pages** (maintainer,
+// 2026-10-08). It carried no head on /security/ for a while, then that page's own
+// wording; both were divergence a reader notices when the two pages sit side by side.
+// The only thing that differs is the CTA, because the home page routes on to /security/
+// and /security/ is already there.
+const { tone = "grid", cta } = Astro.props;
+const label = "Core-Geth security and provenance";
+const title = "How Ethereum Classic core developers fixed Core-Geth.";
+const em = "Ethereum Classic core developers";
+---
+
+<section
+  class:list={["band", tone === "surface" && "band--surface"]}
+  aria-labelledby="security-title"
+>
+  <div class="container security">
+    <SectionHead id="security-title" label={label} title={title} em={em} size="medium" />
+    <ol class="timeline records" role="list">
+      {RECORDS.map((record) => (
+        <li class="timeline__point record">
+          <time class="timeline__date" datetime={record.date.iso}>
+            {record.date.month} <span>{record.date.year}</span>
+          </time>
+          <p class="record__label">{record.label}</p>
+          <h3 class="record__title">
+            <a href={record.page.href}>
+              <ArrowText text={record.page.title} size={18} />
+            </a>
+          </h3>
+          <p class="record__summary">
+            <InlineCode text={record.summary} />
+          </p>
+          {record.cta && (
+            <a class="button button--primary record__cta" href={record.cta.href}>
+              {record.cta.label}
+            </a>
+          )}
+        </li>
+      ))}
+    </ol>
+    {cta && (
+      <a class="security__more" href={cta.href}>
+        <ArrowText text={cta.label} />
+      </a>
+    )}
+  </div>
+</section>
+
+<style>
+  .security {
+    display: grid;
+    gap: clamp(2.25rem, 5vw, 3.5rem);
+  }
+
+  /* Three records read left to right as one account, on the shared timeline: the rule is
+     its line, each record's date sits on it, and the column beneath is the record. */
+  .records {
+    gap: 2.75rem 2.5rem;
+  }
+
+  .record {
+    display: grid;
+    gap: 0.6rem;
+    align-content: start;
+  }
+
+  .record__label {
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+  }
+
+  .record__title {
+    font-size: 1.4rem;
+    letter-spacing: -0.015em;
+  }
+
+  .record__title a {
+    color: var(--ink);
+    text-decoration: none;
+  }
+
+  /* The whole column answers a click, while the link's name stays the title. */
+  .record__title a::after {
+    position: absolute;
+    inset: 0;
+    content: "";
+  }
+
+  .record__title :global(svg) {
+    color: var(--accent);
+  }
+
+  .record:hover .record__title a {
+    color: var(--accent);
+  }
+
+  /* The record a reader can act on carries the same button the sections use, so the end
+     of the account is also where the upgrade is. */
+  .record__cta {
+    justify-self: start;
+    max-width: 100%;
+    margin-top: 0.9rem;
+    overflow-wrap: anywhere;
+  }
+
+  .record__summary {
+    color: var(--text);
+  }
+
+  .security__more {
+    justify-self: start;
+    font-weight: 650;
+    text-decoration: none;
+  }
+
+  .security__more:hover {
+    text-decoration: underline;
+  }
+</style>

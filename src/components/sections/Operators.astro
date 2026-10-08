@@ -15,12 +15,13 @@ const slugParts = (slug: string) =>
     <SectionHead
       id="operators-title"
       label="For node operators"
-      title="Do these four things."
-      em="four things"
+      title="Secure your Core-Geth node with these four steps."
+      em="Secure your Core-Geth node"
     >
       <p class="lede">
         If you run an Ethereum Classic node, a mining pool, an exchange or an RPC endpoint, these
-        come first. The operators page gives the reason for each.
+        come first. Upgrading closes what the audits found, and the other three steps are the parts
+        an upgrade cannot do for you.
       </p>
       <p class="then">
         Then read <a href={DOCS.faq.href}>{DOCS.faq.title}</a>, the short version of the
@@ -135,14 +136,16 @@ const slugParts = (slug: string) =>
   }
 
   .step__detail {
-    max-width: 34rem;
     color: var(--text);
     font-size: 1rem;
     font-weight: 400;
     line-height: 1.5;
   }
 
-  .step__detail :global(code) {
+  /* Ink weight for inline code, which would otherwise inherit the muted body color.
+     A repository name keeps its namespace tone: this rule is scoped, so it outranks
+     the global tone rule unless it says not to. */
+  .step__detail :global(code:not(.namespace--current, .namespace--previous)) {
     color: var(--ink);
   }
 

@@ -13,16 +13,20 @@ import { DOCS, SITE_NAME } from "@/data/site";
         {SITE_NAME}
       </h1>
       <p class="hero__tagline">
-        The <span class="accent">Ethereum Classic</span> execution client
+        an <span class="accent">Ethereum Classic</span> execution client
       </p>
       <div class="hero__actions">
-        <a class="button button--primary" href={DOCS.installation.href}>
+        <a class="button button--primary" href="/downloads/">
+          Download
+        </a>
+        <a class="button" href={DOCS.installation.href}>
           Install a node
         </a>
-        <a class="button" href={DOCS.home.href}>
-          Read the documentation
-        </a>
       </div>
+      <p class="hero__platforms">
+        Run a full Ethereum Classic node on Linux, macOS or Windows. One binary serves Ethereum
+        Classic, Mordor, MintMe and private chains.
+      </p>
     </div>
     <div class="mark" aria-hidden="true">
       <img src="/logo.svg" alt="" width="256" height="256" />
@@ -94,6 +98,13 @@ import { DOCS, SITE_NAME } from "@/data/site";
     line-height: 0.95;
   }
 
+  .hero__platforms {
+    margin: 1.25rem 0 0;
+    color: var(--muted);
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
+
   .hero__tagline {
     max-width: 22ch;
     text-wrap: balance;
@@ -103,6 +114,11 @@ import { DOCS, SITE_NAME } from "@/data/site";
     font-weight: 750;
     letter-spacing: -0.015em;
     line-height: 1.15;
+  }
+
+  /* The network's name is one word to a reader: it never breaks across lines. */
+  .hero__tagline .accent {
+    white-space: nowrap;
   }
 
   .accent {
