@@ -1,7 +1,8 @@
 {
-  "asOf": "2026-09-18",
-  "description": "Core-Geth: the Ethereum Classic execution client",
+  "asOf": "2026-10-07",
+  "description": "Core-Geth: an Ethereum Classic execution client",
+  "watchers": 0,
+  "forks": 12,
   "stars": 7,
-  "forks": 13,
   "releaseTag": "v1.13.0"
 }

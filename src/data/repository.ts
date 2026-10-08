@@ -1,5 +1,5 @@
 /**
- * The repository card's facts: description, stars, forks and the latest release.
+ * The repository card's facts: description, watchers, forks, stars and the latest release.
  *
  * Read from the GitHub API once per build, never in the visitor's browser, so a
  * page view makes no request to GitHub and no third party learns who is reading.
@@ -15,8 +15,11 @@ import { REPO } from "./site";
 
 export interface RepositoryFacts {
   description: string;
-  stars: number;
+  /** GitHub's `subscribers_count`, the number the Watch button shows. Not
+   *  `watchers_count`, which the API still returns as a copy of the star count. */
+  watchers: number;
   forks: number;
+  stars: number;
   release: { tag: string };
   /** The UTC date these values were read from GitHub, as YYYY-MM-DD. */
   asOf: string;
@@ -47,9 +50,14 @@ async function getJson(path: string): Promise<Record<string, unknown>> {
 
 async function fromGitHub(): Promise<RepositoryFacts> {
   const [repo, release] = await Promise.all([getJson(""), getJson("/releases/latest")]);
-  const { description, stargazers_count: stars, forks_count: forks } = repo;
+  const {
+    description,
+    stargazers_count: stars,
+    forks_count: forks,
+    subscribers_count: watchers,
+  } = repo;
   const tag = release.tag_name;
-  if (typeof description !== "string" || !isCount(stars) || !isCount(forks)) {
+  if (typeof description !== "string" || !isCount(stars) || !isCount(forks) || !isCount(watchers)) {
     throw new Error("unexpected repository fields in the API response");
   }
   if (typeof tag !== "string" || !RELEASE_TAG.test(tag)) {
@@ -57,8 +65,9 @@ async function fromGitHub(): Promise<RepositoryFacts> {
   }
   return {
     description,
-    stars,
+    watchers,
     forks,
+    stars,
     release: { tag },
     asOf: new Date().toISOString().slice(0, 10),
     source: "github",
@@ -72,8 +81,9 @@ function fromSnapshot(reason: unknown): RepositoryFacts {
   );
   return {
     description: snapshot.description,
-    stars: snapshot.stars,
+    watchers: snapshot.watchers,
     forks: snapshot.forks,
+    stars: snapshot.stars,
     release: { tag: snapshot.releaseTag },
     asOf: snapshot.asOf,
     source: "snapshot",
@@ -88,7 +98,12 @@ export function getRepository(): Promise<RepositoryFacts> {
   return facts;
 }
 
-/** A YYYY-MM-DD date as the card prints it, for example "September 18, 2026". */
+/**
+ * A YYYY-MM-DD date in the site's one visible format, American order, for example
+ * "March 8, 2026" (maintainer decision, 2026-10-08). Every visible date reads this way:
+ * the timelines, the census caption, the records and the repository card. An ISO date
+ * stays in the `datetime` attribute, where it is for machines rather than readers.
+ */
 export function formatAsOf(isoDate: string): string {
   return new Intl.DateTimeFormat("en-US", {
     year: "numeric",

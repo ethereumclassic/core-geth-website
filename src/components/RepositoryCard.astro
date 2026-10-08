@@ -30,17 +30,30 @@ const [owner, project] = REPO.slug.split("/");
   <dl class="repo__facts">
     <div>
       <dt>
-        <Icon name="star" size={14} />
-        Stars
+        <Icon name="eye" size={14} />
+        Watch
       </dt>
-      <dd>{facts.stars}</dd>
+      <dd>
+        <a href={REPO.url}>{facts.watchers}</a>
+      </dd>
     </div>
     <div>
       <dt>
         <Icon name="fork" size={14} />
-        Forks
+        Fork
       </dt>
-      <dd>{facts.forks}</dd>
+      <dd>
+        <a href={REPO.forkUrl}>{facts.forks}</a>
+      </dd>
+    </div>
+    <div>
+      <dt>
+        <Icon name="star" size={14} />
+        Star
+      </dt>
+      <dd>
+        <a href={REPO.url}>{facts.stars}</a>
+      </dd>
     </div>
     <div>
       <dt>
@@ -118,24 +131,13 @@ const [owner, project] = REPO.slug.split("/");
   /* The card's stat boxes: the value large, its label small beneath it. Three in a
      row where they fit; on a narrow screen the counts pair up and the release,
      the widest value, takes the row below. */
+  /* Two by two at every width. Four tiles in a three-column grid left the release
+     stranded on a row of its own, and four across is too narrow for a version number
+     inside the card's half of the band. */
   .repo__facts {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 0.75rem;
-  }
-
-  .repo__facts > div:last-child {
-    grid-column: 1 / -1;
-  }
-
-  @media (min-width: 40rem) {
-    .repo__facts {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-
-    .repo__facts > div:last-child {
-      grid-column: auto;
-    }
   }
 
   .repo__facts > div {
