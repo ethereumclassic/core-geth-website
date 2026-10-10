@@ -143,19 +143,19 @@ export const DOCS = {
   },
   securityAudit: {
     href: `${DOCS_URL}audits/2026-03-security-audit/`,
-    title: "March 2026 security audit",
+    title: `Core-Geth ${EXPOSED_LINE} security audit`,
     summary:
       "the audit of the client's source, with the per-release breakdown and the disclosure timeline.",
   },
   goToolchain: {
     href: `${DOCS_URL}audits/2026-09-go-toolchain/`,
-    title: "Go toolchain audit",
+    title: `Core-Geth ${EXPOSED_LINE} to ${RECOMMENDED_LINE} Go toolchain audit`,
     summary:
       "which Go toolchain built each published archive, and the standard library advisories each one carries.",
   },
   releaseReport: {
     href: `${DOCS_URL}release-reports/v1.13.0/`,
-    title: "Release report",
+    title: `Core-Geth ${RECOMMENDED_LINE}.0 release report`,
     summary: "what the release fixes, what it changes, and how to verify a download.",
   },
   support: {
@@ -1046,52 +1046,46 @@ export const AUDITS: readonly {
   summary: string;
 }[] = [
   {
-    title: "March 2026 security audit",
-    href: `${DOCS_URL}audits/2026-03-security-audit/`,
+    title: DOCS.securityAudit.title,
+    href: DOCS.securityAudit.href,
     date: { text: "March 2026", iso: "2026-03" },
-    summary:
-      "The flaws found in the previous repository's client code, which of them were used against the ETC Cooperative's bootnodes, and which releases carry each one.",
+    summary: `What 21 months without security maintenance in \`${PREVIOUS_REPO}\` left open in the ${EXPOSED_LINE} client code, and the March 2026 attack that used two of those flaws against the ETC Cooperative's bootnodes, which were running that line. It names which releases carry each flaw.`,
   },
   {
-    title: "Security follow-up",
+    title: `Core-Geth ${EXPOSED_LINE} security follow-up`,
     href: `${DOCS_URL}audits/2026-08-security-followup/`,
     date: { text: "August 2026", iso: "2026-08" },
-    summary: "What remained after the first round of fixes, and how each item was closed.",
+    summary: `\`v1.12.23\` Argos is real security work and an improvement on the rest of the ${EXPOSED_LINE} line, and still not safe to run: one client CVE unpatched, another only mitigated, the Go toolchains out of support. Only ${RECOMMENDED_LINE} clears those, and a node that ran ${EXPOSED_LINE} needs a new P2P key.`,
   },
   {
-    title: "Dependency modernization",
+    title: `Core-Geth ${EXPOSED_LINE} to ${RECOMMENDED_LINE} dependency modernization`,
     href: `${DOCS_URL}audits/2026-08-dependency-modernization/`,
     date: { text: "August 2026", iso: "2026-08" },
-    summary:
-      "What the dependency tree held before the modernization, what moved, and what the build does differently afterwards.",
+    summary: `What the maintenance gap left behind in the ${EXPOSED_LINE} line: a module graph that had not moved since December 2024, and Go toolchains already out of support. ${RECOMMENDED_LINE} moved it onto a supported Go with 83 module changes behind it, and records why each version was chosen.`,
   },
   {
-    title: "Release pipeline audit",
+    title: `Core-Geth ${EXPOSED_LINE} to ${RECOMMENDED_LINE} release pipeline audit`,
     href: `${DOCS_URL}audits/2026-09-release-pipeline/`,
     date: { text: "September 2026", iso: "2026-09" },
-    summary:
-      "What the published archives actually contain: platform floors, architectures and provenance, measured from the files themselves.",
+    summary: `Nobody was checking what those releases contained until the ${RECOMMENDED_LINE} work opened them. The Linux glibc floor rose across three ${EXPOSED_LINE} releases unobserved, the macOS archive ships a binary most of its downloaders cannot run, and no archive is signed or attested.`,
   },
   {
-    title: "Release report",
-    href: `${DOCS_URL}release-reports/v1.13.0/`,
+    title: DOCS.releaseReport.title,
+    href: DOCS.releaseReport.href,
     date: { text: "September 2026", iso: "2026-09" },
-    summary:
-      "What the release fixes, what it changes, how to verify a download, and what is known to be imperfect in it.",
+    summary: `What ${RECOMMENDED_LINE}.0 fixes, what it changes, how to verify a download, and what is known to be imperfect in it.`,
   },
   {
-    title: "Go toolchain audit",
-    href: `${DOCS_URL}audits/2026-09-go-toolchain/`,
+    title: DOCS.goToolchain.title,
+    href: DOCS.goToolchain.href,
     date: { text: "September 2026", iso: "2026-09" },
-    summary:
-      "What a binary inherits from the Go version it was built with, measured per release, and why a release left unbuilt keeps its toolchain's advisories for as long as it runs.",
+    summary: `Every ${EXPOSED_LINE} binary carries the security flaws of the Go version it was built with, and those toolchains left support in 2024 and 2025. Only a rebuild removes them, and no ${EXPOSED_LINE} release is one, so the ${RECOMMENDED_LINE}.0 binaries are the only clean ones to run from here on.`,
   },
   {
-    title: "The record behind the release",
+    title: `Core-Geth ${RECOMMENDED_LINE}.0: the record behind the release`,
     href: `${DOCS_URL}release-reports/v1.13.0-record/`,
     date: { text: "September 2026", iso: "2026-09" },
-    summary:
-      "Every claim made about the release answered from the public record: commit metadata, pull requests, release files and advisory databases.",
+    summary: `Every claim made about ${RECOMMENDED_LINE}.0 answered from the public record: commit metadata, pull requests, release files and advisory databases.`,
   },
 ];
 
