@@ -6,7 +6,7 @@ import PageHero from "@/components/PageHero.astro";
 import SectionHead from "@/components/SectionHead.astro";
 import { getDownloads } from "@/data/release-assets";
 import { formatAsOf, getRepository } from "@/data/repository";
-import { DOCS, DOCS_URL, REPO } from "@/data/site";
+import { DOCS, DOCS_URL, EXPOSED_LINE, RECOMMENDED_LINE, REPO } from "@/data/site";
 
 // Every file the latest release published, read from GitHub at build time rather than
 // listed by hand, behind one tab per platform. The tabs are radio inputs and CSS: this
@@ -230,6 +230,13 @@ const groupFor = (id: string) => downloads?.groups.find((group) => group.id === 
           blocks leave out, read <a href={DOCS.installation.href}>the installation guide</a> on
           docs.coregeth.com. Check an archive against its checksum and its build attestation before
           you run it: <a href="#verify">both commands</a> are at the foot of this page.
+        </p>
+        <p class="lede">
+          {`Every download here is the latest ${RECOMMENDED_LINE} release. If you are replacing a `}
+          <InlineCode text={EXPOSED_LINE} />
+          {` node, the upgrade is a security action rather than housekeeping, and that node needs a new P2P key afterwards: `}
+          <a href="/security/">what the audits found</a>
+          {` says which flaws each ${EXPOSED_LINE} release still carries.`}
         </p>
       </SectionHead>
       <fieldset class="tabs">

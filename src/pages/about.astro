@@ -10,6 +10,7 @@ import {
   CODE_LINEAGE,
   DOCS,
   ORGANIZATIONS,
+  RECOMMENDED_LINE,
   REPO,
   REPOSITORY_MOVE,
   REPOSITORY_MOVE_QUOTE,
@@ -23,7 +24,7 @@ import {
 <BaseLayout
   title="About Core-Geth: an Ethereum Classic client's history"
   crumb="About"
-  description="Core-Geth's lineage: forked from multi-geth in 2020, funded by ETC Labs then the ETC Cooperative, and since 2024 in the ethereumclassic GitHub organization."
+  description={`Core-Geth's lineage: forked from multi-geth in 2020, funded by ETC Labs then the ETC Cooperative, and now the ${RECOMMENDED_LINE} line in the ethereumclassic organization.`}
   path="/about/"
 >
   <PageHero
@@ -98,9 +99,9 @@ import {
     <div class="container about__band">
       <SectionHead
         id="repo-title"
-        label="The Core-Geth repository"
-        title={`Releases are published from ${REPO.slug}`}
-        em={REPO.slug}
+        label={`The Core-Geth ${RECOMMENDED_LINE} repository`}
+        title={`Where the ${RECOMMENDED_LINE} line is published, and what it replaced`}
+        em={`what it replaced`}
         size="medium"
       />
       {REPOSITORY_MOVE.body.map((paragraph, i) => (

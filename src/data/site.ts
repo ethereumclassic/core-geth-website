@@ -33,13 +33,6 @@ export const HOME_TITLE = "Core-Geth: Ethereum Classic Execution Client";
  */
 export const THEME_COLOR = "#14151a";
 
-/**
- * Default meta description, and the Open Graph and Twitter one. Under 160 characters,
- * so a search result shows it whole. It names what the page covers, in its order.
- */
-export const SITE_DESCRIPTION =
-  "Core-Geth is a production execution client for the Ethereum Classic network. Run an ETC or Mordor node, and find its releases, guides and security audits.";
-
 /** Alt text for the social card, the same words the documentation uses for it. */
 export const SOCIAL_CARD = {
   path: "/social-card.png",
@@ -83,6 +76,14 @@ export const RECOMMENDED_LINE = "v1.13";
  * searches that line, and a page that will not say it does not reach them.
  */
 export const EXPOSED_LINE = "v1.12";
+
+/**
+ * Default meta description, and the Open Graph and Twitter one. Under 160 characters,
+ * so a search result shows it whole. It names what the page covers, in its order, and
+ * the line to run, so a search result discriminates the two lines before the click.
+ * Declared after `RECOMMENDED_LINE` because it reads it.
+ */
+export const SITE_DESCRIPTION = `Core-Geth is a production execution client for the Ethereum Classic network. Run the ${RECOMMENDED_LINE} line on an ETC or Mordor node, with its releases, guides and audits.`;
 
 /**
  * The last stable release before the maintenance gap. One constant, because the records
