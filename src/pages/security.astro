@@ -15,6 +15,7 @@ import {
   EXPOSED_LINE,
   NETWORK_RUNNING,
   RECOMMENDED_LINE,
+  RELEASE_FIXES,
   RELEASE_TIMELINE,
   REPO,
   SECURITY_EMAIL,
@@ -32,10 +33,12 @@ const recommendedNodes = NETWORK_RUNNING.rows
 const percent = (nodes: number) => `${((nodes / NETWORK_RUNNING.total) * 100).toFixed(1)}%`;
 
 // Two kinds of document sit in one index, and the split is told from the address rather
-// than written down twice: the stat tile and the audits lede both read these, so neither
-// can be left behind when one is published.
-const reportCount = AUDITS.filter((audit) => audit.href.includes("release-reports")).length;
-const auditCount = AUDITS.length - reportCount;
+// than written down twice: the two bands, the stat tile and both ledes read these, so
+// none can be left behind when one is published.
+const reportDocs = AUDITS.filter((audit) => audit.href.includes("release-reports"));
+const auditDocs = AUDITS.filter((audit) => !audit.href.includes("release-reports"));
+const reportCount = reportDocs.length;
+const auditCount = auditDocs.length;
 const SPELLED = ["no", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"];
 const spell = (count: number) => SPELLED[count] ?? String(count);
 const reportWord = reportCount === 1 ? "report" : "reports";
@@ -131,17 +134,17 @@ const CENSUS_STATS = [
     <div class="container security__band">
       <SectionHead
         id="audits-title"
-        label="The Core-Geth audits"
-        title="Everything this project found, published in full"
+        label={`The Core-Geth ${EXPOSED_LINE} audits`}
+        title={`Everything the 2026 Core-Geth ${EXPOSED_LINE} audits found, published in full`}
         em="published in full"
         size="medium"
       >
         <p class="lede">
-          {`Each one is a page on the documentation site, carrying its method, its raw measurements and what they returned. The ${spell(auditCount)} audits examine the ${EXPOSED_LINE} line and the work that replaced it: that line's client code, the Go toolchain its binaries inherit, its dependency tree, and the archives it published. The ${spell(reportCount)} reports cover ${RECOMMENDED_LINE}.0, down to what is still open in it. Every figure on this page is taken from one of them.`}
+          {`These ${spell(auditCount)} examine the ${EXPOSED_LINE} line and the work that replaced it: that line's client code, the Go toolchain its binaries inherit, its dependency tree, and the archives it published. Every figure on this page comes from one of them or from the ${RECOMMENDED_LINE} release reports under them. If you run a node, migrate to the ${RECOMMENDED_LINE} line and read these reports with your security engineers: each one carries its method and its raw measurements, so you can verify every claim and judge what running ${EXPOSED_LINE} exposed you to.`}
         </p>
       </SectionHead>
       <ul class="audits" role="list">
-        {AUDITS.map((audit) => (
+        {auditDocs.map((audit) => (
           <li class="audit">
             <h3 class="audit__title">
               <a href={audit.href}>{audit.title}</a>
@@ -158,7 +161,41 @@ const CENSUS_STATS = [
     </div>
   </section>
 
-  <section class="band band--surface" aria-labelledby="disclosure-title">
+  <section class="band band--surface" aria-labelledby="releases-title" id="release-reports">
+    <div class="container security__band">
+      <SectionHead
+        id="releases-title"
+        label={`The Core-Geth ${RECOMMENDED_LINE} release`}
+        title={`What the Core-Geth ${RECOMMENDED_LINE} fixes, and how to check it`}
+        em="how to check it"
+        size="medium"
+      >
+        <p class="lede">
+          <InlineCode text={RELEASE_FIXES} />
+        </p>
+      </SectionHead>
+      <p class="security__paragraph">
+        {`Both reports below cover ${RECOMMENDED_LINE}.0 itself rather than the line it replaced. One reports the release, down to what is known to be imperfect in it; the other answers every claim this site makes about it from the public record.`}
+      </p>
+      <ul class="audits" role="list">
+        {reportDocs.map((report) => (
+          <li class="audit">
+            <h3 class="audit__title">
+              <a href={report.href}>{report.title}</a>
+            </h3>
+            <p class="audit__date">
+              <time datetime={report.date.iso}>{report.date.text}</time>
+            </p>
+            <p class="audit__summary">
+              <InlineCode text={report.summary} />
+            </p>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <section class="band" aria-labelledby="disclosure-title">
     <div class="container security__band">
       <SectionHead
         id="disclosure-title"
@@ -178,7 +215,7 @@ const CENSUS_STATS = [
     </div>
   </section>
 
-  <section class="band" aria-labelledby="report-title">
+  <section class="band band--surface" aria-labelledby="report-title">
     <div class="container security__band">
       <SectionHead
         id="report-title"

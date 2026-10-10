@@ -386,7 +386,7 @@ const NETWORK_ROWS: readonly {
     status: "recommended",
     summary: "every client CVE patched, a supported Go build, GraphQL queries bounded",
     detail:
-      "All six flaws in the client's own code are patched, CVE-2026-22868 among them, and GraphQL queries are bounded. Built with Go 1.26.8, a supported version, so none of the 62 Go flaws above is in the binary. Released September 14, 2026, and the release report lists what is known to be imperfect in it.",
+      "All six client CVEs the audits found in the `v1.12` client code are closed here, CVE-2026-22868 among them, GraphQL queries are bounded and the `eth_syncing` regression is fixed. Built with Go 1.26.8, a supported version, so none of the 62 Go flaws above is in the binary. Seven months of work cleared the debt behind them: the dependency tree modernized, and the release pipeline rebuilt so each archive carries a checksum and a build attestation. Released September 14, 2026, and the release report lists what is known to be imperfect in it.",
   },
 ];
 
@@ -1031,6 +1031,13 @@ export const DISCLOSURE = {
  * git: the March 2026 audit's file landed in August, and showing August there would
  * contradict its title. Within a month the order follows when each one landed.
  */
+/**
+ * What the recommended line fixes, in one paragraph, so the release band answers it
+ * without a reader opening either report. Every clause restates a claim this page already
+ * carries: the census row, the release timeline entry, and the records band.
+ */
+export const RELEASE_FIXES = `The \`${RECOMMENDED_LINE}\` line closes all six client CVEs the audits found in the \`${EXPOSED_LINE}\` client code, including the two used against the ETC Cooperative's bootnodes in March 2026 and the one \`${PREVIOUS_REPO}\` declared not applicable to Ethereum Classic, and it bounds the GraphQL query nesting that line left unlimited. It fixes the \`eth_syncing\` regression \`${PREVIOUS_REPO}\` introduced, which made a node report the wrong network head to the exchanges, explorers and monitoring that read it. It is built with a supported Go toolchain, so none of the Go standard library flaws the older archives carry is in the binary, and the dependency tree behind it was modernized in the same work. It reads peer discovery lists published from the \`ethereumclassic\` organization, ships bootnodes run by the Core-Geth maintainers, and is cut by a rebuilt release pipeline that gives each archive a checksum and a build attestation binding it to the workflow run that produced it. Every node still on a \`${EXPOSED_LINE}\` release should move to the \`${RECOMMENDED_LINE}\` line.`;
+
 export const AUDITS: readonly {
   title: string;
   href: string;
