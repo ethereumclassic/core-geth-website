@@ -351,7 +351,7 @@ const NETWORK_ROWS: readonly {
     summary:
       "6 client CVEs open, 62 known Go flaws with 48 in the binary, GraphQL queries unbounded",
     detail:
-      "Every one of the six flaws found in the client's own code is unpatched here, and two of them were used against the ETC Cooperative's bootnodes in March 2026. It was also built with Go 1.21, a version the Go project has since published 62 security fixes for: in 48 of them the flawed code is compiled into the binary you would be running. Whether a node can be made to reach that code was not tested, so treat it as exposure to rule out rather than proven.",
+      "Every one of the six client CVEs is unpatched here, and two of them were used against the ETC Cooperative's bootnodes in March 2026. It was also built with Go 1.21, a version the Go project has since published 62 security fixes for: in 48 of them the flawed code is compiled into the binary you would be running. Whether a node can be made to reach that code was not tested, so treat it as exposure to rule out rather than proven.",
   },
   {
     running: "`v1.12.21`",
@@ -434,7 +434,7 @@ export const NETWORK_RUNNING = {
    *  migration guide asks for one MESS setting per fleet, and `v1.12.x` runs MESS off where
    *  this line turns it on. Check all of it against the documentation whenever the
    *  recommended line changes. */
-  lede: `The \`${RECOMMENDED_LINE}\` line patches all six flaws the audits found in the \`${EXPOSED_LINE}\` client code, bounds GraphQL queries and is built with a supported Go version, so none of the 62 Go flaws the \`${EXPOSED_LINE}\` builds carry is in it. Run a \`${RECOMMENDED_LINE}\` node beside your current ones without sending it traffic, and when you are comfortable, move your whole fleet to it.`,
+  lede: `The \`${RECOMMENDED_LINE}\` line patches all six client CVEs the audits found in the \`${EXPOSED_LINE}\` client code, bounds GraphQL queries and is built with a supported Go version, so none of the 62 Go flaws the \`${EXPOSED_LINE}\` builds carry is in it. Run a \`${RECOMMENDED_LINE}\` node beside your current ones without sending it traffic, and when you are comfortable, move your whole fleet to it.`,
   rows: NETWORK_ROWS.map((row) => ({ ...row, share: `${networkShare(row.nodes).toFixed(1)}%` })),
 } as const;
 
@@ -569,7 +569,7 @@ export const RECORDS: readonly {
   {
     date: { month: "Sep", year: "2026", iso: "2026-09" },
     label: "The solution",
-    summary: `\`${RECOMMENDED_LINE}.0\`, published from \`${REPO.slug}\`, fixes every flaw the audits found in the \`${EXPOSED_LINE}\` client code and returns the dependencies and the Go toolchain to supported versions. Every node still on a \`${EXPOSED_LINE}\` release should move to the \`${RECOMMENDED_LINE}\` line.`,
+    summary: `\`${RECOMMENDED_LINE}.0\`, published from \`${REPO.slug}\`, fixes all six client CVEs the audits found in the \`${EXPOSED_LINE}\` client code and returns the dependencies and the Go toolchain to supported versions. Every node still on a \`${EXPOSED_LINE}\` release should move to the \`${RECOMMENDED_LINE}\` line.`,
     page: DOCS.releaseReport,
     // The record's heading already links the release report, which is the document. This
     // button is for the reader who wants the client: /downloads/ carries the archive for
@@ -990,7 +990,7 @@ export const RELEASE_TIMELINE: readonly HistoryEntry[] = [
     when: "September 14, 2026",
     iso: "2026-09-14",
     title: `\`${RECOMMENDED_LINE}.0\` from \`${REPO.slug}\``,
-    body: `Seven months of work, tested on Ethereum Classic mainnet and Mordor throughout: every flaw the audits found in the \`v1.12\` client code closed, GraphQL queries bounded, the \`eth_syncing\` regression fixed, and a supported Go toolchain. The release pipeline was rebuilt in \`${REPO.slug}\` too, so each archive names the machine it runs on and carries a checksum and a build attestation binding it to the workflow run that produced it. This repository has several maintainers with admin access and takes pull requests from anyone, which is what the previous repository's single-author emergency releases did not have.`,
+    body: `Seven months of work, tested on Ethereum Classic mainnet and Mordor throughout: all six client CVEs the audits found in the \`${EXPOSED_LINE}\` client code closed, GraphQL queries bounded, the \`eth_syncing\` regression fixed, and a supported Go toolchain. The release pipeline was rebuilt in \`${REPO.slug}\` too, so each archive names the machine it runs on and carries a checksum and a build attestation binding it to the workflow run that produced it. This repository has several maintainers with admin access and takes pull requests from anyone, which is what the previous repository's single-author emergency releases did not have.`,
     cta: { label: "Get the latest release", href: REPO.latestUrl },
     current: true,
   },
