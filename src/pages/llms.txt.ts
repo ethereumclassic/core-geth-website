@@ -1,15 +1,19 @@
 import type { APIRoute } from "astro";
 import {
   ABOUT,
+  AUDITS,
   CONTACT,
   DOCS,
   type DocPage,
+  EXPOSED_LINE,
   GUIDES,
   NETWORKS,
   NETWORK_RUNNING,
   OPERATOR_ACTIONS,
   PREVIOUS_NAMESPACE,
+  RECOMMENDED_LINE,
   RECORDS,
+  RELEASE_FIXES,
   RELEASE_TIMELINE,
   REPO,
   SITE_NAME,
@@ -123,6 +127,10 @@ export const GET: APIRoute = () => {
     "",
     "## Security and provenance",
     "",
+    `What the ${RECOMMENDED_LINE} line fixes:`,
+    "",
+    wrap(RELEASE_FIXES.replaceAll("`", "")),
+    "",
     `- [Security and provenance](${SITE_URL}/security/): what the audits found, what the releases fixed, and which releases the network still runs.`,
     `- [About Core-Geth](${SITE_URL}/about/): the code's lineage, the organizations that led and funded it, and the move to the \`ethereumclassic\` organization.`,
     ...RECORDS.map(
@@ -130,7 +138,14 @@ export const GET: APIRoute = () => {
         `- ${record.label}: [${record.page.title}](${record.page.href}). ${record.summary}`,
     ),
     "",
-    "Every release and event since the gap, in order, each naming the repository it came from:",
+    `The ${EXPOSED_LINE} audits and the ${RECOMMENDED_LINE} release reports behind every figure above, each naming the release line it covers:`,
+    "",
+    ...AUDITS.map(
+      (audit) =>
+        `- [${audit.title}](${audit.href}), ${audit.date.text}: ${audit.summary.replaceAll("`", "")}`,
+    ),
+    "",
+    "Every release and event in this record, in order, each release naming the repository that published it:",
     "",
     ...RELEASE_TIMELINE.map((item) => {
       const quote = item.quote ? ` "${item.quote.text}" (${item.quote.source}).` : "";
