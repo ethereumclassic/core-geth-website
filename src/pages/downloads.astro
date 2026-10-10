@@ -356,9 +356,15 @@ const groupFor = (id: string) => downloads?.groups.find((group) => group.id === 
     </div>
   </section>
 
-  <section class="band" id="verify">
+  <section class="band" id="verify" aria-labelledby="verify-title">
     <div class="container downloads__group">
-      <h2>Verify what you downloaded</h2>
+      <SectionHead
+        id="verify-title"
+        label="Verify a Core-Geth download"
+        title="Verify what you downloaded"
+        em="Verify"
+        size="medium"
+      />
       <p class="lede">
         Two checks, and they answer different questions. The checksum says the file arrived intact.
         The attestation says which workflow built it, from which commit, which is the question a

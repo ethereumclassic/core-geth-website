@@ -83,9 +83,15 @@ const supportHref = `${DOCS_URL}support/`;
     </div>
   </section>
 
-  <section class="band">
+  <section class="band" aria-labelledby="funders-title">
     <div class="container sponsor__band">
-      <h2>{SPONSOR.funders.heading}</h2>
+      <SectionHead
+        id="funders-title"
+        label="Core-Geth's funders"
+        title={SPONSOR.funders.heading}
+        em="funded"
+        size="medium"
+      />
       <table class="data-table funders">
         <thead>
           <tr>
@@ -109,9 +115,15 @@ const supportHref = `${DOCS_URL}support/`;
     </div>
   </section>
 
-  <section class="band band--surface">
+  <section class="band band--surface" aria-labelledby="why-title">
     <div class="container sponsor__band">
-      <h2>{SPONSOR.why.heading}</h2>
+      <SectionHead
+        id="why-title"
+        label="The case for sponsoring Core-Geth"
+        title={SPONSOR.why.heading}
+        em="public goods"
+        size="medium"
+      />
       {SPONSOR.why.body.map((paragraph, i) => (
         <p class:list={[i === 0 && "lede"]}>
           <InlineCode text={paragraph} />
@@ -136,9 +148,15 @@ const supportHref = `${DOCS_URL}support/`;
     </div>
   </section>
 
-  <section class="band band--surface">
+  <section class="band band--surface" aria-labelledby="routes-title">
     <div class="container sponsor__band">
-      <h2>{SPONSOR.routes.heading}</h2>
+      <SectionHead
+        id="routes-title"
+        label="Sponsoring Core-Geth"
+        title={SPONSOR.routes.heading}
+        em="sponsor"
+        size="medium"
+      />
       <ul class="routes" role="list">
         {SPONSOR.routes.items.map((item) => (
           <li>
