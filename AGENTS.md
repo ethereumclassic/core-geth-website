@@ -1,7 +1,7 @@
 # core-geth-website
 
-The source for **[coregeth.com](https://coregeth.com)**, the landing page for Core-Geth, a
-production execution client for the Ethereum Classic network. The client itself lives at
+The source for **[coregeth.com](https://coregeth.com)**, the landing page for Core-Geth, an
+Ethereum Classic execution client maintained as a public-good Go reference client. The client itself lives at
 [`ethereumclassic/core-geth`](https://github.com/ethereumclassic/core-geth) and **none of its
 code is here**.
 

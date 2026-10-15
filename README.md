@@ -2,7 +2,7 @@
 
 **an Ethereum Classic execution client**
 
-Core-Geth is a production execution client for the Ethereum Classic network: the software that
+Core-Geth is an Ethereum Classic execution client, maintained as a public-good Go reference client: the software that
 holds the chain, validates every block and answers the JSON-RPC calls an application makes. It is a
 go-ethereum downstream that keeps chain configuration as data rather than hard-coded, so one binary
 serves Ethereum Classic, Mordor, MintMe and private chains.

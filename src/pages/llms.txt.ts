@@ -59,7 +59,7 @@ export const GET: APIRoute = () => {
     `# ${SITE_NAME}`,
     "",
     wrap(
-      `${SITE_NAME} is a production execution client for the Ethereum Classic network, maintained at [github.com/${REPO.slug}](${REPO.url}) in the \`ethereumclassic\` GitHub organization. ${ABOUT.definition} ${ABOUT.maintained}`,
+      `${SITE_NAME} is an Ethereum Classic execution client, a public-good Go reference client maintained at [github.com/${REPO.slug}](${REPO.url}) in the \`ethereumclassic\` GitHub organization. ${ABOUT.definition} ${ABOUT.maintained}`,
       "> ",
     ),
     "",

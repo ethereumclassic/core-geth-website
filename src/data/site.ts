@@ -19,11 +19,12 @@
 export const SITE_URL = "https://coregeth.com";
 export const SITE_NAME = "Core-Geth";
 
-/** The line under the name, in the hero and in the footer: the README's own heading for
- *  the client, with the article the repository's description uses. */
+/** The line under the name, in the hero and in the footer: the first clause of the client
+ *  README's tagline, with the article the repository's description uses. */
 export const TAGLINE_SHORT = "an Ethereum Classic execution client";
 
-/** The home page's title, the README's own heading for the client. Other pages use
+/** The home page's title: the client's name and what it is, a search-result title rather
+ *  than the client README's heading, which is now the name alone. Other pages use
  *  "<page> - Core-Geth", as the documentation does. */
 export const HOME_TITLE = "Core-Geth: Ethereum Classic Execution Client";
 
@@ -83,7 +84,7 @@ export const EXPOSED_LINE = "v1.12";
  * the line to run, so a search result discriminates the two lines before the click.
  * Declared after `RECOMMENDED_LINE` because it reads it.
  */
-export const SITE_DESCRIPTION = `Core-Geth is a production execution client for the Ethereum Classic network. Run the ${RECOMMENDED_LINE} line on an ETC or Mordor node, with its releases, guides and audits.`;
+export const SITE_DESCRIPTION = `Core-Geth is an Ethereum Classic execution client, maintained as a public-good Go reference client. Run the ${RECOMMENDED_LINE} line, with its releases, guides and audits.`;
 
 /**
  * The last stable release before the maintenance gap. One constant, because the records
