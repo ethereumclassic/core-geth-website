@@ -1088,12 +1088,6 @@ export const AUDITS: readonly {
     date: { text: "September 2026", iso: "2026-09" },
     summary: `Every claim made about ${RECOMMENDED_LINE}.0 answered from the public record: commit metadata, pull requests, release files and advisory databases.`,
   },
-  {
-    title: `Core-Geth ${RECOMMENDED_LINE}.0 to ${RECOMMENDED_LINE}.1 dependency bump`,
-    href: `${DOCS_URL}audits/2026-10-dependency-bump/`,
-    date: { text: "October 2026", iso: "2026-10" },
-    summary: `What changed from \`${RECOMMENDED_LINE}.0\` to \`${RECOMMENDED_LINE}.1\`: the build moved to Go 1.26.9 and \`golang.org/x/net\` to v0.60.0 with the module cascade behind it, measured against the current Go vulnerability database. This is the routine currency work a supported line takes on each release.`,
-  },
 ];
 
 /** The pages the brand in the header opens, in the order a reader meets them. */
