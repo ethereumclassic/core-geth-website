@@ -4,5 +4,8 @@ dist/
 .astro/
 node_modules/
 
+# Mirrored from the Core-Geth documentation, kept close to source for re-sync
+src/pages/security/*.md
+
 # Local working files, never committed
 .local/

@@ -1,0 +1,324 @@
+---
+layout: "../../layouts/SecurityDoc.astro"
+title: "Core-Geth v1.13.0 release report"
+description: "What Core-Geth v1.13.0 fixes and changes, the files it publishes, and how to verify a download against its checksum and build attestation."
+label: "Core-Geth release report"
+em: "release report"
+crumb: "v1.13.0 release report"
+date: "September 2026"
+iso: "2026-09"
+kind: "report"
+sourceDoc: "https://docs.coregeth.com/release-reports/v1.13.0/"
+---
+
+# Core-Geth v1.13.0 release report
+
+**Last edited:** October 12, 2026
+
+The [v1.13.0 release notes](https://github.com/ethereumclassic/core-geth/releases/tag/v1.13.0) summarize this
+release. This report keeps the full detail: every change an operator can observe, the release files, and the
+complete list of known issues. It compares `v1.13.0` with the `v1.12.x` line, from `v1.12.20` on.
+
+For the reasoning behind the security and build work, read the audits:
+[March 2026 security audit](/security/2026-03-core-geth-v1.12-security-audit/),
+[August 2026 security follow-up](/security/2026-08-core-geth-v1.12-security-follow-up/),
+[dependency and toolchain modernization](/security/2026-08-core-geth-v1.12-dependency-modernization/),
+[release artifacts](/security/2026-09-core-geth-v1.12-release-pipeline/) and
+[Go toolchain](/security/2026-09-core-geth-v1.12-go-toolchain-audit/).
+
+Claims made about this release after it shipped are answered from the public record, with links, in
+[v1.13.0: the record behind the release](v1.13.0-record.md).
+
+## In short
+
+**`v1.13.0` is the stable, recommended Core-Geth release, and the `v1.13` line is where the client is maintained
+going forward.** Released on September 14, 2026 after about six months of development tested on Ethereum Classic
+mainnet and Mordor, it has run in production for a month since with no critical issue found. It fixes six CVEs and
+a GraphQL denial of service that every `v1.12.x` release carries, builds every binary and image on the supported
+go1.26.8 toolchain, and ships each release file with a checksum and a build attestation. Upgrading requires
+rotating the P2P node key, because one of the fixed issues leaks bits of it.
+[coregeth.com/downloads](https://coregeth.com/downloads/) has the release files and how to verify them, and the
+[migration guide](https://docs.coregeth.com/tutorials/v1.13.0-migration/) covers the upgrade and the rollback.
+
+## Security fixes
+
+Every `v1.12.x` release ships known-vulnerable code, and one of the client issues was exploited against
+the Core-Geth `v1.12` bootnodes in March 2026. From `v1.12.20` on, the line was built with
+[Go 1.21 and Go 1.22](/security/2026-09-core-geth-v1.12-go-toolchain-audit/), whose support ended in August 2024 and February 2025.
+`v1.13.0` fixes all of the issues below, and every binary and image in it is built with Go 1.26.8.
+
+| Identifier | Severity | What it allows |
+| --- | --- | --- |
+| [CVE-2026-22862](https://github.com/ethereum/go-ethereum/commit/638741b08) | High | Any peer crashes the node during the RLPx handshake |
+| [CVE-2026-26315](https://github.com/ethereum/go-ethereum/commit/46bee92f9) | Medium | Repeated handshakes leak bits of the node's own P2P key |
+| [CVE-2026-26314](https://github.com/ethereum/go-ethereum/commit/895a8597c) | High | secp256k1 coordinate field boundary bypass |
+| [CVE-2025-24883](https://github.com/ethereum/go-ethereum/commit/159fb1a1d) | High | Off-curve public key accepted by `UnmarshalPubkey` |
+| [CVE-2026-26313](https://github.com/ethereum/go-ethereum/pull/33835) | High | One crafted p2p message exhausts the node's memory |
+| [CVE-2026-22868](https://github.com/ethereum/go-ethereum/commit/fdfd1235a) | Medium | KZG proof verification denial of service |
+| [GraphQL query depth](https://github.com/graph-gophers/graphql-go/security/advisories/GHSA-mh3m-8c74-74xh) | Medium | Unbounded query nesting; no CVE identifier assigned |
+
+The March audit and the August follow-up show which `v1.12.x` releases carry which issue.
+
+## Upgrading
+
+The [migration guide](https://docs.coregeth.com/tutorials/v1.13.0-migration/) takes a node from any `v1.12.x` release to this one, with
+steps for Linux, macOS, Windows and Docker. Chain data carries over, so a resync is not part of the procedure.
+
+[Rotating the P2P node key](https://docs.coregeth.com/tutorials/v1.13.0-migration/#rotate-the-p2p-node-key) is a required step,
+because CVE-2026-26315 leaks bits of that key.
+
+**A staged migration is straightforward, because `v1.13.0` is proven.** The release has about six months of
+development on Ethereum Classic mainnet and Mordor behind it and a month in production since, with no critical
+issue reported, so you need not cut over all at once. Run a `v1.13.0` node alongside your current one, on its own
+datadir and ports, confirm it syncs and behaves as you expect, and move production traffic across when you are
+confident. If you run a fleet, migrate it node by node and keep MESS set the same across it.
+[coregeth.com/downloads](https://coregeth.com/downloads/) has the files, and the
+[migration guide](https://docs.coregeth.com/tutorials/v1.13.0-migration/) has the per-platform steps and the rollback.
+
+## MESS is on by default
+
+**`v1.12.x` releases carrying ECBP-1110 disable MESS (ECBP-1100) by default from block 19,250,000. `v1.13.0`
+ships it enabled**, with no deactivation block, on Ethereum Classic and Mordor. A node upgraded from one of those
+releases applies MESS to reorganizations again once it is synced and well peered.
+
+This is the client maintainers' position for the `v1.13.x` line, set out in the
+[README](https://github.com/ethereumclassic/core-geth#etc-consensus-history). MESS changes which of two competing
+chains the node prefers, never whether a block is valid. To keep the `v1.12.x` behavior, start the node with
+`--mess=false`. The [MESS page](https://docs.coregeth.com/operate/mess/) covers the setting, and the
+[MESS confirmation calculator](https://docs.coregeth.com/guides/mess-calculator/) shows how much hashrate a reorganization of a given
+age needs.
+
+### MESS flags and API
+
+- **`--mess`, `--mess.activate`, `--mess.deactivate` and `--mess.nodisable` are the flag names.**
+  `--ecbp1100`, `--override.ecbp1100.deactivate` and `--ecbp1100.nodisable` still work. Every value takes effect,
+  including the largest, and `dumpconfig` writes them.
+- `--mess` and `--mess.nodisable=false` also override those settings in a configuration file.
+- `admin_ecbp1100Status` returns block numbers as hex strings, matching the documented schema.
+- `admin_ecbp1100` treats `latest` and `pending` as the current head and refuses `finalized` and `safe`.
+- Chainspecs accept `ecbp1100DeactivateFBlock` as well as `ecbp1100DeactivateFBlockFBlock`.
+
+## No network flag runs Ethereum Classic
+
+**With no network flag, `v1.13.0` runs Ethereum Classic mainnet, and `--mainnet` means the same as `--classic`.**
+In `v1.12.x` both started an Ethereum mainnet node. If your command line names `--classic` or `--mordor`, nothing in
+this section changes for you.
+
+- **Data directory:** `~/.ethereum/classic` on Linux, where `--classic` has always kept it. Data in
+  `~/.ethereum/geth` is left untouched and is not opened.
+- **Accounts** use the Ethereum Classic keystore, `~/.ethereum/classic/keystore`, as `--classic` always has.
+- **Cache:** 1024 MB, as `--classic` has always used. Pass `--cache` for more; the node lowers any value above one
+  third of the machine's memory.
+- **Private networks** initialized with `geth init` keep running from their stored genesis. One started with a
+  `--networkid` other than 1 also keeps the `v1.12.x` defaults: `~/.ethereum`, no Ethereum Classic bootnodes or
+  discovery trees, and a 30000000 gas ceiling.
+- **Mordor and MintMe data directories** started without their network flag, for example from a configuration
+  file, now use their own genesis and consensus schedule.
+
+**`--ethereum`, `--sepolia` and `--holesky` refuse to start.** This client implements Ethereum upgrades only through
+Cancun, so it cannot follow Ethereum or its test networks.
+
+## Peer discovery and RPC exposure
+
+- **Nodes discover peers through this project's DNS trees only.** The two older trees, signed by a key this
+  project does not hold, are removed. Fresh nodes with no bootnodes found peers on both networks from the project's
+  trees alone. The trees are published from
+  [<code class="namespace--current">ethereumclassic/discv4-dns-lists</code>](https://github.com/ethereumclassic/discv4-dns-lists) by a crawl of the network,
+  under <code class="namespace--current">ethereumclassic.net</code>, `ethclassic.net` and <code class="namespace--current">ethereumclassic.network</code>, and signed by the key named in
+  `params/bootnodes_classic.go`, which both networks use. `--bootnodes` and `--discovery.dns` replace them with any
+  list you choose.
+- **The Engine API starts only on a chain configured for the merge.** Ethereum Classic, Mordor and MintMe nodes no
+  longer open port 8551, write a JWT secret, or log two Engine API warnings on every start. Given an `--authrpc.*`
+  flag, such a node logs that it ignored the flag.
+- **`--http.api ""` and `--ws.api ""` stop the node at startup.** An empty list would serve every namespace,
+  including `admin`, `debug` and `personal`.
+- **A first sync is quieter.** Request-tracking races during snap sync (`Expired request does not exist`,
+  `Unexpected ... packet` and similar) log at debug level instead of ERROR and WARN.
+
+## Etchash files during a sync
+
+- **A sync from genesis keeps the Etchash files it is using.** After writing a verification cache or DAG, the
+  cleanup in `v1.12.x` removed every file during the first epochs, including the one in use. Linux and macOS
+  deleted those files, and Windows logged `Failed to delete ethash cache file` for each one. Only files outside the
+  kept range are removed now.
+- **Windows syncs log no Etchash file errors.** When two generators build the same cache, the second maps the
+  first's finished file instead of logging `Failed to generate mapped ethash cache` and building it in memory. A
+  file still in use, as the last 30,000-block caches are when a sync crosses ECIP-1099, is removed later instead of
+  logging `Failed to delete ethash cache file`.
+
+## Custom genesis and chainspec files
+
+**This affects private and custom networks only.** No network built into the client is affected.
+
+Three kinds of value are read differently from `v1.12.x`, and the new reading matches go-ethereum's:
+
+| Value in the file | `v1.12.x` | `v1.13.0` |
+| --- | --- | --- |
+| A fork block number of 2^63 or more | Active from genesis | Never reached |
+| A negative fork block number | Its absolute value | 0 |
+| A block number of 2^63 or more in the difficulty bomb delay schedule | Applied from genesis | Never applied |
+
+If your file holds any of these, change it before you upgrade so that `v1.13.0` applies the rule your chain
+actually ran with. Upgrading every node together does not avoid this, because the new reading also applies to past
+blocks. [The migration guide](https://docs.coregeth.com/tutorials/v1.13.0-migration/#if-your-chain-uses-its-own-genesis-or-chainspec-file)
+gives examples.
+
+## Accounts on a small machine
+
+Deriving a keyfile's encryption key costs about 256MB of RAM at the default scrypt parameters. That cost is what
+makes guessing a passphrase expensive, and on a small VPS or an embedded node it is enough to get
+`geth account new` OOM-killed. The `v1.12.x` line offered one way down, `--lightkdf`, which is a factor of 64
+weaker.
+
+`v1.13.0` adds `--mediumkdf`, between the two at about 64MB and a factor of 4. The default is unchanged, the two
+flags are mutually exclusive, and either affects newly created keyfiles only: an existing keyfile keeps the
+parameters recorded inside it. [Key derivation on a small machine](https://docs.coregeth.com/getting-started/run-cli/#key-derivation-on-a-small-machine)
+has the comparison.
+
+## Deprecated flags
+
+The light-client flags (`--light.*`) and the ultra-light client flags (`--ulc.*`) have had no effect since the
+light client was removed. They are now listed under deprecated flags, and `--ulc.*` warns when set instead of being
+accepted silently.
+
+## Toolchain and dependencies
+
+Every binary and image is built with Go 1.26.8, a supported toolchain. govulncheck reported no Go standard library
+advisory for any of the nine `v1.13.0` node archives or the two `core-geth-docker` image tarballs when the release
+shipped; the [Go toolchain audit](/security/2026-09-core-geth-v1.12-go-toolchain-audit/) lists the ones the `v1.12.20` to `v1.12.23`
+archives carry, and the [dependency bump](https://docs.coregeth.com/audits/2026-10-dependency-bump/) records how the supported line
+stays current as the database moves and the next build takes each Go security release.
+The indirect `go.mongodb.org/mongo-driver` and `golang.org/x/image` modules are updated past their published
+advisories. The [dependency and toolchain audit](/security/2026-08-core-geth-v1.12-dependency-modernization/) covers the module
+graph.
+
+The client's own `geth version-check` now answers correctly. It previously matched its own name against
+go-ethereum's advisory patterns and reported a High-severity advisory that did not apply.
+
+### If you scan these binaries
+
+**A vulnerability scanner will report several go-ethereum advisories against these artifacts that are already
+fixed in them.** Expect that, rather than reading it as a finding.
+
+The Go module path is deliberately `github.com/ethereum/go-ethereum`. That is what makes this client a drop-in
+downstream, and changing it would break every consumer of the packages. A binary scanner reads that module version
+out of the build, resolves it to a go-ethereum pseudo-version, and matches every upstream advisory fixed above that
+point, whether or not the fix is present here. Tagging a release does not resolve it: the tag sorts below the
+upstream tags carrying those fixes, so the report sharpens rather than clears.
+
+Each match has been confirmed by reading the guard in this source, not by comparing version strings. The
+[Go toolchain audit](/security/2026-09-core-geth-v1.12-go-toolchain-audit/#what-a-vulnerability-scanner-reports-against-v1130) records
+the adjudicated set and the reasoning, and the [release artifacts audit](/security/2026-09-core-geth-v1.12-release-pipeline/)
+explains the mechanism.
+
+**A scanner also reports three `golang.org/x/crypto` advisories, at module level only.** This release ships
+`golang.org/x/crypto` v0.55.0, which is in their affected range, but the packages they affect,
+`golang.org/x/crypto/ssh` and `golang.org/x/crypto/openpgp`, are not compiled into any of its binaries, so none of
+the three is a concern for this release. `main` updates the module for `v1.13.1` as dependency maintenance.
+
+**On the two macOS archives those three appear at symbol level.** govulncheck reads no symbols from the `osx` and
+`osx-arm64` binaries, and when it reads none it reports every vulnerable symbol of a module-level match. Those
+findings describe code the binaries do not contain. The macOS binaries were linked with `-s`, which removes the
+symbols govulncheck looks for; the next release links them with `-w`, which keeps them.
+
+## Release files
+
+### Archives
+
+| Archive | Platform |
+| --- | --- |
+| `core-geth-linux` | Linux x86_64, glibc 2.17 or newer |
+| `core-geth-arm64` | Linux arm64, glibc 2.17 or newer |
+| `core-geth-arm5`, `core-geth-arm6`, `core-geth-arm7` | 32-bit ARM Linux, glibc 2.28 or newer |
+| `core-geth-arm` | The `arm5` build under its former name, kept so existing download paths work |
+| `core-geth-osx` | macOS 12 or newer, Intel x86_64 |
+| `core-geth-osx-arm64` | macOS 12 or newer, Apple Silicon |
+| `core-geth-win64` | Windows x86_64 |
+
+Each has a `core-geth-alltools` counterpart that adds the developer tools, so the release carries 18 archives.
+Release binaries set their glibc floor at the compiler rather than inheriting it from the build image, and the
+release fails if a binary exceeds its target or declares a macOS minimum other than 12.
+
+- **Every archive carries `COPYING`**, the license the binaries are distributed under, beside the binaries.
+- **Windows executables carry version information and a manifest.** Their Properties show Core-Geth, the version
+  and Ethereum Classic DAO LLC, and the release fails if Windows reads no version information back.
+- **`geth version` prints the commit date** as well as the commit.
+- **The binaries are not code-signed.** Windows names their publisher as unknown, and macOS blocks a binary a
+  browser downloaded until it is allowed. Check the archive first, then follow
+  [Installation](https://docs.coregeth.com/getting-started/installation/) for how to proceed on each.
+
+### Container images
+
+```shell
+docker pull ghcr.io/ethereumclassic/core-geth:v1.13.0
+docker pull ghcr.io/ethereumclassic/core-geth:alltools-v1.13.0
+```
+
+Built for `linux/amd64` and `linux/arm64`. The entry point is `geth`.
+
+The same images are attached to the release as files, for hosts that cannot pull from the registry:
+`core-geth-docker-amd64-v1.13.0.tar.gz`, `core-geth-docker-arm64-v1.13.0.tar.gz`,
+`core-geth-alltools-docker-amd64-v1.13.0.tar.gz` and `core-geth-alltools-docker-arm64-v1.13.0.tar.gz`. Each is the
+published image saved from the registry. The loaded image keeps its published name:
+
+```shell
+docker load -i core-geth-docker-amd64-v1.13.0.tar.gz
+```
+
+To build an image from the release archive or from source instead, see
+[Installation](https://docs.coregeth.com/getting-started/installation/#docker).
+
+### Verifying a download
+
+Every archive and image tarball ships with a `.sha256`. A checksum proves only that the download was not corrupted,
+so each file also carries a build attestation binding it to the workflow run that produced it:
+
+```shell
+gh attestation verify core-geth-linux-v1.13.0.zip --repo ethereumclassic/core-geth
+gh attestation verify core-geth-docker-amd64-v1.13.0.tar.gz --repo ethereumclassic/core-geth
+```
+
+**`go version -m` reports `vcs.modified=true` for some files, and the build still matches the tag.** It prints the
+tagged commit, `85093c853`, for every binary. The `arm5`, `arm6`, `arm7` and `arm64` builds ran after the previous
+Arm archive's `.sha256` file was written into the build directory, and git counted that untracked file as a change.
+The image builds leave test and documentation files out of their build context, which git counts the same way.
+Neither file is compiled into `geth`. The next release ignores the checksum files, so the Arm builds report
+`vcs.modified=false`.
+
+## Documentation
+
+The documentation now covers running and operating a node end to end: hardware requirements, running an Ethereum
+Classic or Mordor node, sync modes, security and network exposure, MESS, maintenance and upgrades, troubleshooting
+and monitoring. New guides cover production operations, a public RPC endpoint, an archive node, mining, a mining
+pool node, mining on Mordor, and bootnodes and peer discovery. [Choose your role](https://docs.coregeth.com/guides/index/) points each
+kind of operator to the pages they need.
+
+[Running a node](https://docs.coregeth.com/getting-started/run-a-node/) has a guide for Linux, macOS, Windows and Docker, with the
+Ethereum Classic and Mordor commands side by side and the flags for each kind of node. The migration guide has the
+same four guides for the upgrade.
+
+## Known issues
+
+- **Vulnerability scanners report go-ethereum advisories that are already fixed, and `golang.org/x/crypto`
+  advisories for packages the binaries do not contain.** See [If you scan these binaries](#if-you-scan-these-binaries).
+- A clean stop during snap sync logs `Failed to journal state snapshot`. Recovery is correct.
+- Era1 history archives exported from an Ethereum Classic node cannot be imported back.
+- EVMC (`--vm.evm`, `--vm.ewasm`) is not supported on Ethereum Classic or Mordor.
+- In a configuration file, `Preimages`, `DiscoveryV4`, `DiscoveryV5` and `NotifyFull` are replaced by the flag
+  defaults; set them with their flags. An empty `HTTPModules` or `WSModules` there still serves every namespace.
+- `geth removedb` that keeps the ancient store leaves the node unable to start; resync instead.
+- `geth snapshot prune-state` refuses a Mordor database on the hash state scheme, and switching it to
+  `--state.scheme path` rewinds the head.
+- `admin_ecbp1100` changes the MESS activation block without synchronizing with block import. It is an admin-only
+  call.
+- A private network whose genesis sets `terminalTotalDifficulty` does not run on this client: the node drops the
+  setting or stops at startup. No network built into the client is affected.
+
+## Reporting problems
+
+Follow the [<code class="namespace--current">ethereumclassic/core-geth</code> release line](https://github.com/ethereumclassic/core-geth/releases) for
+security updates. Report security issues privately through this repository's
+[private advisories](https://github.com/ethereumclassic/core-geth/security/advisories) or by email to
+<code class="namespace--current">security@ethereumclassic.net</code>, per [SECURITY.md](https://github.com/ethereumclassic/core-geth/blob/main/SECURITY.md).
+Mining pools, exchanges and service providers can use the same address as their point of contact with the core
+developers. For anything else, open an issue.
