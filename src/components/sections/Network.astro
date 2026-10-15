@@ -14,7 +14,8 @@ interface Props {
 }
 
 const { tone = "surface" } = Astro.props;
-const { measured, source, evidence, goAdvisories, upgrade, total, lede, rows } = NETWORK_RUNNING;
+const { measured, source, evidence, goAdvisories, upgrade, total, unlisted, lede, rows } =
+  NETWORK_RUNNING;
 ---
 
 <section
@@ -45,6 +46,8 @@ const { measured, source, evidence, goAdvisories, upgrade, total, lede, rows } =
         <time datetime={measured.iso}>{measured.text}</time>
         {`, ${total} in all. Source: `}
         <a href={source.href}>{source.label}</a>
+        {`. The ${unlisted.nodes} nodes not listed above ran `}
+        <InlineCode text={unlisted.what} />
         {"."}
         <LinkRow
           label="Where the figures in this table come from"

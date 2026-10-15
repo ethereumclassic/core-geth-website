@@ -135,14 +135,14 @@ export const GET: APIRoute = () => {
     `- [About Core-Geth](${SITE_URL}/about/): the code's lineage, the organizations that led and funded it, and the move to the \`ethereumclassic\` organization.`,
     ...RECORDS.map(
       (record) =>
-        `- ${record.label}: [${record.page.title}](${record.page.href}). ${record.summary}`,
+        `- ${record.label}: [${record.page.title}](${absolute(record.page.href)}). ${record.summary}`,
     ),
     "",
     `The ${EXPOSED_LINE} audits and the ${RECOMMENDED_LINE} release reports behind every figure above, each naming the release line it covers:`,
     "",
     ...AUDITS.map(
       (audit) =>
-        `- [${audit.title}](${audit.href}), ${audit.date.text}: ${audit.summary.replaceAll("`", "")}`,
+        `- [${audit.title}](${absolute(audit.href)}), ${audit.date.text}: ${audit.summary.replaceAll("`", "")}`,
     ),
     "",
     "Every release and event in this record, in order, each release naming the repository that published it:",

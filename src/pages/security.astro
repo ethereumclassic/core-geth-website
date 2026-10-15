@@ -35,8 +35,15 @@ const percent = (nodes: number) => `${((nodes / NETWORK_RUNNING.total) * 100).to
 // Two kinds of document sit in one index, and the split is told from the address rather
 // than written down twice: the two bands, the stat tile and both ledes read these, so
 // none can be left behind when one is published.
-const reportDocs = AUDITS.filter((audit) => audit.href.includes("release-reports"));
-const auditDocs = AUDITS.filter((audit) => !audit.href.includes("release-reports"));
+// Reports are the v1.13.0 release report and record; audits are the rest. The slug holds for the
+// docs URLs ("release-reports/") and the apex URLs ("...release-report/", "...release-record/")
+// alike, and no audit slug contains either (the release pipeline audit is "release-pipeline").
+const reportDocs = AUDITS.filter(
+  (audit) => audit.href.includes("release-report") || audit.href.includes("release-record"),
+);
+const auditDocs = AUDITS.filter(
+  (audit) => !(audit.href.includes("release-report") || audit.href.includes("release-record")),
+);
 const reportCount = reportDocs.length;
 const auditCount = auditDocs.length;
 const SPELLED = ["no", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"];
@@ -81,7 +88,7 @@ const CENSUS_STATS = [
 <BaseLayout
   title={`Core-Geth ${EXPOSED_LINE} security audits and the ${RECOMMENDED_LINE} upgrade`}
   crumb="Security"
-  description={`The 2026 security audits of Core-Geth ${EXPOSED_LINE}: the CVEs found, what was used against the ETC Cooperative's bootnodes, and what upgrading to ${RECOMMENDED_LINE} fixes.`}
+  description={`The 2026 security audits of Core-Geth ${EXPOSED_LINE}: the CVEs found, what was used against Core-Geth ${EXPOSED_LINE} bootnodes, and what upgrading to ${RECOMMENDED_LINE} fixes.`}
   path="/security/"
 >
   <PageHero
@@ -90,7 +97,7 @@ const CENSUS_STATS = [
     em="measured and published"
   >
     <p class="lede">
-      {`The ${EXPOSED_LINE} line went 21 months without security maintenance, and in March 2026 two of the flaws that gap left open were used against the ETC Cooperative's bootnodes. The ${RECOMMENDED_LINE} line closes all six client CVEs the audits found, those two among them. Every finding on this page is measured, dated and linked to the audit that records it, so nothing here has to be taken on trust.`}
+      {`The ${EXPOSED_LINE} line went 21 months without security maintenance, and in March 2026 one of the flaws that gap left open was used to crash Core-Geth ${EXPOSED_LINE} bootnodes. The ${RECOMMENDED_LINE} line closes all six client CVEs the audits found, that one among them. Every finding on this page is measured, dated and linked to the audit that records it, so nothing here has to be taken on trust.`}
     </p>
     <div class="security__actions">
       <a class="button button--primary" href={REPO.latestUrl}>
