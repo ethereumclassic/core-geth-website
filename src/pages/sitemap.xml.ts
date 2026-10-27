@@ -6,8 +6,9 @@ import { SITE_URL } from "@/data/site";
  *
  * `@astrojs/sitemap` writes its index as `sitemap-index.xml` and cannot be made to
  * write this name: its `filenameBase` option renames the stem of both files and keeps
- * the `-index` suffix. `public/robots.txt` names the integration's index, and this
- * route is the alias for whoever never reads robots.txt.
+ * the `-index` suffix. `public/robots.txt` names this route, `/sitemap.xml`, the path
+ * a reader or crawler tries first; the integration's own `sitemap-index.xml` is still
+ * served for anything already submitted at that address.
  *
  * It points at the generated sitemap instead of listing any URL of its own, so adding
  * a page cannot leave it stale. `sitemap-0.xml` is the only sitemap this build writes:
