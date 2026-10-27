@@ -351,16 +351,16 @@ const NETWORK_ROWS: readonly {
     nodes: 158,
     status: "exposed",
     summary:
-      "6 client CVEs open, 75 known Go flaws with 59 in the binary, GraphQL queries unbounded",
+      "6 client CVEs open, 62 known Go flaws with 48 in the binary, GraphQL queries unbounded",
     detail:
-      "Every one of the six client CVEs is unpatched here, and one of them was used against Core-Geth `v1.12` bootnodes in March 2026. It was also built with Go 1.21, a version the Go project has since published 75 security fixes for: in 59 of them the flawed code is compiled into the binary you would be running. Whether a node can be made to reach that code was not tested, so treat it as exposure to rule out rather than proven.",
+      "Every one of the six client CVEs is unpatched here, and one of them was used against Core-Geth `v1.12` bootnodes in March 2026. It was also built with Go 1.21, a version the Go project has since published 62 security fixes for: in 48 of them the flawed code is compiled into the binary you would be running. Whether a node can be made to reach that code was not tested, so treat it as exposure to rule out rather than proven.",
   },
   {
     running: "`v1.12.21`",
     nodes: 50,
     status: "exposed",
     summary:
-      "4 client CVEs open, 75 known Go flaws with 59 in the binary, GraphQL queries unbounded",
+      "4 client CVEs open, 62 known Go flaws with 48 in the binary, GraphQL queries unbounded",
     detail:
       "Closes the two handshake encryption flaws, CVE-2026-22862 and CVE-2026-26315, and caps the size of a handshake message. Four flaws stay open: CVE-2025-24883, CVE-2026-26314, CVE-2026-26313 and CVE-2026-22868. A GraphQL query can still nest without limit, which can exhaust a node that serves it, and the Go build is the same as above.",
   },
@@ -369,7 +369,7 @@ const NETWORK_ROWS: readonly {
     nodes: 165,
     status: "exposed",
     summary:
-      "1 client CVE open and 1 only mitigated, 75 known Go flaws with 59 in the binary, GraphQL queries unbounded, `eth_syncing` regression",
+      "1 client CVE open and 1 only mitigated, 62 known Go flaws with 48 in the binary, GraphQL queries unbounded, `eth_syncing` regression",
     detail:
       "Adds the key checks for CVE-2025-24883 and CVE-2026-26314. For CVE-2026-26313 its own commit says mitigation rather than fix: the node stops a peer exhausting its memory, but still reads the whole message, so the attack still costs it work. CVE-2026-22868 was called not applicable to Ethereum Classic and left unpatched, though the same binary also serves Ethereum, Sepolia and Holesky, where the affected feature is switched on. This release is also where `eth_syncing` starts reporting the wrong sync height, reported in `etclabscore/core-geth` as issue #697 and still open. Same Go build as above.",
   },
@@ -378,9 +378,9 @@ const NETWORK_ROWS: readonly {
     nodes: 138,
     status: "exposed",
     summary:
-      "1 client CVE open and 1 only mitigated, 75 known Go flaws with 59 in the binary, GraphQL queries unbounded, `eth_syncing` regression",
+      "1 client CVE open, 62 known Go flaws with 48 in the binary, GraphQL queries unbounded, `eth_syncing` regression",
     detail:
-      "Hardens how peer messages are decoded, and adds a cap on snap sync responses that can disconnect peers which are answering correctly. What stays open: CVE-2026-26313 is still only mitigated, CVE-2026-22868 still unpatched, GraphQL queries still unbounded, and `eth_syncing` still wrong, its report still open. Its archives were built with Go 1.21.13 or Go 1.22.1, versions the Go project had already stopped supporting when this shipped, and 62 of the 75 Go fixes above had been published before the release date.",
+      "Completes the CVE-2026-26313 fix by hardening how peer messages are decoded, and adds a cap on snap sync responses that can disconnect peers which are answering correctly. What stays open: CVE-2026-22868 still unpatched, GraphQL queries still unbounded, and `eth_syncing` still wrong, its report still open. Its archives were built with Go 1.21.13 or Go 1.22.1, versions the Go project had already stopped supporting when this shipped, and all 62 Go fixes above had been published before the release date.",
   },
   {
     running: "`v1.13.0`",
@@ -388,7 +388,7 @@ const NETWORK_ROWS: readonly {
     status: "recommended",
     summary: "every client CVE patched, a supported Go build, GraphQL queries bounded",
     detail:
-      "All six client CVEs the audits found in the `v1.12` client code are closed here, CVE-2026-22868 among them, GraphQL queries are bounded and the `eth_syncing` regression is fixed. Built with Go 1.26.8, a supported version, so none of the 75 Go flaws above is in the binary. Seven months of work cleared the debt behind them: the dependency tree modernized, and the release pipeline rebuilt so each archive carries a checksum and a build attestation. Released September 14, 2026, and the release report lists what is known to be imperfect in it.",
+      "All six client CVEs the audits found in the `v1.12` client code are closed here, CVE-2026-22868 among them, GraphQL queries are bounded and the `eth_syncing` regression is fixed. Built with Go 1.26.8, a supported version, so none of the 62 Go flaws above is in the binary. Seven months of work cleared the debt behind them: the dependency tree modernized, and the release pipeline rebuilt so each archive carries a checksum and a build attestation. Released September 14, 2026, and the release report lists what is known to be imperfect in it.",
   },
 ];
 
@@ -441,7 +441,7 @@ export const NETWORK_RUNNING = {
    *  migration guide asks for one MESS setting per fleet, and `v1.12.x` runs MESS off where
    *  this line turns it on. Check all of it against the documentation whenever the
    *  recommended line changes. */
-  lede: `The \`${RECOMMENDED_LINE}\` line patches all six client CVEs the audits found in the \`${EXPOSED_LINE}\` client code, bounds GraphQL queries and is built with a supported Go version, so none of the 75 Go flaws the \`${EXPOSED_LINE}\` builds carry is in it. Run a \`${RECOMMENDED_LINE}\` node beside your current ones without sending it traffic, and when you are comfortable, move your whole fleet to it.`,
+  lede: `The \`${RECOMMENDED_LINE}\` line patches all six client CVEs the audits found in the \`${EXPOSED_LINE}\` client code, bounds GraphQL queries and is built with a supported Go version, so none of the 62 Go flaws the \`${EXPOSED_LINE}\` builds carry is in it. Run a \`${RECOMMENDED_LINE}\` node beside your current ones without sending it traffic, and when you are comfortable, move your whole fleet to it.`,
   rows: NETWORK_ROWS.map((row) => ({ ...row, share: `${networkShare(row.nodes).toFixed(1)}%` })),
 } as const;
 
@@ -564,7 +564,7 @@ export const RECORDS: readonly {
   {
     date: { month: "Jun", year: "2024", iso: "2024-06" },
     label: "The dormancy",
-    summary: `The last stable release from \`${PREVIOUS_REPO}\` was \`${LAST_RELEASE_BEFORE_GAP}\`, before 21 months of dormancy, through which contributors' issues and pull requests went unmerged. The emergency releases that eventually followed were still built on Go versions no longer supported. Go is compiled into the binary rather than loaded when it runs, so each of those releases carries 75 known Go security flaws for as long as the node is up, and nothing short of a new build removes them.`,
+    summary: `The last stable release from \`${PREVIOUS_REPO}\` was \`${LAST_RELEASE_BEFORE_GAP}\`, before 21 months of dormancy, through which contributors' issues and pull requests went unmerged. The emergency releases that eventually followed were still built on Go versions no longer supported. Go is compiled into the binary rather than loaded when it runs, so each of those releases carries 62 known Go security flaws for as long as the node is up, and nothing short of a new build removes them.`,
     page: DOCS.goToolchain,
   },
   {
@@ -690,7 +690,7 @@ export const SPONSOR = {
       },
     ],
     history:
-      "Moving Ethereum Classic's public goods into the `ethereumclassic` GitHub organization began in 2024, through the ETC Cooperative's own efforts: its published roadmap of July 2024 proposed moving Core-Geth into that organization, and `ethereumclassic/core-geth` was created in December 2024. Before that move, the work passed from one organization to the next as each closed or left: ETCDEV in 2018, ETC Labs in 2021, and the ETC Cooperative, which [entered maintenance mode](https://etccooperative.org/etc-cooperative-retrospective-2024.pdf) at the end of 2024 and is due to dissolve by the end of 2026. Along the way the client changed repositories, the bootnodes and the peer discovery lists changed operators, and the `v1.12` line went 21 months without security maintenance in `etclabscore/core-geth`. What that cost is published in full, release by release and audit by audit: [the record is on the security page](/security/).",
+      "Moving Ethereum Classic's public goods into the `ethereumclassic` GitHub organization began in 2024, through the ETC Cooperative's own efforts: its published roadmap of July 2024 proposed moving Core-Geth into that organization, and `ethereumclassic/core-geth` was created in December 2024. Before that move, the work passed from one organization to the next as each closed or left: ETCDEV in 2018, ETC Labs in 2021, and the ETC Cooperative, which [entered maintenance mode](https://etccooperative.org/etc-cooperative-retrospective-2024.pdf) at the end of 2024 and is due to dissolve. Along the way the client changed repositories, the bootnodes and the peer discovery lists changed operators, and the `v1.12` line went 21 months without security maintenance in `etclabscore/core-geth`. What that cost is published in full, release by release and audit by audit: [the record is on the security page](/security/).",
   },
   funders: {
     heading: "Who has funded Ethereum Classic public goods",
@@ -826,7 +826,7 @@ export const ORGANIZATIONS: readonly HistoryEntry[] = [
   {
     when: "2022 to 2024",
     title: "ETC Cooperative",
-    body: `Funded and maintained Core-Geth from January 2022, at \`${PREVIOUS_REPO}\`, and maintained Ethereum Classic's other public goods: the peer discovery lists, the bootnodes and the public JSON-RPC endpoints. It [entered maintenance mode](https://etccooperative.org/etc-cooperative-retrospective-2024.pdf) at the end of 2024 and began transferring those public goods to the \`ethereumclassic\` GitHub organization. It stopped developing Core-Geth in 2025 and wound down its team, and its board has communicated that it is scheduled to dissolve by the end of 2026, with the public goods continuing in the \`ethereumclassic\` organization.`,
+    body: `Funded and maintained Core-Geth from January 2022, at \`${PREVIOUS_REPO}\`, and maintained Ethereum Classic's other public goods: the peer discovery lists, the bootnodes and the public JSON-RPC endpoints. It [entered maintenance mode](https://etccooperative.org/etc-cooperative-retrospective-2024.pdf) at the end of 2024 and began transferring those public goods to the \`ethereumclassic\` GitHub organization. It stopped developing Core-Geth in 2025 and wound down its team, and its board has communicated that it will dissolve, with the public goods continuing in the \`ethereumclassic\` organization.`,
     link: { label: REPO.slug, href: REPO.url },
   },
   {
@@ -975,7 +975,7 @@ export const RELEASE_TIMELINE: readonly HistoryEntry[] = [
     when: "August 14, 2026",
     iso: "2026-08-14",
     title: `\`v1.12.23\` from \`${PREVIOUS_REPO}\``,
-    body: `The last release from \`${PREVIOUS_REPO}\`, and still not one to run today. It hardened how peer messages are decoded and left everything else open: one client CVE unpatched and another only mitigated, the \`eth_syncing\` regression untouched, GraphQL queries unbounded, the Go toolchains out of support, and a response cap added in that release which can disconnect peers that are answering correctly.`,
+    body: `The last release from \`${PREVIOUS_REPO}\`, and still not one to run today. It closed CVE-2026-26313 by hardening how peer messages are decoded, and left the rest open: one client CVE unpatched, the \`eth_syncing\` regression, GraphQL queries unbounded, the Go toolchains out of support, and a response cap added in that release which can disconnect peers that are answering correctly.`,
   },
   {
     when: "August 28, 2026",
@@ -1056,7 +1056,7 @@ export const AUDITS: readonly {
     title: `Core-Geth ${EXPOSED_LINE} security follow-up`,
     href: "/security/2026-08-core-geth-v1.12-security-follow-up/",
     date: { text: "August 2026", iso: "2026-08" },
-    summary: `\`v1.12.23\` Argos is real security work and an improvement on the rest of the ${EXPOSED_LINE} line, and still not safe to run: one client CVE unpatched, another only mitigated, the Go toolchains out of support. Only ${RECOMMENDED_LINE} clears those, and a node that ran ${EXPOSED_LINE} needs a new P2P key.`,
+    summary: `\`v1.12.23\` Argos is real security work and an improvement on the rest of the ${EXPOSED_LINE} line, and still not safe to run: one client CVE unpatched, the Go toolchains out of support. Only ${RECOMMENDED_LINE} clears those, and a node that ran ${EXPOSED_LINE} needs a new P2P key.`,
   },
   {
     title: `Core-Geth ${EXPOSED_LINE} to ${RECOMMENDED_LINE} dependency modernization`,
@@ -1191,7 +1191,7 @@ export const STEWARDSHIP: readonly {
     date: "2022",
     heading: "ETC Cooperative",
     span: "14,525,000 to 19,250,000",
-    body: "Funded Core-Geth from January 2022, through the Mystique and Spiral upgrades, then [entered maintenance mode](https://etccooperative.org/etc-cooperative-retrospective-2024.pdf) at the end of 2024. Core development stalled from June 2024 to February 2026, and the Cooperative is scheduled to dissolve by the end of 2026.",
+    body: "Funded Core-Geth from January 2022, through the Mystique and Spiral upgrades, then [entered maintenance mode](https://etccooperative.org/etc-cooperative-retrospective-2024.pdf) at the end of 2024. Core development stalled from June 2024 to February 2026, and the Cooperative's board has communicated that it will dissolve.",
     link: { label: "Where each service continues", href: DOCS.transition.href },
   },
   {
