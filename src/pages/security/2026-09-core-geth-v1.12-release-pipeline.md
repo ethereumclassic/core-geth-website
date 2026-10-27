@@ -31,7 +31,7 @@ created from the archived development line; the other three were published in 20
 
 **Work funded by:** [Ethereum Classic DAO](https://ethereumclassicdao.org)
 
-**Last edited:** October 12, 2026
+**As of:** the `v1.13.0` release, September 14, 2026
 
 ## In short
 
@@ -39,8 +39,8 @@ created from the archived development line; the other three were published in 20
 `v1.12.23` archives raised the glibc version a Linux host needs without saying so, shipped an Apple Silicon
 binary under a name that does not say so, and carried nothing that identifies what built them. Every `v1.13.0`
 archive and image ships with a checksum and a build attestation, and names its platform. The `v1.13.0`
-release has about six months of testing on Ethereum Classic mainnet and Mordor behind it and a month in
-production since release, with no critical issue found.
+release has about six months of testing on Ethereum Classic mainnet and Mordor behind it, with no
+critical issue found.
 
 ## Why the artifacts needed a pass of their own
 
@@ -278,7 +278,7 @@ Two consequences worth holding:
   It means either the adjudication has gone stale or the artifact scanned is not
   the one that was adjudicated.
 - **Each match is confirmed by reading the guard in this tree**, not by comparing
-  version strings. [Go toolchain](2026-09-go-toolchain.md#what-a-vulnerability-scanner-reports-against-v1130)
+  version strings. [Go toolchain](/security/2026-09-core-geth-v1.12-go-toolchain-audit/#what-a-vulnerability-scanner-reports-against-v1130)
   records the adjudicated set and the reasoning.
 
 **The client's own `version-check` command is a separate matter and used to be

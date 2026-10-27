@@ -27,15 +27,14 @@ source-level CVE remediation; this one covers what changed underneath the code.
 
 **Work funded by:** [Ethereum Classic DAO](https://ethereumclassicdao.org)
 
-**Last edited:** October 12, 2026
+**As of:** the `v1.13.0` release, September 14, 2026
 
 ## In short
 
 **Upgrade to [v1.13.0 or later](https://github.com/ethereumclassic/core-geth/releases/latest).** The archived `v1.12.x` line was pinned to Go toolchains that left
 support in August 2024 and February 2025, and its module graph had not moved since December 2024. `v1.13.0`
 builds on Go 1.26.8, behind it 83 module changes and a current linter. The v1.13 line has about six
-months of testing on Ethereum Classic mainnet and Mordor behind it and a month in production since
-release, with no critical issue found. This page records what moved, what
+months of testing on Ethereum Classic mainnet and Mordor behind it, with no critical issue found. This page records what moved, what
 deliberately did not, and how each version was chosen.
 
 ## Why this work was necessary
@@ -56,7 +55,7 @@ than triggered by an incident.
 
 | Surface | Before | After |
 |---|---|---|
-| `go.mod` directive | `go 1.21` | `go 1.26.0` |
+| `go.mod` directive | `go 1.21` | `go 1.26` |
 | CI workflows | `1.21` | `1.26`; the release workflow `1.26.8` |
 | Docker builder | `golang:1.22-alpine` | `golang:1.26.8-alpine` |
 | `build/checksums.txt` (`version:golang`) | `1.22.1` | `1.26.8` |
@@ -65,7 +64,7 @@ There is no `toolchain` directive; the `go` directive is the whole statement.
 
 Three Go versions were in force simultaneously on the archived line: 1.21 in CI,
 1.22.1 for the `-dlgo` download path, and 1.22 in the Docker builder. They now
-agree. [Go toolchain](2026-09-go-toolchain.md) records which of them built each
+agree. [Go toolchain](/security/2026-09-core-geth-v1.12-go-toolchain-audit/) records which of them built each
 published archive, and the Go standard library advisories each archive carries.
 
 **`build/checksums.txt` carries a second Go pin, `version:ppa-builder`, which was
@@ -330,7 +329,7 @@ from genesis on the resulting build.
 
 `govulncheck` is run in both source and binary mode. A set of advisories is
 reported permanently and has been adjudicated;
-[Go toolchain](2026-09-go-toolchain.md#what-a-vulnerability-scanner-reports-against-v1130)
+[Go toolchain](/security/2026-09-core-geth-v1.12-go-toolchain-audit/#what-a-vulnerability-scanner-reports-against-v1130)
 records the set and the reasoning. Two properties of that check are worth stating because they
 invert the usual reading:
 

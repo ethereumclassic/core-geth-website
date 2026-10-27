@@ -70,7 +70,7 @@ A month after release, the record is plain, and every line of it is checkable ag
   "no blocks were lost, no reorg occurred, no funds were affected, and no service went down," and in the month
   since, no issue reporting a defect has been opened in [this repository](https://github.com/ethereumclassic/core-geth/issues).
   The "potential catastrophe" the article warned of did not happen.
-- **It fixes vulnerabilities every `v1.12.23` archive carries.** Those archives carry 67 to 73 Go standard library
+- **It fixes vulnerabilities every `v1.12.23` archive carries.** Those archives carry 55 to 61 Go standard library
   advisories, each with a CVE identifier; `v1.13.0` carries none of them, and clears 44 third-party module
   advisories besides. The claim that "nothing ... fixes a vulnerability in that version" is contradicted by the
   release files.
@@ -80,8 +80,8 @@ A month after release, the record is plain, and every line of it is checkable ag
   move the Cooperative's own [2024 retrospective](https://etccooperative.org/etc-cooperative-retrospective-2024.pdf)
   and its Senior Editor had already proposed.
 - **The work was deliberate, not last-minute.** The security fixes opened as pull requests
-  [#10 to #36](https://github.com/ethereumclassic/core-geth/pulls?q=is%3Apr+created%3A2026-03-20..2026-03-21) on 20
-  and March 21, 2026, from commits authored as early as 26 February; of the 202 commits to `v1.13.0`, 75 predate
+  [#10 to #36](https://github.com/ethereumclassic/core-geth/pulls?q=is%3Apr+created%3A2026-03-20..2026-03-21) on March 20
+  and 21, 2026, from commits authored as early as February 26; of the 202 commits to `v1.13.0`, 75 predate
   September. The September commits are 41 documentation and 31 release engineering, with 17 changing the client,
   each reviewed against Ethereum client practice, tested on every push, and run through seven release candidates
   (see [Review](#review)).
@@ -110,7 +110,7 @@ Ethereum Classic keeps its public goods:** the [ECIPs](https://github.com/ethere
   July 30, 2024, lists *"Move Core Geth to the Ethereum Classic community GitHub repository: This would restore
   sovereignty of the community on the node client software."*
 - **<code class="namespace--current">ethereumclassic/core-geth</code>** was created in the community organization on December 21, 2024 to carry that
-  maintenance forward, from <code class="namespace--previous">etclabscore/core-geth</code> at its commit of 16 December,
+  maintenance forward, from <code class="namespace--previous">etclabscore/core-geth</code> at its commit of December 16,
   [`7ef3ecd7a`](https://github.com/ethereumclassic/core-geth/commit/7ef3ecd7a716354589c2f27ff8f4b74d7a5edf2e). The
   [<code class="namespace--previous">archive-etclabscore-2024-12</code>](https://github.com/ethereumclassic/core-geth/tree/archive-etclabscore-2024-12)
   branch preserves that point. The repository holds Core-Geth's full history up to it, and `v1.13.0` includes the `v1.12.23`
@@ -131,8 +131,8 @@ Keeping a reference client in the project's own organization is common practice,
 The article tells operators who upgraded to move back to `v1.12.23` and to restore a node key they rotated. Both
 steps return a node to a worse security position than `v1.13.0`.
 
-- **The published `v1.12.23` archives carry the Go standard library advisories `v1.13.0` removed.** Each carries 67
-  to 73, all published before it shipped, and its release build cannot be compiled on a supported Go, so the
+- **The published `v1.12.23` archives carry the Go standard library advisories `v1.13.0` removed.** Each carries 55
+  to 61, all published before it shipped, and its release build cannot be compiled on a supported Go, so the
   exposure cannot be cleared by rebuilding. [Go toolchain](/security/2026-09-core-geth-v1.12-go-toolchain-audit/) lists every one.
 - **A rotated node key should not be restored.** The go-ethereum advisory for CVE-2026-26315
   ([GHSA-m6j8-rg6r-7mv8](https://github.com/ethereum/go-ethereum/security/advisories/GHSA-m6j8-rg6r-7mv8))
@@ -143,9 +143,9 @@ steps return a node to a worse security position than `v1.13.0`.
 
 The security work in `v1.13.0` was reported privately to the <code class="namespace--previous">etclabscore/core-geth</code> maintainers in
 February and March 2026. It was published as pull requests
-[#10 to #36](https://github.com/ethereumclassic/core-geth/pulls?q=is%3Apr+created%3A2026-03-20..2026-03-21) on 20
-and March 21, 2026, and <code class="namespace--previous">etclabscore/core-geth</code> cut its emergency releases, `v1.12.21` and `v1.12.22`, on 18 and 28
-March. `v1.13.0` shipped on 14 September, nearly six months after the fixes were public. The
+[#10 to #36](https://github.com/ethereumclassic/core-geth/pulls?q=is%3Apr+created%3A2026-03-20..2026-03-21) on March 20
+and 21, 2026, and <code class="namespace--previous">etclabscore/core-geth</code> cut its emergency releases, `v1.12.21` and `v1.12.22`, on March 18
+and 28. `v1.13.0` shipped on September 14, nearly six months after the fixes were public. The
 [March 2026 audit](/security/2026-03-core-geth-v1.12-security-audit/#disclosure-timeline) records the sequence.
 
 ## Since the release
@@ -154,13 +154,13 @@ March. `v1.13.0` shipped on 14 September, nearly six months after the fixes were
 release in September, and it has now run in production for a month since. No issue reporting a defect in it has been
 opened in [this repository](https://github.com/ethereumclassic/core-geth/issues), operators who moved to it report
 stable nodes, and the scrutiny the release has drawn has surfaced no critical issue, only further cleanup and
-polish, which `v1.13.1` carries. The [March 2026 audit](/security/2026-03-core-geth-v1.12-security-audit/#methodology) and
+polish. The [March 2026 audit](/security/2026-03-core-geth-v1.12-security-audit/#methodology) and
 [dependency and toolchain modernization](/security/2026-08-core-geth-v1.12-dependency-modernization/#verification) record the
 development validation.
 
 ## What has happened since the article
 
-**The toolchain finding is now being acted on in the other repository.** The article, published 16 September
+**The toolchain finding is now being acted on in the other repository.** The article, published September 16,
 2026, states that "Nothing in the rogue release fixes a vulnerability in that version, as is claimed." On
 September 17, 2026, [pull request #702](https://github.com/etclabscore/core-geth/pull/702) was opened at
 <code class="namespace--previous">etclabscore/core-geth</code>, titled "build, go.mod: align the Go toolchain with upstream v1.17.5". It changes 68
@@ -168,7 +168,7 @@ files, including `go.mod`, `go.sum`, `build/checksums.txt`, both Dockerfiles and
 Go version those workflows request from 1.21 to 1.25.
 
 That is the finding this project reported privately in February and March 2026, published in the
-[March 2026 audit](/security/2026-03-core-geth-v1.12-security-audit/), and shipped in `v1.13.0` on 14 September: the
+[March 2026 audit](/security/2026-03-core-geth-v1.12-security-audit/), and shipped in `v1.13.0` on September 14: the
 `v1.12.x` line is built by toolchains that are out of support. `v1.12.21`, `v1.12.22` and `v1.12.23` each left
 it unchanged, so operators on that line have carried it since the fixes were made public six months ago, and
 since `v1.12.20` shipped in June 2024 before that.
@@ -221,19 +221,19 @@ The security fixes and the toolchain upgrade were written in February and March 
 | CVE-2026-22868: disconnect peers sending invalid KZG proofs | 2026-03-20 | [`9985c33fb`](https://github.com/ethereumclassic/core-geth/commit/9985c33fb2e4122c96065acd6182b6e76521760a) |
 
 They were published as pull requests [#10 to #36](https://github.com/ethereumclassic/core-geth/pulls?q=is%3Apr+created%3A2026-03-20..2026-03-21)
-on 20 and March 21, 2026, and cross-referenced in
+on March 20 and 21, 2026, and cross-referenced in
 [<code class="namespace--previous">etclabscore/core-geth</code> #692](https://github.com/etclabscore/core-geth/issues/692) the same weekend. A pull
 request's opening date cannot be changed afterwards. The same commits are also in
 [`white-b0x/core-geth`](https://github.com/white-b0x/core-geth/commit/8e40b7e41a93db863ae149a6a25073e6e7186dfc),
 where GitHub records them as committed on May 25, 2026, with the same author dates.
 
-**The commits dated 12 to 14 September were written on those days.** Of the 96 the article counts, 41 are
+**The commits dated September 12 to 14 were written on those days.** Of the 96 the article counts, 41 are
 documentation and 31 are release engineering: the release workflows, the build scripts, archive and image
 publishing, and the release stage. Much of that fixed what the seven release candidates turned up in the release
 build, such as image attestation, macOS and Windows binary metadata, and publishing the archives from one job.
 Four commits touch dependencies and three add tests. The remaining 17 change the client: the network defaults,
 the discovery trees and bootnodes, the MESS flags, chainspec parsing and a medium key derivation tier, which the
-[release report](v1.13.0.md) describes, and fixes found running the release candidates, to the Etchash cache and
+[release report](/security/2026-09-core-geth-v1.13.0-release-report/) describes, and fixes found running the release candidates, to the Etchash cache and
 to the Engine API on chains without the merge.
 
 **`v1.13.0` also carries nine commits authored in <code class="namespace--previous">etclabscore/core-geth</code>** for `v1.12.23`, the delayed p2p
@@ -257,9 +257,9 @@ day of the snapshot below, nine nodes ran it, and the rest carried the exposure 
 | Running | Nodes | Share | What that version carries |
 | --- | ---: | ---: | --- |
 | `v1.12.20` and older | 158 | 30.2% | all six client CVEs, unpatched. [CVE-2026-22862](https://github.com/ethereum/go-ethereum/commit/638741b08) was exploited against the Core-Geth `v1.12` bootnodes in March 2026 |
-| `v1.12.21` | 50 | 9.5% | [CVE-2026-22862](https://github.com/ethereum/go-ethereum/commit/638741b08) (the ECIES crash) and [CVE-2026-26315](https://github.com/ethereum/go-ethereum/commit/46bee92f9) (the key oracle) closed. Still open: [CVE-2025-24883](https://github.com/ethereum/go-ethereum/commit/159fb1a1d), [CVE-2026-26314](https://github.com/ethereum/go-ethereum/commit/895a8597c), [CVE-2026-26313](https://github.com/ethereum/go-ethereum/pull/33835), [CVE-2026-22868](https://github.com/ethereum/go-ethereum/commit/fdfd1235a) and the [GraphQL depth limit](https://github.com/graph-gophers/graphql-go/security/advisories/GHSA-mh3m-8c74-74xh). Built with Go 1.21 |
-| `v1.12.22` | 165 | 31.5% | [CVE-2025-24883](https://github.com/ethereum/go-ethereum/commit/159fb1a1d) and [CVE-2026-26314](https://github.com/ethereum/go-ethereum/commit/895a8597c) backported, [CVE-2026-26313](https://github.com/ethereum/go-ethereum/pull/33835) only partly mitigated. [CVE-2026-22868](https://github.com/ethereum/go-ethereum/commit/fdfd1235a) and the [GraphQL depth limit](https://github.com/graph-gophers/graphql-go/security/advisories/GHSA-mh3m-8c74-74xh) still open. Introduces the `eth_syncing` regression. Built with Go 1.21 |
-| `v1.12.23` | 138 | 26.3% | [CVE-2026-26313](https://github.com/ethereum/go-ethereum/pull/33835) closed by the delayed decoding series, the mechanism this release uses. **Nothing else in this row is fixed**: [CVE-2026-22868](https://github.com/ethereum/go-ethereum/commit/fdfd1235a) still unpatched; built with Go 1.21.13, or Go 1.22.1 for Arm, carrying 67 to 73 Go standard library advisories with 54 to 58 whose affected symbols are present in the binary; no [GraphQL depth limit](https://github.com/graph-gophers/graphql-go/security/advisories/GHSA-mh3m-8c74-74xh); the `eth_syncing` regression untouched; and a response cap that can disconnect peers answering correctly |
+| `v1.12.21` | 50 | 9.5% | [CVE-2026-22862](https://github.com/ethereum/go-ethereum/commit/638741b08) (the ECIES crash) and [CVE-2026-26315](https://github.com/ethereum/go-ethereum/commit/46bee92f9) (the key oracle) closed. Still open: [CVE-2025-24883](https://github.com/ethereum/go-ethereum/commit/159fb1a1d), [CVE-2026-26314](https://github.com/ethereum/go-ethereum/commit/895a8597c), [CVE-2026-26313](https://github.com/ethereum/go-ethereum/pull/33835), [CVE-2026-22868](https://github.com/ethereum/go-ethereum/commit/fdfd1235a) and the [GraphQL depth limit](https://github.com/graph-gophers/graphql-go/security/advisories/GHSA-mh3m-8c74-74xh). Built with end-of-life Go 1.21.13, or Go 1.22.1 for Arm, carrying 55 to 61 Go standard library advisories with 43 to 47 whose affected symbols are present in the binary |
+| `v1.12.22` | 165 | 31.5% | [CVE-2025-24883](https://github.com/ethereum/go-ethereum/commit/159fb1a1d) and [CVE-2026-26314](https://github.com/ethereum/go-ethereum/commit/895a8597c) backported, [CVE-2026-26313](https://github.com/ethereum/go-ethereum/pull/33835) only partly mitigated. [CVE-2026-22868](https://github.com/ethereum/go-ethereum/commit/fdfd1235a) and the [GraphQL depth limit](https://github.com/graph-gophers/graphql-go/security/advisories/GHSA-mh3m-8c74-74xh) still open. Introduces the `eth_syncing` regression. Built with end-of-life Go 1.21.13, or Go 1.22.1 for Arm, carrying 55 to 61 Go standard library advisories with 43 to 47 whose affected symbols are present in the binary |
+| `v1.12.23` | 138 | 26.3% | [CVE-2026-26313](https://github.com/ethereum/go-ethereum/pull/33835) closed by the delayed decoding series, the mechanism this release uses. [CVE-2026-22868](https://github.com/ethereum/go-ethereum/commit/fdfd1235a), the [GraphQL depth limit](https://github.com/graph-gophers/graphql-go/security/advisories/GHSA-mh3m-8c74-74xh) and the `eth_syncing` regression still open. Introduces a response cap that can disconnect peers answering correctly. Built with end-of-life Go 1.21.13, or Go 1.22.1 for Arm, carrying 55 to 61 Go standard library advisories with 43 to 47 whose affected symbols are present in the binary |
 | `v1.12.24` | 4 | 0.8% | a development build of the previous repository's `master`, which is not a release |
 | `v1.13.0` | 9 | 1.7% | **Recommended client:** six CVEs resolved and the GraphQL limit fixed, built with Go 1.26.8, zero Go standard library advisories |
 
@@ -281,8 +281,8 @@ Foundation networks, where the KZG path is active. `v1.13.0` patches all six. Th
 release carried which. The larger difference lies underneath the client's code.
 
 - **The Go standard library.** Every `v1.12.23` archive was built with go1.21.13 or go1.22.1, and both Go
-  versions had left support before the release shipped. Each archive carries 67 to 73 standard library
-  advisories, all published before `v1.12.23`, 54 to 58 of them with the vulnerable code present in the binary.
+  versions had left support before the release shipped. Each archive carries 55 to 61 standard library
+  advisories, all published before `v1.12.23`, 43 to 47 of them with the vulnerable code present in the binary.
   `v1.13.0` is built with go1.26.8 and carries none.
   [Go toolchain](/security/2026-09-core-geth-v1.12-go-toolchain-audit/) lists every one. Whether the client can reach each one was
   not assessed.
@@ -417,7 +417,7 @@ confirmations.
 
 ## Check a release yourself
 
-- **Checksums and provenance.** [Verifying a download](v1.13.0.md#verifying-a-download) checks an archive against
+- **Checksums and provenance.** [Verifying a download](/security/2026-09-core-geth-v1.13.0-release-report/#verifying-a-download) checks an archive against
   its published checksum and its build attestation.
 - **What built a binary.** `go version -m geth` prints the Go version and the commit a binary was built from,
   without running it.
