@@ -60,12 +60,13 @@ const windowsCompare =
 //
 // The macOS blocks carry no comments at all, and no block carries one after a command. Stock
 // zsh, the macOS default, treats `#` in a paste as a command or an argument, so a comment line
-// prints an error and a trailing comment makes `shasum -c` fail on the `#`. The Windows block
-// keeps its numbered comments, which PowerShell reads as comments.
+// prints an error and a trailing comment makes `shasum -c` fail on the `#`. The Windows blocks
+// can carry comments, which PowerShell reads as comments.
 //
 // A pasted block carries on past a failed line. So where a block checks what it downloaded, the
 // lines after the check are chained to it, and the line that starts a node sits in a block of its
-// own, which a failed check cannot reach.
+// own, which a failed check cannot reach. PowerShell's check is two lines a reader compares by eye,
+// and a paste does not wait for the reader, so on Windows nothing follows those lines in their block.
 const PANELS: readonly PlatformPanel[] = [
   {
     id: "linux",
@@ -117,21 +118,27 @@ shasum -a 256 -c core-geth-osx-arm64-${releaseTag}.zip.sha256 &&
     label: "Windows",
     steps: [
       {
-        title: "From nothing to a running node",
-        code: `# 1. Download the release and its checksum, in PowerShell
+        title: "Download the release and check it",
+        code: `# In PowerShell
 Invoke-WebRequest "${assetBase}/core-geth-win64-${releaseTag}.zip" -OutFile "core-geth-win64-${releaseTag}.zip"
 Invoke-WebRequest "${assetBase}/core-geth-win64-${releaseTag}.zip.sha256" -OutFile "core-geth-win64-${releaseTag}.zip.sha256"
 
-# 2. Compare these two lines, then unpack
+# Compare these two lines
 (Get-FileHash "core-geth-win64-${releaseTag}.zip" -Algorithm SHA256).Hash
-Get-Content "core-geth-win64-${releaseTag}.zip.sha256"
-Expand-Archive "core-geth-win64-${releaseTag}.zip" -DestinationPath C:\\core-geth -Force
-
-# 3. Start a node on Ethereum Classic
-cd C:\\core-geth
-.\\geth.exe version
+Get-Content "core-geth-win64-${releaseTag}.zip.sha256"`,
+        after: `${windowsCompare} If they differ, delete the file and download it again rather than running it.`,
+      },
+      {
+        title: "If the two lines match, unpack the release",
+        code: `Expand-Archive "core-geth-win64-${releaseTag}.zip" -DestinationPath C:\\core-geth -Force
+C:\\core-geth\\geth.exe version`,
+        after: `The last line must report a \`${RECOMMENDED_LINE}\` release.`,
+      },
+      {
+        title: "Start a node on Ethereum Classic",
+        code: `cd C:\\core-geth
 .\\geth.exe --classic`,
-        after: `For the Mordor test network, run \`.\\geth.exe --mordor\` instead. ${windowsCompare}`,
+        after: "For the Mordor test network, run `.\\geth.exe --mordor` instead.",
       },
     ],
     guide: { label: "Windows users guide", href: `${DOCS_URL}getting-started/run/windows/` },
