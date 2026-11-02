@@ -8,9 +8,8 @@ import sitemap from "@astrojs/sitemap";
 // route in src/pages/sitemap.xml.ts that points at this integration's sitemap-0.xml,
 // so that output filename is part of the deploy contract.
 //
-// Each page's lastmod is the build's date. That is true rather than approximate:
-// the build reads the repository card's counts and release from GitHub, so every
-// build changes the page.
+// Each page's lastmod is the build's date. Nothing schedules a build, so that date tracks
+// real deploys, and one deploy dates every page.
 export default defineConfig({
   site: "https://coregeth.com",
   output: "static",

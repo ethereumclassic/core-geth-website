@@ -1,16 +1,17 @@
 ---
 import Icon from "@/components/Icon.astro";
-import { formatAsOf, type RepositoryFacts } from "@/data/repository";
+import type { RepositoryFacts } from "@/data/repository";
 import { REPO } from "@/data/site";
 
 interface Props {
   facts: RepositoryFacts;
 }
 
-// The numbers are GitHub's as of the build, or of the committed snapshot when the
-// API could not be read; the card prints which date applies. The release link is
-// GitHub's latest-release address, so it lands on a newer release as soon as one
-// ships, before the next build updates the tag shown.
+// Links, with no count, version or date (maintainer, 2026-11-01): a number read at build time
+// is stale the moment someone stars or forks the repository or a release ships, and nothing
+// schedules a build. Each link stays right without one. The release link is GitHub's
+// latest-release address, and the other three go where a reader can act, in the order GitHub
+// sets them.
 const { facts } = Astro.props;
 const [owner, project] = REPO.slug.split("/");
 ---
@@ -27,52 +28,35 @@ const [owner, project] = REPO.slug.split("/");
     </h3>
   </div>
   <p class="repo__description">{facts.description}</p>
-  <dl class="repo__facts">
-    <div>
-      <dt>
-        <Icon name="eye" size={14} />
-        Watch
-      </dt>
-      <dd>
-        <a href={REPO.url}>{facts.watchers}</a>
-      </dd>
-    </div>
-    <div>
-      <dt>
-        <Icon name="fork" size={14} />
-        Fork
-      </dt>
-      <dd>
-        <a href={REPO.forkUrl}>{facts.forks}</a>
-      </dd>
-    </div>
-    <div>
-      <dt>
-        <Icon name="star" size={14} />
-        Star
-      </dt>
-      <dd>
-        <a href={REPO.url}>{facts.stars}</a>
-      </dd>
-    </div>
-    <div>
-      <dt>
-        <Icon name="tag" size={14} />
-        Latest release
-      </dt>
-      <dd>
-        <a href={REPO.latestUrl}>{facts.release.tag}</a>
-      </dd>
-    </div>
-  </dl>
-  <div class="repo__foot">
-    <a class="button button--primary" href={REPO.releasesUrl}>
+  <div class="repo__releases">
+    <a class="button button--primary" href={REPO.latestUrl}>
+      <Icon name="tag" />
+      Latest release
+    </a>
+    <a class="button" href={REPO.releasesUrl}>
       All releases
     </a>
-    <p class="repo__asof">
-      Read from GitHub on <time datetime={facts.asOf}>{formatAsOf(facts.asOf)}</time>.
-    </p>
   </div>
+  <ul class="repo__actions" role="list">
+    <li>
+      <a class="button" href={REPO.url}>
+        <Icon name="eye" />
+        Watch<span class="visually-hidden"> this repository on GitHub</span>
+      </a>
+    </li>
+    <li>
+      <a class="button" href={REPO.forkUrl}>
+        <Icon name="fork" />
+        Fork<span class="visually-hidden"> this repository on GitHub</span>
+      </a>
+    </li>
+    <li>
+      <a class="button" href={REPO.url}>
+        <Icon name="star" />
+        Star<span class="visually-hidden"> this repository on GitHub</span>
+      </a>
+    </li>
+  </ul>
 </article>
 
 <style>
@@ -128,63 +112,29 @@ const [owner, project] = REPO.slug.split("/");
     color: var(--text);
   }
 
-  /* The card's stat boxes: the value large, its label small beneath it. Three in a
-     row where they fit; on a narrow screen the counts pair up and the release,
-     the widest value, takes the row below. */
-  /* Two by two at every width. Four tiles in a three-column grid left the release
-     stranded on a row of its own, and four across is too narrow for a version number
-     inside the card's half of the band. */
-  .repo__facts {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  /* Two rows that fill the card and wrap on the narrowest screens rather than overflowing. */
+  .repo__releases {
+    display: flex;
+    flex-wrap: wrap;
     gap: 0.75rem;
   }
 
-  .repo__facts > div {
-    display: flex;
-    flex-direction: column-reverse;
-    gap: 0.3rem;
-    padding: 0.9rem 1.1rem;
-    border: 1px solid var(--hairline);
-    border-radius: var(--radius);
-    background: var(--ground);
+  .repo__releases .button {
+    flex: 1 1 auto;
+    padding-inline: 0.75rem;
   }
 
-  .repo__facts dt {
-    display: inline-flex;
-    gap: 0.35rem;
-    align-items: center;
-    color: var(--muted);
-    font-size: 0.9rem;
+  .repo__actions {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(5.5rem, 1fr));
+    gap: 0.75rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
   }
 
-  .repo__facts dd {
-    color: var(--ink);
-    font-size: 2rem;
-    font-variant-numeric: tabular-nums;
-    font-weight: 800;
-    letter-spacing: -0.03em;
-    line-height: 1.1;
-  }
-
-  .repo__facts dd a {
-    color: var(--accent);
-    text-decoration: none;
-  }
-
-  .repo__facts dd a:hover {
-    text-decoration: underline;
-  }
-
-  .repo__foot {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.75rem 1.25rem;
-    align-items: center;
-  }
-
-  .repo__asof {
-    color: var(--muted);
-    font-size: 0.9rem;
+  .repo__actions .button {
+    width: 100%;
+    padding-inline: 0.5rem;
   }
 </style>

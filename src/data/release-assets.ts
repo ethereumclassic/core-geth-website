@@ -10,6 +10,7 @@
  * for the client and `core-geth-alltools-<platform>-<tag>.zip` for the client with the
  * tools, each beside a `.sha256`. Docker image tarballs use `.tar.gz`.
  */
+import { RELEASE_TAG } from "./repository";
 import { REPO } from "./site";
 
 export interface DownloadFile {
@@ -161,6 +162,9 @@ export async function getDownloads(): Promise<ReleaseDownloads | undefined> {
     const notes = release.html_url;
     if (typeof tag !== "string" || typeof published !== "string" || typeof notes !== "string") {
       throw new Error("the releases API returned an unexpected shape");
+    }
+    if (!RELEASE_TAG.test(tag)) {
+      throw new Error("the releases API returned a tag that is not a plain version");
     }
     const assets = (Array.isArray(release.assets) ? release.assets : []) as {
       name?: unknown;

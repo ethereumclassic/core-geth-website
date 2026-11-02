@@ -1,12 +1,10 @@
 ---
 import Icon from "@/components/Icon.astro";
-import { getRepository } from "@/data/repository";
 import { BRAND_MENU, DOCS, REPO, SITE_NAME } from "@/data/site";
 
 // The same bar the documentation's header is: the mark and the name on the left, the two
-// routes a reader needs and the repository on the right, with its release, stars and
-// forks. The facts come from the build, like the repository card's.
-const facts = await getRepository();
+// routes a reader needs and the repository on the right, by name alone. A count or a tag read
+// at build time is stale the moment it changes (maintainer, 2026-11-01).
 ---
 
 <header class="bar">
@@ -36,26 +34,8 @@ const facts = await getRepository();
       </a>
       <a class="source" href={REPO.url}>
         <Icon name="github" size={22} />
-        <span class="source__text">
-          <span class="source__name">{REPO.slug}</span>
-          <span class="source__facts" aria-hidden="true">
-            <span>
-              <Icon name="tag" size={12} />
-              {facts.release.tag}
-            </span>
-            <span>
-              <Icon name="star" size={12} />
-              {facts.stars}
-            </span>
-            <span>
-              <Icon name="fork" size={12} />
-              {facts.forks}
-            </span>
-          </span>
-        </span>
-        <span class="visually-hidden">
-          {` on GitHub: latest release ${facts.release.tag}, ${facts.stars} stars, ${facts.forks} forks`}
-        </span>
+        <span class="source__name">{REPO.slug}</span>
+        <span class="visually-hidden">{" on GitHub"}</span>
       </a>
     </nav>
   </div>
@@ -201,42 +181,24 @@ const facts = await getRepository();
   }
 
   /* Narrow screens keep the GitHub mark and read the name to assistive technology. */
-  .source__text {
+  .source__name {
     position: absolute;
     width: 1px;
     height: 1px;
     overflow: hidden;
     clip-path: inset(50%);
+    font-size: 0.85rem;
+    font-weight: 600;
     white-space: nowrap;
   }
 
   @media (min-width: 40rem) {
-    .source__text {
+    .source__name {
       position: static;
-      display: grid;
       width: auto;
       height: auto;
       overflow: visible;
       clip-path: none;
-      line-height: 1.3;
     }
-  }
-
-  .source__name {
-    font-size: 0.85rem;
-    font-weight: 600;
-  }
-
-  .source__facts {
-    display: flex;
-    gap: 0.75rem;
-    color: var(--bar-text);
-    font-size: 0.75rem;
-  }
-
-  .source__facts > span {
-    display: inline-flex;
-    gap: 0.25rem;
-    align-items: center;
   }
 </style>
