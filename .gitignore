@@ -52,6 +52,9 @@ keystore/
 *.keystore
 wallet.json
 mnemonic.txt
+# The client's node private key, which sets a node's identity on the network. The
+# client names the file with no extension, so *.key catches only a renamed copy.
+nodekey
 
 # ---- Package-registry auth -----------------------------------------------------
 #
