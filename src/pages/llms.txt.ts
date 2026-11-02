@@ -64,7 +64,7 @@ export const GET: APIRoute = () => {
     ),
     "",
     wrap(
-      `${SITE_URL}/ is the project's landing page, ${SITE_URL}/downloads/ lists every file the latest release published and how to verify one, ${SITE_URL}/security/ carries the audits and what the network is running, ${SITE_URL}/about/ carries the project's lineage, and ${SITE_URL}/sponsor/ says who maintains and funds the client and how to sponsor it. The documentation at ${DOCS.home.href} is where to install, run and operate a node, and where the audits and release records are published.`,
+      `${SITE_URL}/ is the project's landing page, ${SITE_URL}/downloads/ lists every file the latest release published, how to move a \`${EXPOSED_LINE}\` node to the \`${RECOMMENDED_LINE}\` line and how to verify a download, ${SITE_URL}/security/ carries the audits and what the network is running, ${SITE_URL}/about/ carries the project's lineage, and ${SITE_URL}/sponsor/ says who maintains and funds the client and how to sponsor it. The documentation at ${DOCS.home.href} is where to install, run and operate a node, and where the audits and release records are published.`,
     ),
     "",
     "## Networks",
@@ -79,8 +79,10 @@ export const GET: APIRoute = () => {
     "## Releases",
     "",
     `- [${REPO.slug}](${REPO.releasesUrl}): where releases are published. ${PREVIOUS_NAMESPACE}`,
-    `- [Downloads](${SITE_URL}/downloads/): every archive and container image the latest release published, for Linux, macOS, Windows and Arm, with the checksum beside each one.`,
-    `- [The latest release](${REPO.latestUrl}): the address every download on this site links, so it resolves to whatever is current.`,
+    `- [Downloads](${SITE_URL}/downloads/): every archive and container image the latest release published, for Linux, macOS, Windows and Arm, with the checksum beside each one, and the commands to install, move and verify on each platform.`,
+    // A reader told to upgrade lands on /downloads/, and a link to the release itself uses
+    // REPO.latestUrl, never a tag (maintainer, 2026-11-01).
+    `- [The latest release](${REPO.latestUrl}): the release itself, at GitHub's address for the newest one, so it resolves to whatever is current. A reader told to upgrade goes to Downloads, which has the commands. Downloads can lag a new release until the site is next deployed.`,
     "",
     wrap(
       `Every archive and image is published with a \`.sha256\` checksum and a GitHub build attestation, minted against a short-lived certificate issued to the workflow run, recording which workflow built the file from which commit. Check them with \`sha256sum -c\` and \`gh attestation verify\`. On a first run Windows names the publisher as unknown, and macOS blocks a downloaded binary until it is allowed.`,
@@ -88,6 +90,9 @@ export const GET: APIRoute = () => {
     "",
     wrap(TRANSITION.lede),
     "",
+    wrap(TRANSITION.advice),
+    "",
+    entry(DOCS.migration),
     entry(DOCS.transition),
     "",
     "## What the network is running",
@@ -104,7 +109,7 @@ export const GET: APIRoute = () => {
     ),
     `- [What the network is running](${SITE_URL}/security/): this table, the audits behind it, and how to report a security issue.`,
     `- [The evidence for each row](${NETWORK_RUNNING.evidence})`,
-    `- [${NETWORK_RUNNING.upgrade.label}](${NETWORK_RUNNING.upgrade.href})`,
+    `- [${NETWORK_RUNNING.upgrade.label}](${absolute(NETWORK_RUNNING.upgrade.href)})`,
     "",
     "## For node operators",
     "",

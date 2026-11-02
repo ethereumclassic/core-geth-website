@@ -26,9 +26,10 @@ docker run -d --name core-geth-classic \
 ```
 
 [Downloads](https://coregeth.com/downloads/) has the archive for every platform with its checksum
-beside it, and the install and start commands for Linux, macOS, Windows and building from source.
-The file names carry the release tag, which is why they are generated there rather than written
-down here.
+beside it, and the commands to install, start and verify on Linux, macOS, Windows, in a container or
+from source. [Moving a `v1.12` node](https://coregeth.com/downloads/#upgrade) has its own steps there,
+including the required P2P node key rotation. The file names carry the release tag, which is why
+they are generated there rather than written down here.
 
 ## Why it is maintained here
 

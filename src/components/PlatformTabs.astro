@@ -1,0 +1,201 @@
+---
+/**
+ * One tab per platform, with no script: the tabs are radio inputs and labels, and CSS shows the
+ * checked one's panel. Every panel stays in the HTML, so a browser without `:has()`, a reader
+ * with CSS off and a crawler all get all of them rather than none (maintainer decision,
+ * 2026-10-07).
+ *
+ * A page can carry several sets, so `prefix` keeps their radio groups and ids apart. Each set
+ * chooses on its own: one choice driving every set would take a script, or a radio input far
+ * from the labels that use it, which a keyboard reader could not reach from where they are.
+ *
+ * A panel that needs more than its steps takes it from a named slot: `before-<id>` above the
+ * steps, `after-<id>` under the guide link.
+ */
+import ArrowText from "@/components/ArrowText.astro";
+import InlineCode from "@/components/InlineCode.astro";
+
+export interface PlatformPanel {
+  /** One of the five the styles below can show: a sixth needs its own rule there. */
+  id: "linux" | "macos" | "windows" | "containers" | "source";
+  label: string;
+  /** What a reader does in order: `before` for what a block needs them to read first, a block to run, `after` for what it leaves them to do. */
+  steps: readonly { title: string; before?: string; code?: string; after?: string }[];
+  guide: { label: string; href: string };
+}
+
+interface Props {
+  legend: string;
+  panels: readonly PlatformPanel[];
+  prefix?: string;
+}
+
+const { legend, panels, prefix = "" } = Astro.props;
+---
+
+<fieldset class="tabs">
+  <legend class="visually-hidden">{legend}</legend>
+  <div class="tabs__bar">
+    {panels.map((panel, index) => (
+      <Fragment>
+        <input
+          class="tabs__input visually-hidden"
+          type="radio"
+          name={`${prefix}platform`}
+          id={`${prefix}tab-${panel.id}`}
+          data-platform={panel.id}
+          checked={index === 0}
+        />
+        <label class="tabs__label" for={`${prefix}tab-${panel.id}`}>
+          {panel.label}
+        </label>
+      </Fragment>
+    ))}
+  </div>
+
+  {panels.map((panel) => (
+    <div class="panel" id={`${prefix}panel-${panel.id}`} data-platform={panel.id}>
+      <h3 class="panel__heading">{panel.label}</h3>
+      <slot name={`before-${panel.id}`} />
+      {panel.steps.map((step) => (
+        <Fragment>
+          <h4 class="panel__step">{step.title}</h4>
+          {step.before && (
+            <p class="panel__note">
+              <InlineCode text={step.before} />
+            </p>
+          )}
+          {step.code && (
+            <div class="shell-wrap">
+              <pre class="shell"><code>{step.code}</code></pre>
+            </div>
+          )}
+          {step.after && (
+            <p class="panel__note">
+              <InlineCode text={step.after} />
+            </p>
+          )}
+        </Fragment>
+      ))}
+      <a class="more" href={panel.guide.href}>
+        <ArrowText text={panel.guide.label} />
+      </a>
+      <slot name={`after-${panel.id}`} />
+    </div>
+  ))}
+</fieldset>
+
+<style>
+  /* The tab strip. The fieldset carries no frame of its own; the strip and the panel below it
+     share one. */
+  .tabs {
+    width: 100%;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+  }
+
+  .tabs__bar {
+    display: flex;
+    flex-wrap: wrap;
+    border: 1px solid var(--hairline);
+    border-bottom: 0;
+    background: var(--surface);
+  }
+
+  .tabs__label {
+    flex: 1 1 auto;
+    padding: 0.8rem 1.25rem;
+    border-right: 1px solid var(--hairline);
+    color: var(--muted);
+    font-size: 0.95rem;
+    font-weight: 650;
+    text-align: center;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  .tabs__label:last-of-type {
+    border-right: 0;
+  }
+
+  .tabs__label:hover {
+    color: var(--ink);
+    background: var(--ground);
+  }
+
+  .panel {
+    display: grid;
+    gap: 1.1rem;
+    justify-items: start;
+    padding: 2rem clamp(1rem, 3vw, 2rem);
+    border: 1px solid var(--hairline);
+    background: var(--surface);
+  }
+
+  .panel + .panel {
+    border-top: 0;
+  }
+
+  .panel__heading {
+    margin: 0;
+    font-size: clamp(1.4rem, 3vw, 1.9rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+
+  /* Global, because what a page passes through a panel's slots sets these two as well. */
+  :global(.panel__step) {
+    margin: 0.4rem 0 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+  }
+
+  :global(.panel__note) {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.95rem;
+    line-height: 1.6;
+  }
+
+  /* A long path has no space to break at, and would otherwise widen the panel, and the page
+     with it, on a narrow screen. */
+  :global(.panel__note code) {
+    overflow-wrap: anywhere;
+  }
+
+  /* With `:has()` the checked radio shows its panel. Without it, or with CSS off
+     entirely, every panel stays visible: the page loses the tabs, never the content. */
+  @supports selector(:has(*)) {
+    .panel {
+      display: none;
+    }
+
+    .tabs:has(.tabs__input[data-platform="linux"]:checked) .panel[data-platform="linux"],
+    .tabs:has(.tabs__input[data-platform="macos"]:checked) .panel[data-platform="macos"],
+    .tabs:has(.tabs__input[data-platform="windows"]:checked) .panel[data-platform="windows"],
+    .tabs:has(.tabs__input[data-platform="containers"]:checked) .panel[data-platform="containers"],
+    .tabs:has(.tabs__input[data-platform="source"]:checked) .panel[data-platform="source"] {
+      display: grid;
+    }
+
+    .tabs__input:checked + .tabs__label {
+      color: var(--bar-strong);
+      background: var(--accent);
+    }
+
+    .tabs__input:focus-visible + .tabs__label {
+      outline: 2px solid var(--accent);
+      outline-offset: -4px;
+    }
+  }
+
+  @media (max-width: 36rem) {
+    .tabs__label {
+      flex: 1 1 40%;
+      padding: 0.7rem 0.75rem;
+      border-bottom: 1px solid var(--hairline);
+    }
+  }
+</style>

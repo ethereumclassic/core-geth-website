@@ -1,0 +1,89 @@
+---
+/**
+ * Every file one platform's tab lists, from the release's own asset list. When the build could
+ * not read that list, this says so and links the release rather than showing a list that may be
+ * wrong.
+ */
+import InlineCode from "@/components/InlineCode.astro";
+import type { DownloadGroup } from "@/data/release-assets";
+import { REPO } from "@/data/site";
+
+interface Props {
+  group: DownloadGroup | undefined;
+}
+
+const { group } = Astro.props;
+---
+
+{group ? (
+  <Fragment>
+    <h4 class="panel__step panel__files">Every file in this release</h4>
+    {group.note && (
+      <p class="panel__note">
+        <InlineCode text={group.note} />
+      </p>
+    )}
+    <table class="data-table files">
+      <thead>
+        <tr>
+          <th scope="col">File</th>
+          <th scope="col">Your machine</th>
+          <th scope="col" class="files__num">
+            Size
+          </th>
+          <th scope="col">Checksum</th>
+        </tr>
+      </thead>
+      <tbody>
+        {group.files.map((file) => (
+          <tr>
+            <th scope="row">
+              <a class="files__name" href={file.href}>
+                {file.name}
+              </a>
+            </th>
+            <td>
+              <InlineCode text={file.machine} />
+            </td>
+            <td class="files__num">{file.size}</td>
+            <td>{file.checksum ? <a href={file.checksum}>sha256</a> : "none published"}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </Fragment>
+) : (
+  <p class="panel__note">
+    The file list could not be read at build time. Every file is on{" "}
+    <a href={REPO.latestUrl}>the release itself</a>, with its checksum beside it.
+  </p>
+)}
+
+<style>
+  /* The full list is reference below the actionable part, so it gets a rule above it. */
+  .panel__files {
+    width: 100%;
+    margin-top: 1.4rem;
+    padding-top: 1.75rem;
+    border-top: 1px solid var(--hairline);
+  }
+
+  /* The file name is what ends up on disk, so it is set in the documentation's code
+     face and is allowed to wrap rather than widening the table. */
+  .files__name {
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+    overflow-wrap: anywhere;
+  }
+
+  .files__num {
+    text-align: right;
+    white-space: nowrap;
+  }
+
+  @media (max-width: 36rem) {
+    .files__num {
+      text-align: left;
+    }
+  }
+</style>

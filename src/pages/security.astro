@@ -12,6 +12,7 @@ import VerticalTimeline from "@/components/VerticalTimeline.astro";
 import {
   AUDITS,
   DISCLOSURE,
+  DISCOVERY_FLAG_STEP,
   EXPOSED_LINE,
   NETWORK_RUNNING,
   RECOMMENDED_LINE,
@@ -20,6 +21,7 @@ import {
   REPO,
   SECURITY_EMAIL,
   SECURITY_POLICY_URL,
+  UPGRADE_ANCHOR,
 } from "@/data/site";
 
 // Every figure in the strip is computed from the census the page already shows, so a
@@ -100,7 +102,7 @@ const CENSUS_STATS = [
       {`The ${EXPOSED_LINE} line went 21 months without security maintenance, and in March 2026 one of the flaws that gap left open was used to crash Core-Geth ${EXPOSED_LINE} bootnodes. The ${RECOMMENDED_LINE} line closes all six client CVEs the audits found, that one among them. Every finding on this page is measured, dated and linked to the audit that records it, so nothing here has to be taken on trust.`}
     </p>
     <div class="security__actions">
-      <a class="button button--primary" href={REPO.latestUrl}>
+      <a class="button button--primary" href={`/downloads/#${UPGRADE_ANCHOR}`}>
         Upgrade to the latest release
       </a>
       <a class="button" href="#audits">
@@ -147,7 +149,9 @@ const CENSUS_STATS = [
         size="medium"
       >
         <p class="lede">
-          {`These ${spell(auditCount)} examine the ${EXPOSED_LINE} line and the work that replaced it: that line's client code, the Go toolchain its binaries inherit, its dependency tree, and the archives it published. Every figure on this page comes from one of them or from the ${RECOMMENDED_LINE} release reports under them. If you run a node, migrate to the ${RECOMMENDED_LINE} line and read these reports with your security engineers: each one carries its method and its raw measurements, so you can verify every claim and judge what running ${EXPOSED_LINE} exposed you to.`}
+          <InlineCode
+            text={`These ${spell(auditCount)} examine the ${EXPOSED_LINE} line and the work that replaced it: that line's client code, the Go toolchain its binaries inherit, its dependency tree, and the archives it published. Every figure on this page comes from one of them or from the ${RECOMMENDED_LINE} release reports under them. If you run a node, [migrate to the ${RECOMMENDED_LINE} line](/downloads/#${UPGRADE_ANCHOR}) and read these reports with your security engineers: each one carries its method and its raw measurements, so you can verify every claim and judge what running ${EXPOSED_LINE} exposed you to.`}
+          />
         </p>
       </SectionHead>
       <ul class="audits" role="list">
@@ -181,6 +185,9 @@ const CENSUS_STATS = [
           <InlineCode text={RELEASE_FIXES} />
         </p>
       </SectionHead>
+      <p class="security__paragraph">
+        <InlineCode text={DISCOVERY_FLAG_STEP} />
+      </p>
       <p class="security__paragraph">
         {`Both reports below cover ${RECOMMENDED_LINE}.0 itself rather than the line it replaced. One reports the release, down to what is known to be imperfect in it; the other answers every claim this site makes about it from the public record.`}
       </p>

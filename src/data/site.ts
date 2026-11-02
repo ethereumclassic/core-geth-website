@@ -9,10 +9,10 @@
  * numbers, advisory counts, fork schedules and node figures belong to the pages that
  * maintain them, and a second copy here would go stale without anyone noticing. Link
  * the page instead. The exceptions, each set where it is defined:
- * - The repository card, whose release tag and counts are read from GitHub at build
- *   time (src/data/repository.ts).
- * - The MESS operator action, which names the release that ships MESS on, in the
- *   maintainer's wording.
+ * - `/downloads/`, whose commands and file names carry the release tag read from GitHub
+ *   at build time (src/data/release-assets.ts).
+ * - The MESS operator action, which names the `--mess` flags and takes no position on a
+ *   default, in the maintainer's wording.
  * - NETWORK_RUNNING, the network table, dated and sourced where it is set.
  */
 
@@ -50,23 +50,28 @@ export const REPO = {
    *  it ships, where a tag link would keep pointing at the old one. */
   latestUrl: "https://github.com/ethereumclassic/core-geth/releases/latest",
   /**
-   * The card's three counts link to where a reader can act on them. **Only forking has a
-   * URL that does anything**: GitHub starts a fork from a plain link, while starring and
-   * watching are POST actions with no GET equivalent, and `/stargazers` and `/watchers`
-   * answer 404 to a signed-out visitor (measured 2026-10-08, with
-   * `ethereum/go-ethereum/stargazers` as the control, which 404s the same way). So those
-   * two link to the repository, where their buttons are.
+   * The repository card's Watch, Fork and Star link to where a reader can act. **Only
+   * forking has a URL that does anything**: GitHub starts a fork from a plain link, while
+   * starring and watching are POST actions with no GET equivalent, and `/stargazers` and
+   * `/watchers` answer 404 to a signed-out visitor (measured 2026-10-08 and 2026-11-01, with
+   * `ethereum/go-ethereum/stargazers` as the first control, which 404s the same way). So
+   * those two link to the repository, where their buttons are.
    */
   forkUrl: "https://github.com/ethereumclassic/core-geth/fork",
 } as const;
 
 /**
  * The release line the page recommends, never a single release: a patch inside the
- * line then ships without editing the site, because every download link is
- * `REPO.latestUrl` and the card reads its version from GitHub at build time. The
- * network table is the one place an exact release is named, since its rows are a
- * census counted on a date. `NETWORK_RUNNING` fails the build if its recommended row
- * leaves this line.
+ * line then ships without editing the site, because `/downloads/` reads the release from
+ * GitHub at build time. The network table is the one place an exact release
+ * is named, since its rows are a census counted on a date. `NETWORK_RUNNING` fails the
+ * build if its recommended row leaves this line.
+ *
+ * **A reader told to upgrade lands on `/downloads/`, and a link to the release itself uses
+ * `REPO.latestUrl`, never a tag** (maintainer, 2026-11-01). `/downloads/` has the archive
+ * for each platform, its checksum and the commands, and GitHub's release page does not.
+ * The cost: `/downloads/` reads the release at build time and nothing schedules a build,
+ * so a new release needs a redeploy before that page shows it.
  */
 export const RECOMMENDED_LINE = "v1.13";
 
@@ -253,11 +258,46 @@ export const GUIDES: readonly { role: string; title: string; href: string }[] = 
   },
 ];
 
-/** The transition, in the words the transition page opens with. */
+/**
+ * The `/downloads/` section that moves a node off the exposed line. The commands live there
+ * and nowhere else, because that page's script is what gives a code block its copy button,
+ * so another page links this section rather than carrying a block of its own.
+ */
+export const UPGRADE_ANCHOR = "upgrade";
+
+/** The discovery flag's heading in that section, below its tabs, so a link can land on it. */
+export const DISCOVERY_FLAG_ANCHOR = "discovery-flag";
+
+/**
+ * The recommendation and where to act on it, in the order an operator still on the exposed
+ * line needs them (maintainer, 2026-11-01). /llms.txt reads the sentences built from these,
+ * so a link in them is absolute.
+ */
+export const MOVE_RECOMMENDATION = `Every node still on a \`${EXPOSED_LINE}\` release should move to the \`${RECOMMENDED_LINE}\` line.`;
+const MOVE_WHERE = `[Downloads](${SITE_URL}/downloads/#${UPGRADE_ANCHOR}) has the commands and checksums, and the [migration guide](${DOCS.migration.href}) has the steps, including the required P2P node key rotation.`;
+
+/** What the upgrade costs, in the operators page's and the migration guide's words. */
+export const UPGRADE_COST =
+  "Your chain data carries over, and the upgrade costs about twenty minutes of downtime.";
+
+/**
+ * The step for a node that cannot move yet, in the notice below and on `/security/`. /llms.txt
+ * reads the notice, so the link is absolute.
+ */
+export const DISCOVERY_FLAG_STEP = `A \`${EXPOSED_LINE}\` node that cannot move yet can [add the \`--discovery.dns\` flag](${SITE_URL}/downloads/#${DISCOVERY_FLAG_ANCHOR}) to read the \`ethereumclassic\` GitHub organization's peer discovery lists, a small step that closes none of the flaws the audits found in the \`${EXPOSED_LINE}\` line.`;
+
+/**
+ * The lede is the transition page's opening, then the services it names, less the client,
+ * because `PREVIOUS_NAMESPACE` directly above this notice says the client has moved. The advice
+ * is this site's own, in the order an operator still on the exposed line needs it (maintainer,
+ * 2026-11-01): move, where to, then what the discovery flag does and does not do. Only its last
+ * sentence is the transition page's. It stays short (maintainer, 2026-11-01): `/downloads/` says
+ * what the discovery lists are, in the words of `ethereumclassic/discv4-dns-lists`' "Using the
+ * trees" page.
+ */
 export const TRANSITION = {
-  lede: "The ETC Cooperative is winding down, and the services it maintained are moving to the `ethereumclassic` GitHub organization: the Core-Geth client, the peer discovery lists, the bootnodes and public JSON-RPC.",
-  advice:
-    "The peer discovery lists are how a node finds its first peers. `v1.13` reads the `ethereumclassic` organization's lists by default, and a `v1.12.x` node switches to them with one flag. Before you move a node, a pool or an application to a new source of software or data, confirm which organization publishes it.",
+  lede: "The ETC Cooperative is winding down, and the services it maintained are moving to the `ethereumclassic` GitHub organization: the peer discovery lists, the bootnodes and public JSON-RPC.",
+  advice: `Move a \`${EXPOSED_LINE}\` node to the \`${RECOMMENDED_LINE}\` line with the commands and checksums on [Downloads](${SITE_URL}/downloads/#${UPGRADE_ANCHOR}) and the steps in the [migration guide](${DOCS.migration.href}), including the required P2P node key rotation. ${DISCOVERY_FLAG_STEP} Before you move a node, a pool or an application to a new source of software or data, confirm which organization publishes it.`,
 } as const;
 
 export interface Network {
@@ -294,9 +334,11 @@ export const NETWORKS: readonly Network[] = [
 ];
 
 /**
- * The four actions the operators page opens with. Each links there, and each carries one
- * line of its own (maintainer, 2026-10-08): an action a reader cannot weigh without
- * opening another page is not an action. Every line is the operators page's or the
+ * The four actions the operators page opens with. Each row links the page that carries its
+ * next step: the upgrade and rotation rows the migration guide, the MESS row its setting,
+ * and a row with no `href` the operators page, which `Operators.astro` falls back to. Each
+ * carries one line of its own (maintainer, 2026-10-08): an action a reader cannot weigh
+ * without opening another page is not an action. Every line is the operators page's or the
  * migration guide's, shortened, never reasoned out here. `code` is set in monospace
  * after `text`; `detail` is a line beneath it, with backticks marking code.
  */
@@ -308,12 +350,13 @@ export const OPERATOR_ACTIONS: readonly {
 }[] = [
   {
     text: `Upgrade to the ${RECOMMENDED_LINE} line`,
-    detail:
-      "Your chain data carries over, and the upgrade costs about twenty minutes of downtime. The migration guide has a path for each platform.",
+    detail: `${UPGRADE_COST} The migration guide has a path for each platform.`,
+    href: DOCS.migration.href,
   },
   {
     text: "Rotate the P2P node key",
     detail: `Required if your node ran the \`${EXPOSED_LINE}\` line: one of the flaws in that line leaks bits of that key across repeated handshakes, and no fix can take back what already leaked. A key that has only ever run \`${RECOMMENDED_LINE}\` was never exposed, so a fresh install skips this step.`,
+    href: `${DOCS.migration.href}#rotate-the-p2p-node-key`,
   },
   {
     text: "Track releases at ",
@@ -430,7 +473,7 @@ export const NETWORK_RUNNING = {
     label: "Where the Go figures come from",
     href: "/security/2026-09-core-geth-v1.12-go-toolchain-audit/",
   },
-  upgrade: { label: "Upgrade to the latest release", href: REPO.latestUrl },
+  upgrade: { label: "Upgrade to the latest release", href: `/downloads/#${UPGRADE_ANCHOR}` },
   total: NETWORK_TOTAL,
   /** The nodes in the total that are not a release row, named in the caption so the rows and
    *  the total reconcile for a reader. */
@@ -520,8 +563,7 @@ export const CAPABILITIES: readonly {
  * July 30, 2024 proposed the move. Nothing published says who performed it, so this does
  * not say either.
  */
-export const PREVIOUS_NAMESPACE =
-  "On December 21, 2024, Core-Geth maintenance moved to [`ethereumclassic/core-geth`](https://github.com/ethereumclassic/core-geth) from `etclabscore/core-geth`, as the ETC Cooperative's published roadmap on July 30, 2024 had proposed. Archives still published under `etclabscore/core-geth` are built from the older code and do not carry the `v1.13` fixes, so they are not a release to run: move to the latest `v1.13` release instead.";
+export const PREVIOUS_NAMESPACE = `On December 21, 2024, Core-Geth maintenance moved to [\`ethereumclassic/core-geth\`](https://github.com/ethereumclassic/core-geth) from \`etclabscore/core-geth\`, as the ETC Cooperative's published roadmap on July 30, 2024 had proposed. Archives still published under \`etclabscore/core-geth\` are built from the older code and do not carry the \`${RECOMMENDED_LINE}\` fixes, so they are not a release to run: [move to the latest \`${RECOMMENDED_LINE}\` release](${SITE_URL}/downloads/#${UPGRADE_ANCHOR}) instead.`;
 
 /**
  * The two repository names, and the tone each takes wherever it appears on the site
@@ -576,7 +618,7 @@ export const RECORDS: readonly {
   {
     date: { month: "Sep", year: "2026", iso: "2026-09" },
     label: "The solution",
-    summary: `\`${RECOMMENDED_LINE}.0\`, published from \`${REPO.slug}\`, fixes all six client CVEs the audits found in the \`${EXPOSED_LINE}\` client code and returns the dependencies and the Go toolchain to supported versions. Every node still on a \`${EXPOSED_LINE}\` release should move to the \`${RECOMMENDED_LINE}\` line.`,
+    summary: `\`${RECOMMENDED_LINE}.0\`, published from \`${REPO.slug}\`, fixes all six client CVEs the audits found in the \`${EXPOSED_LINE}\` client code and returns the dependencies and the Go toolchain to supported versions. ${MOVE_RECOMMENDATION}`,
     page: DOCS.releaseReport,
     // The record's heading already links the release report, which is the document. This
     // button is for the reader who wants the client: /downloads/ carries the archive for
@@ -689,8 +731,7 @@ export const SPONSOR = {
         cta: { label: "ethereumclassicdao.org", href: "https://ethereumclassicdao.org" },
       },
     ],
-    history:
-      "Moving Ethereum Classic's public goods into the `ethereumclassic` GitHub organization began in 2024, through the ETC Cooperative's own efforts: its published roadmap of July 2024 proposed moving Core-Geth into that organization, and `ethereumclassic/core-geth` was created in December 2024. Before that move, the work passed from one organization to the next as each closed or left: ETCDEV in 2018, ETC Labs in 2021, and the ETC Cooperative, which [entered maintenance mode](https://etccooperative.org/etc-cooperative-retrospective-2024.pdf) at the end of 2024 and is due to dissolve. Along the way the client changed repositories, the bootnodes and the peer discovery lists changed operators, and the `v1.12` line went 21 months without security maintenance in `etclabscore/core-geth`. What that cost is published in full, release by release and audit by audit: [the record is on the security page](/security/).",
+    history: `Moving Ethereum Classic's public goods into the \`ethereumclassic\` GitHub organization began in 2024, through the ETC Cooperative's own efforts: its published roadmap of July 2024 proposed moving Core-Geth into that organization, and \`ethereumclassic/core-geth\` was created in December 2024. Before that move, the work passed from one organization to the next as each closed or left: ETCDEV in 2018, ETC Labs in 2021, and the ETC Cooperative, which [entered maintenance mode](https://etccooperative.org/etc-cooperative-retrospective-2024.pdf) at the end of 2024 and is due to dissolve. Along the way the client changed repositories, the bootnodes and the peer discovery lists changed operators, and the \`v1.12\` line went 21 months without security maintenance in \`etclabscore/core-geth\`. What that cost is published in full, release by release and audit by audit: [the record is on the security page](${SITE_URL}/security/).`,
   },
   funders: {
     heading: "Who has funded Ethereum Classic public goods",
@@ -847,7 +888,7 @@ export const ORGANIZATIONS: readonly HistoryEntry[] = [
     // work in rather than a firm (maintainer, 2026-10-08). **The site names no contractor
     // anywhere**: the audits record one, and a reader who opens them will meet it there.
     title: "Ethereum Classic core developers",
-    body: `Maintain Core-Geth today, in \`${REPO.slug}\`. They resumed maintenance in February 2026, after the 21-month gap, carried out the security work on the \`${EXPOSED_LINE}\` line and disclosed it privately to the \`${PREVIOUS_REPO}\` maintainers. In September 2026 they released the \`${RECOMMENDED_LINE}\` modernization, which cleared years of technical debt and the security issues still open in \`${EXPOSED_LINE}\`. Run the \`${RECOMMENDED_LINE}\` line, and track releases at \`${REPO.slug}\` from here on.`,
+    body: `Maintain Core-Geth today, in \`${REPO.slug}\`. They resumed maintenance in February 2026, after the 21-month gap, carried out the security work on the \`${EXPOSED_LINE}\` line and disclosed it privately to the \`${PREVIOUS_REPO}\` maintainers. In September 2026 they released the \`${RECOMMENDED_LINE}\` modernization, which cleared years of technical debt and the security issues still open in \`${EXPOSED_LINE}\`. [Run the \`${RECOMMENDED_LINE}\` line](/downloads/), and track releases at \`${REPO.slug}\` from here on.`,
     link: { label: REPO.slug, href: REPO.url },
     current: true,
   },
@@ -881,7 +922,7 @@ export const STAKEHOLDERS_QUOTE = {
 export const REPOSITORY_MOVE = {
   heading: "This repository",
   body: [
-    "On December 21, 2024, Core-Geth maintenance moved to `ethereumclassic/core-geth` from `etclabscore/core-geth`, as the ETC Cooperative's published roadmap on July 30, 2024 had proposed. The `v1.13` line is published here and is the one to run; the `v1.12` releases still listed under `etclabscore/core-geth` are built from the older code and carry security flaws that line never closed.",
+    "On December 21, 2024, Core-Geth maintenance moved to `ethereumclassic/core-geth` from `etclabscore/core-geth`, as the ETC Cooperative's published roadmap on July 30, 2024 had proposed. The `v1.13` line is published from `ethereumclassic/core-geth` and is [the one to run](/downloads/); the `v1.12` releases still listed under `etclabscore/core-geth` are built from the older code and carry security flaws that line never closed.",
     "Documenting the ETC Cooperative handoff: the last commit before the move, December 16, 2024, is preserved on the [`archive-etclabscore-2024-12`](https://github.com/ethereumclassic/core-geth/tree/archive-etclabscore-2024-12) branch and [tagged](https://github.com/ethereumclassic/core-geth/releases/tag/archive%2Fetclabscore-2024-12), so the full history up to that point is intact and checkable. Keeping a reference client in the project's own organization is ordinary practice, as with Bitcoin Core at `bitcoin/bitcoin` and go-ethereum at `ethereum/go-ethereum`.",
   ],
 } as const;
@@ -898,9 +939,10 @@ export const REPOSITORY_MOVE = {
  * versions says nothing.
  *
  * The December 2024 entry links the archived commit by tag, which is a citation of a
- * preserved state rather than a download: the copy standard's rule that every release link
- * uses `REPO.latestUrl` is about getting the software, and that tag's own page says it is
- * not a release.
+ * preserved state rather than a download: the copy standard's rule (maintainer, 2026-11-01)
+ * that a reader told to upgrade lands on `/downloads/`, and that a link to the release
+ * itself uses `REPO.latestUrl`, never a tag, is about getting the software, and that tag's
+ * own page says it is not a release.
  *
  * **Each title names the repository that published it** (maintainer, 2026-10-08), in
  * backticks so the namespace tones apply: the emergency patches came from the previous
@@ -992,7 +1034,7 @@ export const RELEASE_TIMELINE: readonly HistoryEntry[] = [
     iso: "2026-09-14",
     title: `\`${RECOMMENDED_LINE}.0\` from \`${REPO.slug}\``,
     body: `Seven months of work, tested on Ethereum Classic mainnet and Mordor throughout: all six client CVEs the audits found in the \`${EXPOSED_LINE}\` client code closed, GraphQL queries bounded, the \`eth_syncing\` regression fixed, and a supported Go toolchain. The release pipeline was rebuilt in \`${REPO.slug}\` too, so each archive names the machine it runs on and carries a checksum and a build attestation binding it to the workflow run that produced it. This repository has several maintainers with admin access and takes pull requests from anyone, which is what the previous repository's single-author emergency releases did not have.`,
-    cta: { label: "Get the latest release", href: REPO.latestUrl },
+    cta: { label: "Get the latest release", href: "/downloads/" },
     current: true,
   },
 ];
@@ -1037,7 +1079,7 @@ export const DISCLOSURE = {
  * without a reader opening either report. Every clause restates a claim this page already
  * carries: the census row, the release timeline entry, and the records band.
  */
-export const RELEASE_FIXES = `The \`${RECOMMENDED_LINE}\` line closes all six client CVEs the audits found in the \`${EXPOSED_LINE}\` client code, including the one used against Core-Geth \`${EXPOSED_LINE}\` bootnodes in March 2026 and the one \`${PREVIOUS_REPO}\` declared not applicable to Ethereum Classic, and it bounds the GraphQL query nesting that line left unlimited. It fixes the \`eth_syncing\` regression \`${PREVIOUS_REPO}\` introduced, which made a node report the wrong network head to the exchanges, explorers and monitoring that read it. It is built with a supported Go toolchain, so none of the Go standard library flaws the older archives carry is in the binary, and the dependency tree behind it was modernized in the same work. It reads peer discovery lists published from the \`ethereumclassic\` organization, ships bootnodes run by the Core-Geth maintainers, and is cut by a rebuilt release pipeline that gives each archive a checksum and a build attestation binding it to the workflow run that produced it. Every node still on a \`${EXPOSED_LINE}\` release should move to the \`${RECOMMENDED_LINE}\` line.`;
+export const RELEASE_FIXES = `The \`${RECOMMENDED_LINE}\` line closes all six client CVEs the audits found in the \`${EXPOSED_LINE}\` client code, including the one used against Core-Geth \`${EXPOSED_LINE}\` bootnodes in March 2026 and the one \`${PREVIOUS_REPO}\` declared not applicable to Ethereum Classic, and it bounds the GraphQL query nesting that line left unlimited. It fixes the \`eth_syncing\` regression \`${PREVIOUS_REPO}\` introduced, which made a node report the wrong network head to the exchanges, explorers and monitoring that read it. It is built with a supported Go toolchain, so none of the Go standard library flaws the older archives carry is in the binary, and the dependency tree behind it was modernized in the same work. It reads peer discovery lists published from the \`ethereumclassic\` organization, ships bootnodes run by the Core-Geth maintainers, and is cut by a rebuilt release pipeline that gives each archive a checksum and a build attestation binding it to the workflow run that produced it. ${MOVE_RECOMMENDATION} ${MOVE_WHERE}`;
 
 export const AUDITS: readonly {
   title: string;

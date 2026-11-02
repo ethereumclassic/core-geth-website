@@ -14,12 +14,13 @@
 
 # core-geth-website: Copilot Instructions
 
-The source for **coregeth.com**, the landing page for Core-Geth, the Ethereum Classic execution
+The source for **coregeth.com**, the landing page for Core-Geth, an Ethereum Classic execution
 client. The client lives at `ethereumclassic/core-geth`, and none of its code is here.
 
-The page sends node operators to docs.coregeth.com and to the repository; it holds no documentation
-of its own. Every section answers "what is this, and should I run it" in a few lines, or links the
-documentation page that answers it. Content that would grow past a short paragraph and a link
+The page sends node operators to docs.coregeth.com and to the repository; apart from the commands
+`/downloads/` carries for installing, moving a node and verifying a file, it holds no documentation
+of its own. Every other section answers "what is this, and should I run it" in a few lines, or links
+the documentation page that answers it. Content that would grow past a short paragraph and a link
 belongs in the documentation.
 
 ## Stack
@@ -38,8 +39,8 @@ Read versions from `package.json` and `pnpm-lock.yaml`; the series are:
   when they differ, so change them together.
 - **`pnpm-workspace.yaml`** carries the release-age gate, `minimumReleaseAge: 10080`, strict.
 - **Node.js 24**, set by `node-version` in both workflows.
-- **No client-side JavaScript and no client framework runtime.** The only script element is the
-  JSON-LD in the head.
+- **No client-side JavaScript framework.** The only scripts are the JSON-LD in the head and one
+  inline copy-button script on `/downloads/`.
 
 Astro 7 differs from older versions: the Rust compiler rejects unclosed tags; `compressHTML`
 defaults to `'jsx'`, so a line break next to a tag drops its space, and `prettier-plugin-astro`
@@ -67,9 +68,12 @@ tests pass. `pnpm lint`, `pnpm format:check` and `pnpm build` are the whole gate
 ## Structure
 
 - `src/pages/index.astro` is the landing page; `src/pages/downloads.astro` lists what the latest
-  release published, read from the GitHub API at build time; `src/pages/sponsor.astro` says who
-  maintains and funds the client; `src/pages/404.astro` is served for any missing path;
-  `src/pages/llms.txt.ts` generates `/llms.txt` at build time.
+  release published, read from the GitHub API at build time, with the commands to install, move and
+  verify on each platform; `src/pages/security.astro` carries the audits and what the network runs;
+  `src/pages/about.astro` carries the project's lineage; `src/pages/sponsor.astro` says who maintains
+  and funds the client; `src/pages/404.astro` is served for any missing path;
+  `src/pages/llms.txt.ts` generates `/llms.txt` at build time. The pages under
+  `src/pages/security/` are copies of the audits and reports on docs.coregeth.com.
 - `index.astro` lists one component per section, in page order, from `src/components/sections/`.
   Each is a full-width band; bands alternate white (`band--surface`) and the grid, starting white under
   the hero, and each opens with `SectionHead`: the card's pill, then a heavy heading with a green
@@ -78,24 +82,26 @@ tests pass. `pnpm lint`, `pnpm format:check` and `pnpm build` are the whole gate
   Twitter, theme color and JSON-LD.
 - `src/data/site.ts` holds every URL, name and sentence that more than one of the page, the head, the
   JSON-LD and `/llms.txt` use. Never add a static `llms.txt` to `public/`.
-- `src/data/repository.ts` reads the repository card's stars, forks and latest release from the
-  GitHub API during the build, never in the browser, and falls back to
+- `src/data/repository.ts` reads the repository card's description and the latest release's tag
+  from the GitHub API during the build, never in the browser, and falls back to
   `src/data/repository-snapshot.json` when the API cannot be read. Never add a client-side GitHub
   call or a third-party badge.
-- Every link to a release uses GitHub's latest-release address, `REPO.latestUrl`, never a tag, so a
-  new release is where it lands. The docs links naming `v1.13.0` (the release report and the record)
-  stay pinned, because each cites that release's own record.
+- A reader told to upgrade lands on `/downloads/`, and a link to the release itself uses GitHub's
+  latest-release address, `REPO.latestUrl`, never a tag (maintainer decision, 2026-11-01).
+  `/downloads/` reads the release at build time and nothing schedules a build, so a new release
+  needs a redeploy before that page shows it. The docs links naming `v1.13.0` (the release report
+  and the record) stay pinned, because each cites that release's own record.
 - `src/styles/global.css` holds the palette tokens. `public/` is served at the domain root, so
   everything in it is public. `dist/` and `.astro/` are build output, never edited or committed.
 
 ## Copy, design and content
 
-**The site's copy, design and content decisions are the maintainers'.** Colours, type, section
+**The site's copy, design and content decisions are the maintainers'.** Colors, type, section
 order, the wording of any sentence, the crawler posture and anything under `src/data/` are
 settled outside this repository. Open an issue before changing them rather than proposing an
 edit.
 
-Two things hold regardless, because the build enforces them:
+Two things hold regardless:
 
 - **American English, and no em dashes anywhere in this repository.** Rewrite the sentence
   instead of swapping in a comma.

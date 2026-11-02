@@ -8,7 +8,7 @@ code is here**.
 This file is for anyone running the site locally: a contributor, or an agent working on their
 behalf. It covers the stack, the commands, the layout and the boundaries. **The site's copy,
 design and content decisions are the maintainers' and are not settled here.** Open an issue
-before changing prose, colours, section order or anything under `src/data/`.
+before changing prose, colors, section order or anything under `src/data/`.
 
 ## Stack
 
@@ -75,7 +75,8 @@ public/           served at the domain root, so everything in it is public
   `src/pages/llms.txt.ts` generates `/llms.txt` from it and the JSON-LD is derived from it, so
   none of the three can disagree with the page.
 - **The site is six routes and one redirect**: `/`, `/downloads/`, `/security/`, `/about/`,
-  `/sponsor/`, a 404, and `/discord` which forwards to the community's Discord page.
+  `/sponsor/`, a 404, and `/discord` which forwards to the community's Discord page. The pages
+  under `src/pages/security/` are copies of the audits and reports on docs.coregeth.com.
 - **`/downloads/` and the repository card read GitHub at build time**, never from a visitor's
   browser. When the API is unreachable they fall back to `src/data/repository-snapshot.json`
   and log a warning.
@@ -170,7 +171,7 @@ This repository is **public**. Everything not ignored is world-readable once pus
 - Changing the custom domain, Astro's `site` or `output`, or the head metadata, canonical URL
   or JSON-LD in `src/layouts/BaseLayout.astro`.
 - Adding client-side JavaScript, a client framework runtime or a server adapter.
-- Changing the site's copy, colours or section order, or anything under `src/data/`. These are
+- Changing the site's copy, colors or section order, or anything under `src/data/`. These are
   maintainer decisions; open an issue.
 - Raising a Dependabot limit or turning on Dependabot security updates.
 

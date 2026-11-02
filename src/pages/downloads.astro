@@ -3,53 +3,44 @@ import ArrowText from "@/components/ArrowText.astro";
 import InlineCode from "@/components/InlineCode.astro";
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import PageHero from "@/components/PageHero.astro";
+import PlatformTabs, { type PlatformPanel } from "@/components/PlatformTabs.astro";
+import ReleaseFiles from "@/components/ReleaseFiles.astro";
 import SectionHead from "@/components/SectionHead.astro";
 import { getDownloads } from "@/data/release-assets";
 import { formatAsOf, getRepository } from "@/data/repository";
-import { DOCS, DOCS_URL, EXPOSED_LINE, RECOMMENDED_LINE, REPO } from "@/data/site";
+import {
+  DOCS,
+  DISCOVERY_FLAG_ANCHOR,
+  DOCS_URL,
+  EXPOSED_LINE,
+  MOVE_RECOMMENDATION,
+  RECOMMENDED_LINE,
+  REPO,
+  UPGRADE_ANCHOR,
+  UPGRADE_COST,
+} from "@/data/site";
 
 // Every file the latest release published, read from GitHub at build time rather than
-// listed by hand, behind one tab per platform. The tabs are radio inputs and CSS: this
-// site ships no client-side JavaScript, so every panel is in the HTML, and a browser
-// without `:has()`, or a reader with no CSS at all, gets all of them rather than none.
+// listed by hand, behind one tab per platform.
 const downloads = await getDownloads();
 
-// Every command names a real release, even when the API cannot be reached: the asset list
-// comes from the release, and the tag falls back to the repository snapshot, which is what
-// the repository card already shows. A build that lost the API still publishes commands a
-// reader can run; only the file table, which cannot be known without the API, degrades.
+// Every command that names a release names a real one, even when the API cannot be reached:
+// the asset list comes from the release, and the tag falls back to the repository snapshot. A
+// build that lost the API still publishes commands a reader can run; only the file table, which
+// cannot be known without the API, degrades.
 const facts = await getRepository();
 const releaseTag = downloads?.tag ?? facts.release.tag;
 
-// The archive the verification commands name: the Linux client archive, whose file name
-// follows the release pipeline's own scheme when the asset list is unavailable.
-const example =
-  downloads?.groups
-    .find((group) => group.id === "linux")
-    ?.files.find((file) => file.arch === "x86-64")?.name ?? `core-geth-linux-${releaseTag}.zip`;
+// The notes below tell a reader to stop unless a command reports the recommended line, so the
+// release this build read has to be on that line.
+if (!releaseTag.startsWith(`${RECOMMENDED_LINE}.`)) {
+  throw new Error(`the latest release, ${releaseTag}, is outside ${RECOMMENDED_LINE}`);
+}
 
 const assetBase = `https://github.com/${REPO.slug}/releases/download/${releaseTag}`;
 
-const verifyExample = `# Check a downloaded archive, and where it came from
-sha256sum -c ${example}.sha256   # macOS: shasum -a 256 -c
-# ${example}: OK
-
-gh attestation verify ${example} --repo ${REPO.slug}
-# Loaded digest sha256:... for file://${example}
-# Loaded 1 attestation from GitHub API
-# \u2713 Verification succeeded!
-#
-# - Attestation #1
-#   - Build repo:..... ${REPO.slug}
-#   - Build workflow:. .github/workflows/release-packages.yml@refs/tags/${releaseTag}`;
-
-type Panel = {
-  id: string;
-  label: string;
-  /** Each block a reader runs in order, with `after` for what the block leaves them to do. */
-  steps: readonly { title: string; code: string; after?: string }[];
-  guide: { label: string; href: string };
-};
+const windowsCompare =
+  "PowerShell has no equivalent of `sha256sum -c`, so compare those two lines yourself: `Get-FileHash` prints uppercase hex and the `.sha256` file holds lowercase followed by the file name, and the letters must match; the case does not.";
 
 // One panel per platform the project publishes for, plus source. Every command is the one
 // its linked guide gives, with that guide's version comment dropped, because this page
@@ -58,8 +49,14 @@ type Panel = {
 //
 // No block carries a `$` or `>` prompt: a reader selects the whole block and pastes it
 // into a shell, so a prompt would have to be stripped line by line first. Expected output
-// is a comment for the same reason.
-const PANELS: readonly Panel[] = [
+// goes on a comment line of its own, or in the note under the block.
+//
+// The macOS block carries no comments at all, and no block carries one after a command. Stock
+// zsh, the macOS default, treats `#` in a paste as a command or an argument, so a comment line
+// prints an error and a trailing comment makes `shasum -c` fail on the `#`. The numbered steps
+// on the other tabs stay, because they are safe where those blocks run, and on a Mac the
+// containers and source blocks print one harmless error per comment line.
+const PANELS: readonly PlatformPanel[] = [
   {
     id: "linux",
     label: "Linux",
@@ -71,7 +68,7 @@ curl -LO ${assetBase}/core-geth-linux-${releaseTag}.zip
 curl -LO ${assetBase}/core-geth-linux-${releaseTag}.zip.sha256
 
 # 2. Check it, then unpack and install
-sha256sum -c core-geth-linux-${releaseTag}.zip.sha256   # core-geth-linux-${releaseTag}.zip: OK
+sha256sum -c core-geth-linux-${releaseTag}.zip.sha256
 unzip core-geth-linux-${releaseTag}.zip
 sudo install -m 0755 geth /usr/local/bin/geth
 geth version
@@ -79,7 +76,7 @@ geth version
 # 3. Start a node on Ethereum Classic
 geth --classic`,
         after:
-          "For the Mordor test network, run `geth --mordor` instead. On an Arm board, put `arm64`, `arm7`, `arm6` or `arm5` where the file name says `linux`, matching what `uname -m` prints. `sha256sum -c` must print `OK`: if it prints `FAILED`, delete the file and download it again rather than running it.",
+          "For the Mordor test network, run `geth --mordor` instead. On an Arm board, put the name for your processor where the file name says `linux`: `arm64` if `uname -m` prints `aarch64` or `arm64`, `arm7` for `armv7l`, `arm6` for `armv6l`, and `arm5` for `armv5tel`. `sha256sum -c` must print `OK`: if it prints `FAILED`, delete the file and download it again rather than running it.",
       },
     ],
     guide: { label: "Linux users guide", href: `${DOCS_URL}getting-started/run/linux/` },
@@ -90,19 +87,16 @@ geth --classic`,
     steps: [
       {
         title: "From nothing to a running node",
-        code: `# 1. Download the release and its checksum
-curl -LO ${assetBase}/core-geth-osx-arm64-${releaseTag}.zip
+        code: `curl -LO ${assetBase}/core-geth-osx-arm64-${releaseTag}.zip
 curl -LO ${assetBase}/core-geth-osx-arm64-${releaseTag}.zip.sha256
 
-# 2. Check it, then unpack and install
-shasum -a 256 -c core-geth-osx-arm64-${releaseTag}.zip.sha256   # core-geth-osx-arm64-${releaseTag}.zip: OK
+shasum -a 256 -c core-geth-osx-arm64-${releaseTag}.zip.sha256
 unzip core-geth-osx-arm64-${releaseTag}.zip
 sudo install -m 0755 geth /usr/local/bin/geth
 geth version
 
-# 3. Start a node on Ethereum Classic
 geth --classic`,
-        after: `For the Mordor test network, run \`geth --mordor\` instead. On an Intel Mac, use \`core-geth-osx-${releaseTag}.zip\`. macOS has no \`sha256sum\`, so \`shasum -a 256 -c\` reads the same file. macOS also blocks a binary carrying the quarantine attribute: browsers set it and \`curl\` does not, so the commands above avoid it, and \`xattr -d com.apple.quarantine geth\` clears it from a browser download.`,
+        after: `The block downloads the release and its checksum, checks the archive, installs the client and starts a node on Ethereum Classic. For the Mordor test network, run \`geth --mordor\` instead. On an Intel Mac, use \`core-geth-osx-${releaseTag}.zip\`. macOS has no \`sha256sum\`, so \`shasum -a 256 -c\` reads the same file; it must print \`OK\`, and if it prints \`FAILED\`, delete the file and download it again rather than running it. macOS also blocks a binary carrying the quarantine attribute: browsers set it and \`curl\` does not, so the commands above avoid it, and \`xattr -d com.apple.quarantine geth\` clears it from a browser download.`,
       },
     ],
     guide: { label: "macOS users guide", href: `${DOCS_URL}getting-started/run/macos/` },
@@ -126,8 +120,7 @@ Expand-Archive "core-geth-win64-${releaseTag}.zip" -DestinationPath C:\\core-get
 cd C:\\core-geth
 .\\geth.exe version
 .\\geth.exe --classic`,
-        after:
-          "For the Mordor test network, run `.\\geth.exe --mordor` instead. PowerShell has no equivalent of `sha256sum -c`, so compare those two lines yourself: `Get-FileHash` prints uppercase hex and the `.sha256` file holds lowercase followed by the file name, and the letters must match; the case does not.",
+        after: `For the Mordor test network, run \`.\\geth.exe --mordor\` instead. ${windowsCompare}`,
       },
     ],
     guide: { label: "Windows users guide", href: `${DOCS_URL}getting-started/run/windows/` },
@@ -183,6 +176,494 @@ make geth
 ];
 
 const groupFor = (id: string) => downloads?.groups.find((group) => group.id === id);
+
+const cleanStop =
+  "Go on only once the node's log prints `Blockchain stopped`, which confirms the database is consistent.";
+
+const stopSafely = `[Stop it safely](${DOCS_URL}getting-started/run-classic-node/#stop-it-safely) says what each kind of stop does.`;
+
+const keepId =
+  'Keep what this prints. The move changes the enode ID, and "Confirm the move" compares the new ID and the block number with these two lines.';
+
+const rotationRequired =
+  "This rename is the required rotation, and the next start writes a fresh key. If it prints an error, look in the node's data directory before you go on. If `geth/nodekey.old-rotated-` with today's date is there, the rename has already happened. If only `geth/nodekey` is there, rename that file, because a node started now would start on the old key.";
+
+const verifyPointer = "[Verify what you downloaded](#verify) also checks where the file came from.";
+
+const attestationMust = (workflow: string, verb = "run") =>
+  `\`gh attestation verify\` needs the GitHub CLI, signed in with \`gh auth login\`. Once signed in, it must print \`Verification succeeded\` and name \`.github/workflows/${workflow}\`. If it does not, do not ${verb} the file.`;
+
+const keepBinary = `\`geth-${EXPOSED_LINE}\` is the old binary, kept so you can roll back. A second run leaves that copy alone, so you can run this block again after a mistake.`;
+
+const confirmNote = `If an attach line cannot connect, give the node a minute to start and run that line again. The first line must name a \`${RECOMMENDED_LINE}\` release. The enode ID must differ from the one you recorded. If the ID is the same, the node is still on the old key: stop the node cleanly and rename \`geth/nodekey\` in the data directory the node really uses. The peer count climbs within minutes, and a count stuck at zero after ten minutes usually means a peer still lists your old enode ID. The block number resumes where the node stopped. Compare the block number with a block explorer or another node you operate, and if the number settles somewhere else, stop and investigate rather than resyncing.`;
+
+// Peers a node lists by ID, in the file it reads at the start or on the console while it runs. The new
+// ID exists only after the first start on the new key, so one step edits this node's own list while it
+// is down, and another, after the start, gives the new ID to the nodes that list this one. Measured
+// across a rotation, from `v1.12.17` up: a two-line file changes nothing but the list, and a console
+// change lasts until that node restarts.
+const staticPeersStep = (mount = "") => ({
+  title: "If this node lists static peers, update the list",
+  before:
+    "Static peers are nodes a node keeps connecting to, such as the rest of a mining pool's fleet. They sit under `[Node.P2P]` in the file you pass with `--config`, so edit that file while the node is down:",
+  code: `[Node.P2P]
+StaticNodes = ["enode://<node ID>@<IP>:30303"]`,
+  after: `A node that has already moved has a new ID, so put the new ID in its entry and keep the address and port. Separate entries with commas. \`TrustedNodes\`, on a line of its own in the same section, takes the same entries. With no file yet, save these two lines with your own values, then add \`--config\` and the file's path to the start command. The client ignores \`static-nodes.json\` and logs an error at the start, so move any entries from that file into this one. To change the list on a running node instead, use the step after "Confirm the move".${mount}`,
+});
+
+const otherNodesStep = (attach: string, ipc: string, extra = "") => ({
+  title: "If other nodes list this node, give them the new ID",
+  before: `The new ID exists only now that this node has started. A node that still names the old ID no longer connects to this node, and neither node logs the failure. On each node that lists this one, on \`${EXPOSED_LINE}\` or \`${RECOMMENDED_LINE}\`, run these lines with your own values: the old ID you recorded, the new ID from the step above, and the address and port the entry already has.`,
+  code: `${attach} --exec "admin.removePeer('enode://<old ID>@<IP>:30303')" ${ipc}
+${attach} --exec "admin.addPeer('enode://<new ID>@<IP>:30303')" ${ipc}
+${attach} --exec "admin.peers.map(function(p){return p.enode})" ${ipc}`,
+  after: `The first two lines each print \`true\` and take effect with no restart, and the third lists the new ID once the two nodes connect. A running node keeps this change only until it restarts, so put the new ID in that node's configuration file too. For an entry in \`TrustedNodes\`, use \`admin.removeTrustedPeer\` and \`admin.addTrustedPeer\`. Send the new ID to anyone else who lists this node. [Static and trusted peers](${DOCS_URL}guides/bootnodes-and-discovery/#static-and-trusted-peers) explains the two lists.${extra}`,
+});
+
+// While the node is down, in the guide's order: MESS is in its "What changes" and the RPC check is
+// its step 4. Neither has a command of its own, because both are flags the reader already sets. A
+// file `dumpconfig` wrote on `v1.12` is in neither, and it fails two ways: `v1.13` refuses the
+// `ECBP1100` lines that `v1.12.17` and `v1.12.18` wrote, and from `v1.12.19` up the file loads and
+// silently keeps that release's discovery lists and bootnodes (measured on each release).
+const checkFlags = {
+  title: "Check the flags you start the node with",
+  after: `While the node is down, decide MESS, which makes a node resist deep chain reorganizations. An upgrade can change whether a node runs MESS, so set MESS with a flag: \`--mess\` turns it on and \`--mess=false\` turns it off. [Which setting fits which operator](${DOCS.messSetting.href}) sets out the choice, and every node you run should carry the same setting. If you pass \`--config\` a file that \`dumpconfig\` wrote on \`${EXPOSED_LINE}\`, delete its \`BootstrapNodes\`, \`EthDiscoveryURLs\` and \`SnapDiscoveryURLs\` lines, which would keep the \`${EXPOSED_LINE}\` peer lists in place of the ones built into \`${RECOMMENDED_LINE}\`. Delete any \`ECBP1100\` line too, because \`${RECOMMENDED_LINE}\` will not start with one in the file. Then go through the [RPC exposure checklist](${DOCS.migration.href}#re-check-rpc-exposure).`,
+};
+
+// Moving a node off the exposed line. Another page links this section rather than carrying a
+// block of its own, because only this page's script gives a code block its copy button.
+//
+// One panel per platform, in the migration guide's order, except that the download comes first, so
+// the node keeps running until the new release is in hand and checked. The blocks are separate on
+// purpose: a pasted block carries on past a failed line, so the rename that rotates the key stands
+// alone and the start has a block of its own, which a failed rename cannot reach. `&&` holds the
+// install lines together for the same reason, and because a `sudo` line can swallow the lines still
+// waiting in a paste. No block carries a comment, except in PowerShell, because stock zsh, the macOS
+// default, treats `#` in a paste as a command or an argument.
+//
+// Every command is the one that platform's migration guide gives, apart from what keeps a paste safe
+// and the rollback intact. `mv -n` keeps a second paste from overwriting the old key, and the install
+// saves the old binary only once, so the block can run again after a mistake. The source panel clones
+// the tag into its own folder, so an old clone cannot be rebuilt by mistake. The containers panel
+// renames the key from a throwaway container and gives the new container the old one's volumes, which
+// needs no `sudo` and no host path, and it keeps the old container to roll back to. "Confirm the move"
+// reads the release from the running node, because `geth version` reads the binary on `PATH`, which
+// need not be the binary a unit starts. Every console line that carries an enode wraps it in single
+// quotes inside double quotes, the one form PowerShell 5.1 passes to a native program unchanged.
+const MOVE_PANELS: readonly PlatformPanel[] = [
+  {
+    id: "linux",
+    label: "Linux",
+    steps: [
+      {
+        title: "Download the release and check it",
+        code: `curl -LO ${assetBase}/core-geth-linux-${releaseTag}.zip
+curl -LO ${assetBase}/core-geth-linux-${releaseTag}.zip.sha256
+sha256sum -c core-geth-linux-${releaseTag}.zip.sha256`,
+        after: `The node can keep running for this step. \`sha256sum -c\` must print \`OK\`: if it prints \`FAILED\`, delete the file and download it again rather than running it. ${verifyPointer} On an Arm board, put the name for your processor where the file name says \`linux\`, here and in the install step: \`arm64\` if \`uname -m\` prints \`aarch64\` or \`arm64\`, \`arm7\` for \`armv7l\`, \`arm6\` for \`armv6l\`, and \`arm5\` for \`armv5tel\`.`,
+      },
+      {
+        title: "Record the node's block number and ID",
+        code: `geth attach --exec 'eth.blockNumber' ~/.ethereum/classic/geth.ipc
+geth attach --exec 'admin.nodeInfo.enode' ~/.ethereum/classic/geth.ipc`,
+        after: `${keepId} These commands use the default data directory. For Mordor, use \`~/.ethereum/mordor\`; if you pass \`--datadir\`, use yours. On the unit in the [Linux run guide](${DOCS_URL}getting-started/run/linux/), the \`geth\` user owns \`/var/lib/core-geth\`, so attach as \`sudo -u geth -H geth --classic attach --exec 'admin.nodeInfo.enode' /var/lib/core-geth/geth.ipc\` instead, here and in every later attach line.`,
+      },
+      {
+        title: "Stop the node cleanly",
+        after: `Press Ctrl-C once in the node's terminal and wait, or stop the systemd unit you wrote, for example \`sudo systemctl stop core-geth\`. ${cleanStop} Under systemd, \`journalctl -u core-geth\` shows that log. ${stopSafely}`,
+      },
+      {
+        title: "Install the release",
+        code: `unzip core-geth-linux-${releaseTag}.zip &&
+  { test -e /usr/local/bin/geth-${EXPOSED_LINE} || sudo mv /usr/local/bin/geth /usr/local/bin/geth-${EXPOSED_LINE}; } &&
+  sudo install -m 0755 geth /usr/local/bin/geth &&
+  geth version`,
+        after: `Each line runs only if the one before it worked. Go on only if \`geth version\` reports a \`${RECOMMENDED_LINE}\` release. ${keepBinary}`,
+      },
+      {
+        title: "Rename the old P2P node key",
+        code: "mv -n ~/.ethereum/classic/geth/nodekey ~/.ethereum/classic/geth/nodekey.old-rotated-$(date +%F)",
+        after: `${rotationRequired} On the unit in the Linux run guide, run \`sudo -u geth mv -n /var/lib/core-geth/geth/nodekey /var/lib/core-geth/geth/nodekey.old-rotated-$(date +%F)\` instead.`,
+      },
+      staticPeersStep(),
+      checkFlags,
+      {
+        title: "Start the node",
+        code: "sudo systemctl daemon-reload && sudo systemctl start core-geth",
+        after:
+          "`core-geth` stands for the systemd unit you wrote, and the reload picks up any flag you changed in that unit. From a terminal, start the node the way you always do, with the flags you just checked.",
+      },
+      {
+        title: "Confirm the move",
+        code: `geth attach --exec 'admin.nodeInfo.name' ~/.ethereum/classic/geth.ipc
+geth attach --exec 'admin.nodeInfo.enode' ~/.ethereum/classic/geth.ipc
+geth attach --exec 'net.peerCount' ~/.ethereum/classic/geth.ipc
+geth attach --exec 'eth.blockNumber' ~/.ethereum/classic/geth.ipc`,
+        after: `${confirmNote} On the unit in the Linux run guide, attach with the \`sudo -u geth -H\` form from the recording step.`,
+      },
+      otherNodesStep(
+        "geth attach",
+        "~/.ethereum/classic/geth.ipc",
+        " On the unit in the Linux run guide, attach with the `sudo -u geth -H` form from the recording step.",
+      ),
+    ],
+    guide: { label: "Linux users guide", href: `${DOCS_URL}tutorials/migration/linux/` },
+  },
+  {
+    id: "macos",
+    label: "macOS",
+    steps: [
+      {
+        title: "Download the release and check it",
+        code: `curl -LO ${assetBase}/core-geth-osx-arm64-${releaseTag}.zip
+curl -LO ${assetBase}/core-geth-osx-arm64-${releaseTag}.zip.sha256
+shasum -a 256 -c core-geth-osx-arm64-${releaseTag}.zip.sha256`,
+        after: `The node can keep running for this step. \`shasum -a 256 -c\` must print \`OK\`: if it prints \`FAILED\`, delete the file and download it again rather than running it. ${verifyPointer} On an Intel Mac, put \`osx\` where the file name says \`osx-arm64\`, here and in the install step.`,
+      },
+      {
+        title: "Record the node's block number and ID",
+        code: `geth attach --exec 'eth.blockNumber' ~/Library/Ethereum/classic/geth.ipc
+geth attach --exec 'admin.nodeInfo.enode' ~/Library/Ethereum/classic/geth.ipc`,
+        after: `${keepId} These commands use the default data directory. For Mordor, use \`~/Library/Ethereum/mordor\`; if you pass \`--datadir\`, use yours.`,
+      },
+      {
+        title: "Stop the node cleanly",
+        after: `Press Ctrl-C once in the node's terminal and wait, or stop the launchd job you created. ${cleanStop}`,
+      },
+      {
+        title: "Install the release",
+        code: `unzip core-geth-osx-arm64-${releaseTag}.zip &&
+  { test -e /usr/local/bin/geth-${EXPOSED_LINE} || sudo mv /usr/local/bin/geth /usr/local/bin/geth-${EXPOSED_LINE}; } &&
+  sudo install -m 0755 geth /usr/local/bin/geth &&
+  geth version`,
+        after: `Each line runs only if the one before it worked. Go on only if \`geth version\` reports a \`${RECOMMENDED_LINE}\` release. ${keepBinary}`,
+      },
+      {
+        title: "Rename the old P2P node key",
+        code: "mv -n ~/Library/Ethereum/classic/geth/nodekey ~/Library/Ethereum/classic/geth/nodekey.old-rotated-$(date +%F)",
+        after: rotationRequired,
+      },
+      staticPeersStep(),
+      checkFlags,
+      {
+        title: "Start the node",
+        after: "Start the node the way you always do, with the flags you just checked.",
+      },
+      {
+        title: "Confirm the move",
+        code: `geth attach --exec 'admin.nodeInfo.name' ~/Library/Ethereum/classic/geth.ipc
+geth attach --exec 'admin.nodeInfo.enode' ~/Library/Ethereum/classic/geth.ipc
+geth attach --exec 'net.peerCount' ~/Library/Ethereum/classic/geth.ipc
+geth attach --exec 'eth.blockNumber' ~/Library/Ethereum/classic/geth.ipc`,
+        after: confirmNote,
+      },
+      otherNodesStep("geth attach", "~/Library/Ethereum/classic/geth.ipc"),
+    ],
+    guide: { label: "macOS users guide", href: `${DOCS_URL}tutorials/migration/macos/` },
+  },
+  {
+    id: "windows",
+    label: "Windows",
+    steps: [
+      {
+        title: "Download the release and check it",
+        code: `# In PowerShell, in the folder that holds your current geth.exe
+Invoke-WebRequest "${assetBase}/core-geth-win64-${releaseTag}.zip" -OutFile "core-geth-win64-${releaseTag}.zip"
+Invoke-WebRequest "${assetBase}/core-geth-win64-${releaseTag}.zip.sha256" -OutFile "core-geth-win64-${releaseTag}.zip.sha256"
+
+# Compare these two lines
+(Get-FileHash "core-geth-win64-${releaseTag}.zip" -Algorithm SHA256).Hash
+Get-Content "core-geth-win64-${releaseTag}.zip.sha256"`,
+        after: `The node can keep running for this step. ${windowsCompare} If they differ, delete the file and download it again rather than running it. ${verifyPointer}`,
+      },
+      {
+        title: "Record the node's block number and ID",
+        code: `.\\geth.exe attach --exec 'eth.blockNumber' \\\\.\\pipe\\geth.ipc
+.\\geth.exe attach --exec 'admin.nodeInfo.enode' \\\\.\\pipe\\geth.ipc`,
+        after: keepId,
+      },
+      {
+        title: "Stop the node cleanly",
+        after: `Press Ctrl+C once in the node's console window and wait, or stop the service with the tool you installed it with. ${cleanStop}`,
+      },
+      {
+        title: "Install the release",
+        code: `Rename-Item .\\geth.exe geth-${EXPOSED_LINE}.exe
+Expand-Archive "core-geth-win64-${releaseTag}.zip" -DestinationPath .
+.\\geth.exe version`,
+        after: `Go on only if \`.\\geth.exe version\` reports a \`${RECOMMENDED_LINE}\` release. \`geth-${EXPOSED_LINE}.exe\` is the old binary, kept so you can roll back.`,
+      },
+      {
+        title: "Rename the old P2P node key",
+        code: `$key = "$env:LOCALAPPDATA\\Ethereum\\classic\\geth\\nodekey"
+Rename-Item $key "nodekey.old-rotated-$(Get-Date -Format yyyy-MM-dd)"`,
+        after: `${rotationRequired} The commands use the default data directory, but the node uses \`%USERPROFILE%\\AppData\\Roaming\\Ethereum\\classic\` instead if an older \`AppData\\Roaming\\Ethereum\` folder exists and is not empty. For Mordor, use \`mordor\` in place of \`classic\`; if you pass \`--datadir\`, use yours.`,
+      },
+      staticPeersStep(),
+      checkFlags,
+      {
+        title: "Start the node",
+        after: "Start the node the way you always do, with the flags you just checked.",
+      },
+      {
+        title: "Confirm the move",
+        code: `.\\geth.exe attach --exec 'admin.nodeInfo.name' \\\\.\\pipe\\geth.ipc
+.\\geth.exe attach --exec 'admin.nodeInfo.enode' \\\\.\\pipe\\geth.ipc
+.\\geth.exe attach --exec 'net.peerCount' \\\\.\\pipe\\geth.ipc
+.\\geth.exe attach --exec 'eth.blockNumber' \\\\.\\pipe\\geth.ipc`,
+        after: confirmNote,
+      },
+      otherNodesStep(".\\geth.exe attach", "\\\\.\\pipe\\geth.ipc"),
+    ],
+    guide: { label: "Windows users guide", href: `${DOCS_URL}tutorials/migration/windows/` },
+  },
+  {
+    id: "containers",
+    label: "Containers",
+    steps: [
+      {
+        title: "Pull the release",
+        code: `docker pull ghcr.io/${REPO.slug}:${releaseTag}`,
+        after:
+          "The node can keep running for this step. The image moves from `etclabscore/core-geth` to images built from `ethereumclassic/core-geth`. [Verify what you downloaded](#verify) checks an image file from the release, and the installation guide gives the other ways to get the image.",
+      },
+      {
+        title: "Record the node's block number and ID",
+        code: `docker exec core-geth geth attach --exec 'eth.blockNumber' /root/.ethereum/classic/geth.ipc
+docker exec core-geth geth attach --exec 'admin.nodeInfo.enode' /root/.ethereum/classic/geth.ipc`,
+        after: `${keepId} These commands use a container named \`core-geth\` with its data at \`/root\`, so put your own name in its place. For Mordor, use \`.ethereum/mordor\` in the paths.`,
+      },
+      {
+        title: "Stop the node cleanly",
+        code: `docker stop -t 300 core-geth
+docker logs --tail 50 core-geth 2>&1 | grep 'Blockchain stopped'`,
+        after:
+          "Go on only once the second command prints `Blockchain stopped`. `-t 300` is required: a plain `docker stop` waits 10 seconds and then kills the process, and a node killed while it writes to disk is the one thing in this upgrade that costs a resync.",
+      },
+      {
+        title: "Rename the old P2P node key",
+        code: `docker run --rm --volumes-from core-geth --entrypoint sh ghcr.io/${REPO.slug}:${releaseTag} \\
+  -c "mv -n /root/.ethereum/classic/geth/nodekey /root/.ethereum/classic/geth/nodekey.old-rotated-$(date +%F)"`,
+        after: `${rotationRequired} This runs in a throwaway container from the new image, so it reaches the key however the old container mounts the data directory, with no \`sudo\`.`,
+      },
+      staticPeersStep(
+        ' The new container has to see the file: add `-v <path>/config.toml:/config.toml:ro` to the `docker run` under "Replace the container", and `--config /config.toml` after the image name.',
+      ),
+      checkFlags,
+      {
+        title: "Replace the container",
+        code: `docker rename core-geth core-geth-${EXPOSED_LINE}
+docker update --restart no core-geth-${EXPOSED_LINE}
+docker run -d --name core-geth \\
+  --restart unless-stopped --stop-timeout 300 \\
+  --volumes-from core-geth-${EXPOSED_LINE} \\
+  -p 30303:30303 -p 30303:30303/udp -p 127.0.0.1:8545:8545 \\
+  ghcr.io/${REPO.slug}:${releaseTag} \\
+  --classic --http --http.addr 0.0.0.0 --http.port 8545`,
+        after: `Put your own ports and flags in the last lines of \`docker run\`: \`docker inspect core-geth-${EXPOSED_LINE}\` shows what the old container used. For Mordor, use \`--mordor\` in place of \`--classic\`. The new container takes the old one's volumes, so the chain carries over. The old container stays, stopped, and is what you roll back to.`,
+      },
+      {
+        title: "Confirm the move",
+        code: `docker exec core-geth geth version
+docker exec core-geth geth attach --exec 'admin.nodeInfo.enode' /root/.ethereum/classic/geth.ipc
+docker exec core-geth geth attach --exec 'net.peerCount' /root/.ethereum/classic/geth.ipc
+docker exec core-geth geth attach --exec 'eth.blockNumber' /root/.ethereum/classic/geth.ipc`,
+        after: confirmNote,
+      },
+      otherNodesStep("docker exec core-geth geth attach", "/root/.ethereum/classic/geth.ipc"),
+      {
+        title: "If you need to roll back",
+        code: `docker stop -t 300 core-geth &&
+  docker rm core-geth &&
+  docker rename core-geth-${EXPOSED_LINE} core-geth &&
+  docker update --restart unless-stopped core-geth &&
+  docker start core-geth`,
+        after:
+          "The old container keeps its own flags and takes the same volumes. Put its restart policy in place of `unless-stopped`. The rotated key stays rotated: rolling back does not un-expose the old key.",
+      },
+    ],
+    guide: { label: "Docker users guide", href: `${DOCS_URL}tutorials/migration/docker/` },
+  },
+  {
+    id: "source",
+    label: "Source",
+    steps: [
+      {
+        title: "Build the release",
+        code: `git clone --branch ${releaseTag} --single-branch https://github.com/${REPO.slug}.git core-geth-${releaseTag} &&
+  cd core-geth-${releaseTag} &&
+  make geth &&
+  ./build/bin/geth version`,
+        after: `The node can keep running for this step. Go on only if the last line reports a \`${RECOMMENDED_LINE}\` release. [Build from source](${DOCS_URL}developers/build-from-source/) lists what a build needs. On Windows, run the commands one at a time, with \`go run build/ci.go install ./cmd/geth\` in place of \`make geth\`, then follow the Windows tab, copying \`build\\bin\\geth.exe\` into the node's folder in place of its \`Expand-Archive\` line.`,
+      },
+      {
+        title: "Record the node's block number and ID",
+        code: `geth attach --exec 'eth.blockNumber' ~/.ethereum/classic/geth.ipc
+geth attach --exec 'admin.nodeInfo.enode' ~/.ethereum/classic/geth.ipc`,
+        after: `${keepId} The commands in this tab use the default data directory on Linux. On macOS, put \`~/Library/Ethereum\` where they say \`~/.ethereum\`. For Mordor, use \`mordor\` in place of \`classic\`; if you pass \`--datadir\`, use yours. The Linux tab has the forms for the unit in the Linux run guide.`,
+      },
+      {
+        title: "Stop the node cleanly",
+        after: `Press Ctrl-C once in the node's terminal and wait, or stop the service you run the node under. ${cleanStop}`,
+      },
+      {
+        title: "Install the build",
+        code: `ls build/bin/geth &&
+  { test -e /usr/local/bin/geth-${EXPOSED_LINE} || sudo mv /usr/local/bin/geth /usr/local/bin/geth-${EXPOSED_LINE}; } &&
+  sudo install -m 0755 build/bin/geth /usr/local/bin/geth &&
+  geth version`,
+        after: `Run this in the folder the build step left you in: the first line stops the block anywhere else. Go on only if \`geth version\` reports a \`${RECOMMENDED_LINE}\` release. ${keepBinary}`,
+      },
+      {
+        title: "Rename the old P2P node key",
+        code: "mv -n ~/.ethereum/classic/geth/nodekey ~/.ethereum/classic/geth/nodekey.old-rotated-$(date +%F)",
+        after: rotationRequired,
+      },
+      staticPeersStep(),
+      checkFlags,
+      {
+        title: "Start the node",
+        after: "Start the node the way you always do, with the flags you just checked.",
+      },
+      {
+        title: "Confirm the move",
+        code: `geth attach --exec 'admin.nodeInfo.name' ~/.ethereum/classic/geth.ipc
+geth attach --exec 'admin.nodeInfo.enode' ~/.ethereum/classic/geth.ipc
+geth attach --exec 'net.peerCount' ~/.ethereum/classic/geth.ipc
+geth attach --exec 'eth.blockNumber' ~/.ethereum/classic/geth.ipc`,
+        after: confirmNote,
+      },
+      otherNodesStep("geth attach", "~/.ethereum/classic/geth.ipc"),
+    ],
+    guide: { label: "Migration guide", href: DOCS.migration.href },
+  },
+];
+
+// The Quick start in `ethereumclassic/discv4-dns-lists`, whose three trees
+// `params/bootnodes_classic.go` in `ethereumclassic/core-geth` builds into the recommended line.
+const discoveryFlag = `geth --classic --discovery.dns "enrtree://APDLRZ2T7ERXPWXX4D5USB32NIFYHXMFVZQ3DZALK6JJJ5L4VSYIQ@all.classic.ethereumclassic.net,enrtree://APDLRZ2T7ERXPWXX4D5USB32NIFYHXMFVZQ3DZALK6JJJ5L4VSYIQ@all.classic.ethclassic.net,enrtree://APDLRZ2T7ERXPWXX4D5USB32NIFYHXMFVZQ3DZALK6JJJ5L4VSYIQ@all.classic.ethereumclassic.network"`;
+
+const moveLede = `${MOVE_RECOMMENDATION} ${UPGRADE_COST} Follow the steps for your platform below rather than the install block at the top of this page, which starts a node before its P2P node key changes. These steps keep your old binary or container so you can roll back, and rotate the key before the node starts again. The rotation is required: one of the flaws in the \`${EXPOSED_LINE}\` line leaks bits of the P2P node key across repeated handshakes, and no fix can take back what already leaked.`;
+
+const moveNote = `The [migration guide](${DOCS.migration.href}) also says which peers' configuration to update with the new enode ID, and how to roll back. A \`${EXPOSED_LINE}\` binary refuses the \`--mess\` flag, so take that flag out of the start command before you roll back.`;
+
+const flagIntro = `A node that cannot move yet should read the three peer discovery lists [\`ethereumclassic/discv4-dns-lists\`](https://github.com/ethereumclassic/discv4-dns-lists) publishes for its network, the ones the \`${RECOMMENDED_LINE}\` line reads by default. After a clean stop, add \`--discovery.dns\` with those three lists to the command or unit you already start the node with. \`ethereumclassic/discv4-dns-lists\` records that the lists a \`${EXPOSED_LINE}\` release reads by default stop being updated when the ETC Cooperative dissolves. The flag is a small step, and the node stays exposed: the flag closes none of the flaws the audits found in the \`${EXPOSED_LINE}\` line.`;
+
+const flagNote = `For Mordor, use \`--mordor\` and swap \`all.classic.\` for \`all.mordor.\` in all three lists. On Windows, run \`.\\geth.exe\` in place of \`geth\`. In a container, stop the container with \`docker stop -t 300\` and pass the same flags after the image name. Under systemd, run \`sudo systemctl daemon-reload\` after you edit the unit. The flag replaces the lists built into the release, and the node dials the nodes in those lists directly, so it does not need \`--bootnodes\` as well. [Bootnodes and peer discovery](${DOCS_URL}guides/bootnodes-and-discovery/) covers \`--bootnodes\`.`;
+
+// What `gh attestation verify` prints, in a terminal, with the policy it enforced left out for
+// the paragraph under the tabs. The archives and the image files are built by different
+// workflows, and the attestation names the one that ran.
+const attestationOutput = (file: string, workflow: string) =>
+  `# Loaded digest sha256:... for file://${file}
+# Loaded 1 attestation from GitHub API
+# ✓ Verification succeeded!
+#
+# - Attestation #1
+#   - Build repo:..... ${REPO.slug}
+#   - Build workflow:. .github/workflows/${workflow}@refs/tags/${releaseTag}`;
+
+const installationVerify = {
+  label: "Verify where the archive came from",
+  href: `${DOCS.installation.href}#verify-where-the-archive-came-from`,
+};
+
+// One panel per platform, each checking the file its install tab or release list gives a
+// reader, in the installation guide's commands. A build from source has no published file to
+// check, so its panel checks the commit instead, with the command the documentation's FAQ gives.
+// Expected output sits in comments where the platform's shell allows them, and in the note under
+// the block on macOS and for containers, which readers often run from a Mac.
+const VERIFY_PANELS: readonly PlatformPanel[] = [
+  {
+    id: "linux",
+    label: "Linux",
+    steps: [
+      {
+        title: "Check an archive",
+        code: `# 1. Check that the archive arrived intact
+sha256sum -c core-geth-linux-${releaseTag}.zip.sha256
+# core-geth-linux-${releaseTag}.zip: OK
+
+# 2. Check where the archive came from
+gh attestation verify core-geth-linux-${releaseTag}.zip --repo ${REPO.slug}
+${attestationOutput(`core-geth-linux-${releaseTag}.zip`, "release-packages.yml")}`,
+        after: `\`sha256sum -c\` must print \`OK\`. If it prints \`FAILED\`, delete the file and download it again rather than running it. ${attestationMust("release-packages.yml")} For another archive, put its name in place of \`core-geth-linux-${releaseTag}.zip\`, such as \`core-geth-arm64-${releaseTag}.zip\`.`,
+      },
+    ],
+    guide: installationVerify,
+  },
+  {
+    id: "macos",
+    label: "macOS",
+    steps: [
+      {
+        title: "Check an archive",
+        code: `shasum -a 256 -c core-geth-osx-arm64-${releaseTag}.zip.sha256
+gh attestation verify core-geth-osx-arm64-${releaseTag}.zip --repo ${REPO.slug}`,
+        after: `\`shasum -a 256 -c\` must print \`OK\`. If it prints \`FAILED\`, delete the file and download it again rather than running it. ${attestationMust("release-packages.yml")} On an Intel Mac, use \`core-geth-osx-${releaseTag}.zip\`.`,
+      },
+    ],
+    guide: installationVerify,
+  },
+  {
+    id: "windows",
+    label: "Windows",
+    steps: [
+      {
+        title: "Check an archive",
+        code: `# 1. Check that the archive arrived intact: compare these two lines, in PowerShell
+(Get-FileHash "core-geth-win64-${releaseTag}.zip" -Algorithm SHA256).Hash
+Get-Content "core-geth-win64-${releaseTag}.zip.sha256"
+
+# 2. Check where the archive came from
+gh attestation verify core-geth-win64-${releaseTag}.zip --repo ${REPO.slug}
+${attestationOutput(`core-geth-win64-${releaseTag}.zip`, "release-packages.yml")}`,
+        after: `${windowsCompare} If they differ, delete the file and download it again rather than running it. ${attestationMust("release-packages.yml")}`,
+      },
+    ],
+    guide: installationVerify,
+  },
+  {
+    id: "containers",
+    label: "Containers",
+    steps: [
+      {
+        title: "Check an image file",
+        code: `curl -LO ${assetBase}/core-geth-docker-amd64-${releaseTag}.tar.gz
+curl -LO ${assetBase}/core-geth-docker-amd64-${releaseTag}.tar.gz.sha256
+sha256sum -c core-geth-docker-amd64-${releaseTag}.tar.gz.sha256
+gh attestation verify core-geth-docker-amd64-${releaseTag}.tar.gz --repo ${REPO.slug}`,
+        after: `Each image file is the published image saved from the registry. On an Arm64 host, put \`docker-arm64\` where the file name says \`docker-amd64\`. \`sha256sum -c\` must print \`OK\`: if it prints \`FAILED\`, delete the file and download it again rather than loading it. ${attestationMust("docker-publish.yml", "load")}`,
+      },
+      {
+        title: "Load the image",
+        code: `docker load -i core-geth-docker-amd64-${releaseTag}.tar.gz`,
+        after: `The loaded image keeps its published name, with \`${releaseTag}\` as its tag.`,
+      },
+    ],
+    guide: {
+      label: "Load the image from the release",
+      href: `${DOCS.installation.href}#load-the-image-from-the-release`,
+    },
+  },
+  {
+    id: "source",
+    label: "Source",
+    steps: [
+      {
+        title: "Check the commit you built",
+        code: `git rev-parse HEAD
+go version -m ./build/bin/geth | grep vcs.revision`,
+        after:
+          "Run these in the clone: the first line is the commit you checked out and the second is the commit the binary was built from. A build from source has no checksum or attestation of its own, because no file was published for it. What you can check is the commit: both lines must name the same one, and `go version -m` reads the binary without running it. On Windows, run `go version -m .\\build\\bin\\geth.exe` and read its `vcs.revision` line.",
+      },
+    ],
+    guide: {
+      label: "How do I verify a download?",
+      href: `${DOCS_URL}about/faq/#how-do-i-verify-a-download`,
+    },
+  },
+];
 ---
 
 <BaseLayout
@@ -232,121 +713,34 @@ const groupFor = (id: string) => downloads?.groups.find((group) => group.id === 
           you run it: <a href="#verify">both commands</a> are at the foot of this page.
         </p>
         <p class="lede">
-          {`Every download here is the latest ${RECOMMENDED_LINE} release. If you are replacing a `}
+          {`Every download on this page is the latest ${RECOMMENDED_LINE} release. If you are replacing a `}
           <InlineCode text={EXPOSED_LINE} />
-          {` node, the upgrade is a security action rather than housekeeping, and that node needs a new P2P key afterwards: `}
+          {` node, the upgrade is a security action rather than housekeeping, and that node needs a new P2P key before it starts again: `}
+          <a href={`#${UPGRADE_ANCHOR}`}>{`moving a ${EXPOSED_LINE} node`}</a>
+          {` has the commands, and `}
           <a href="/security/">what the audits found</a>
           {` says which flaws each ${EXPOSED_LINE} release still carries.`}
         </p>
       </SectionHead>
-      <fieldset class="tabs">
-        <legend class="visually-hidden">Choose your platform</legend>
-        <div class="tabs__bar">
-          {PANELS.map((panel, index) => (
-            <Fragment>
-              <input
-                class="tabs__input visually-hidden"
-                type="radio"
-                name="platform"
-                id={`tab-${panel.id}`}
-                checked={index === 0}
-              />
-              <label class="tabs__label" for={`tab-${panel.id}`}>
-                {panel.label}
-              </label>
-            </Fragment>
-          ))}
-        </div>
-
-        {PANELS.map((panel) => {
-          const group = groupFor(panel.id);
-          return (
-            <div class="panel" id={`panel-${panel.id}`}>
-              <h3 class="panel__heading">{panel.label}</h3>
-              {panel.id === "source" && (
-                <p class="panel__note">
-                  Building needs Go 1.26 or later and a C compiler. Checking out the release tag
-                  builds the same source the published archives were built from; a binary built from{" "}
-                  <code>main</code> prints <code>unstable</code> as its release stage until a
-                  release is prepared. To build with the exact Go toolchain the releases use, run{" "}
-                  <code>go run build/ci.go install -dlgo</code> in place of <code>make geth</code>.
-                </p>
-              )}
-              {panel.id === "source" && (
-                <a class="source-repo" href={REPO.url}>
-                  github.com/{REPO.slug.split("/")[0]}/<wbr />
-                  {REPO.slug.split("/")[1]}
-                </a>
-              )}
-
-              {panel.steps.map((step) => (
-                <Fragment>
-                  <h4 class="panel__step">{step.title}</h4>
-                  <div class="shell-wrap">
-                    <pre class="shell"><code>{step.code}</code></pre>
-                  </div>
-                  {step.after && (
-                    <p class="panel__note">
-                      <InlineCode text={step.after} />
-                    </p>
-                  )}
-                </Fragment>
-              ))}
-              <a class="more" href={panel.guide.href}>
-                <ArrowText text={panel.guide.label} />
-              </a>
-
-              {group && (
-                <Fragment>
-                  <h4 class="panel__step panel__files">Every file in this release</h4>
-                  {group.note && (
-                    <p class="panel__note">
-                      <InlineCode text={group.note} />
-                    </p>
-                  )}
-                  <table class="data-table files">
-                    <thead>
-                      <tr>
-                        <th scope="col">File</th>
-                        <th scope="col">Your machine</th>
-                        <th scope="col" class="files__num">
-                          Size
-                        </th>
-                        <th scope="col">Checksum</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {group.files.map((file) => (
-                        <tr>
-                          <th scope="row">
-                            <a class="files__name" href={file.href}>
-                              {file.name}
-                            </a>
-                          </th>
-                          <td>
-                            <InlineCode text={file.machine} />
-                          </td>
-                          <td class="files__num">{file.size}</td>
-                          <td>
-                            {file.checksum ? <a href={file.checksum}>sha256</a> : "none published"}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </Fragment>
-              )}
-
-              {!group && panel.id !== "source" && (
-                <p class="panel__note">
-                  The file list could not be read at build time. Every file is on{" "}
-                  <a href={REPO.latestUrl}>the release itself</a>, with its checksum beside it.
-                </p>
-              )}
-            </div>
-          );
-        })}
-      </fieldset>
+      <PlatformTabs legend="Choose your platform" panels={PANELS}>
+        <Fragment slot="before-source">
+          <p class="panel__note">
+            Building needs Go 1.26 or later and a C compiler. Checking out the release tag builds
+            the same source the published archives were built from; a binary built from{" "}
+            <code>main</code> prints <code>unstable</code> as its release stage until a release is
+            prepared. To build with the exact Go toolchain the releases use, run{" "}
+            <code>go run build/ci.go install -dlgo</code> in place of <code>make geth</code>.
+          </p>
+          <a class="source-repo" href={REPO.url}>
+            github.com/{REPO.slug.split("/")[0]}/<wbr />
+            {REPO.slug.split("/")[1]}
+          </a>
+        </Fragment>
+        <ReleaseFiles slot="after-linux" group={groupFor("linux")} />
+        <ReleaseFiles slot="after-macos" group={groupFor("macos")} />
+        <ReleaseFiles slot="after-windows" group={groupFor("windows")} />
+        <ReleaseFiles slot="after-containers" group={groupFor("containers")} />
+      </PlatformTabs>
 
       <p class="downloads__note">
         An <code>alltools</code> archive is the same client with the rest of the tools beside it:{" "}
@@ -356,54 +750,93 @@ const groupFor = (id: string) => downloads?.groups.find((group) => group.id === 
     </div>
   </section>
 
-  <section class="band" id="verify" aria-labelledby="verify-title">
-    <div class="container downloads__group">
+  <section class="band" id={UPGRADE_ANCHOR} aria-labelledby="upgrade-title">
+    <div class="container downloads__install">
+      <SectionHead
+        id="upgrade-title"
+        label={`Moving a Core-Geth ${EXPOSED_LINE} node`}
+        title={`Move a ${EXPOSED_LINE} node to the ${RECOMMENDED_LINE} line`}
+        em={`the ${RECOMMENDED_LINE} line`}
+        size="medium"
+      >
+        <p class="lede">
+          <InlineCode text={moveLede} />
+        </p>
+      </SectionHead>
+      <PlatformTabs
+        legend="Choose your platform for moving a node"
+        panels={MOVE_PANELS}
+        prefix="move-"
+      />
+      <div class="downloads__group">
+        <p>
+          <InlineCode text={moveNote} />
+        </p>
+        <h3 id={DISCOVERY_FLAG_ANCHOR}>{`If a ${EXPOSED_LINE} node cannot move yet`}</h3>
+        <p>
+          <InlineCode text={flagIntro} />
+        </p>
+        <div class="shell-wrap">
+          <pre class="shell"><code>{discoveryFlag}</code></pre>
+        </div>
+        <p class="panel__note">
+          <InlineCode text={flagNote} />
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <section class="band band--surface" id="verify" aria-labelledby="verify-title">
+    <div class="container downloads__install">
       <SectionHead
         id="verify-title"
         label="Verify a Core-Geth download"
         title="Verify what you downloaded"
         em="Verify"
         size="medium"
+      >
+        <p class="lede">
+          Two checks, and they answer different questions. The checksum says the file arrived
+          intact. The attestation says which workflow built it, from which commit, which is the
+          question a checksum cannot answer.
+        </p>
+      </SectionHead>
+      <PlatformTabs
+        legend="Choose your platform for checking a download"
+        panels={VERIFY_PANELS}
+        prefix="verify-"
       />
-      <p class="lede">
-        Two checks, and they answer different questions. The checksum says the file arrived intact.
-        The attestation says which workflow built it, from which commit, which is the question a
-        checksum cannot answer.
-      </p>
-      <div class="shell-wrap">
-        <pre class="shell"><code>{verifyExample}</code></pre>
+      <div class="downloads__group">
+        <p>
+          The attestation check also prints the policy it enforced, which the blocks leave out: the
+          repository, the workflow identity and the OIDC issuer it requires before it will succeed.
+        </p>
+        <h3>What every release carries</h3>
+        <ul class="plain" role="list">
+          <li>
+            <strong>A checksum beside every file.</strong> A <code>.sha256</code> is published with
+            each archive and each image tarball.
+          </li>
+          <li>
+            <strong>A build attestation on every archive and image.</strong> It is minted against a
+            short-lived certificate issued to the workflow run itself, and records which workflow,
+            at which commit, produced the file, so each one traces to the run that built it rather
+            than resting on anyone's word.
+          </li>
+          <li>
+            <strong>Provenance for the container images.</strong> Recorded for the published image
+            index and for each image tarball.
+          </li>
+        </ul>
+        <p>
+          On a first run Windows names the publisher as unknown, and macOS blocks a downloaded
+          binary until it is allowed. The <a href={DOCS.installation.href}>installation guide</a>{" "}
+          says how to check an archive and proceed.
+        </p>
+        <a class="more" href={`${DOCS_URL}audits/2026-09-release-pipeline/`}>
+          <ArrowText text="How the release artifacts are built and checked" />
+        </a>
       </div>
-      <p>
-        <code>sha256sum -c</code> must print <code>OK</code>. If it prints <code>FAILED</code>,
-        delete the file and download it again rather than running it. Between the lines above, the
-        attestation check also prints the policy it enforced: the repository, the workflow identity
-        and the OIDC issuer it requires before it will succeed.
-      </p>
-      <h3>What every release carries</h3>
-      <ul class="plain" role="list">
-        <li>
-          <strong>A checksum beside every file.</strong> A <code>.sha256</code> is published with
-          each archive and each image tarball.
-        </li>
-        <li>
-          <strong>A build attestation on every archive and image.</strong> It is minted against a
-          short-lived certificate issued to the workflow run itself, and records which workflow, at
-          which commit, produced the file, so each one traces to the run that built it rather than
-          resting on anyone's word.
-        </li>
-        <li>
-          <strong>Provenance for the container images.</strong> Recorded for the published image
-          index and for each image tarball.
-        </li>
-      </ul>
-      <p>
-        On a first run Windows names the publisher as unknown, and macOS blocks a downloaded binary
-        until it is allowed. The <a href={DOCS.installation.href}>installation guide</a> says how to
-        check an archive and proceed.
-      </p>
-      <a class="more" href={`${DOCS_URL}audits/2026-09-release-pipeline/`}>
-        <ArrowText text="How the release artifacts are built and checked" />
-      </a>
     </div>
   </section>
 </BaseLayout>
@@ -459,8 +892,7 @@ const groupFor = (id: string) => downloads?.groups.find((group) => group.id === 
   }
 
   .downloads__meta,
-  .downloads__note,
-  .panel__note {
+  .downloads__note {
     margin: 0;
     color: var(--muted);
     font-size: 0.95rem;
@@ -496,75 +928,11 @@ const groupFor = (id: string) => downloads?.groups.find((group) => group.id === 
     font-weight: 700;
   }
 
-  .downloads__group p {
+  .downloads__group p:not(.panel__note) {
     margin: 0;
     color: var(--text);
     line-height: 1.65;
     text-wrap: pretty;
-  }
-
-  /* The tab strip: radio inputs and labels, so choosing a platform needs no script. The
-     fieldset carries no frame of its own; the strip and the panel below it share one. */
-  .tabs {
-    min-width: 0;
-    margin: 0;
-    padding: 0;
-    border: 0;
-  }
-
-  .tabs__bar {
-    display: flex;
-    flex-wrap: wrap;
-    border: 1px solid var(--hairline);
-    border-bottom: 0;
-    background: var(--surface);
-  }
-
-  .tabs__label {
-    flex: 1 1 auto;
-    padding: 0.8rem 1.25rem;
-    border-right: 1px solid var(--hairline);
-    color: var(--muted);
-    font-size: 0.95rem;
-    font-weight: 650;
-    text-align: center;
-    white-space: nowrap;
-    cursor: pointer;
-  }
-
-  .tabs__label:last-of-type {
-    border-right: 0;
-  }
-
-  .tabs__label:hover {
-    color: var(--ink);
-    background: var(--ground);
-  }
-
-  .panel {
-    display: grid;
-    gap: 1.1rem;
-    justify-items: start;
-    padding: 2rem clamp(1rem, 3vw, 2rem);
-    border: 1px solid var(--hairline);
-    background: var(--surface);
-  }
-
-  .panel + .panel {
-    border-top: 0;
-  }
-
-  .panel__heading {
-    margin: 0;
-    font-size: clamp(1.4rem, 3vw, 1.9rem);
-    font-weight: 800;
-    letter-spacing: -0.02em;
-  }
-
-  .panel__step {
-    margin: 0.4rem 0 0;
-    font-size: 1.05rem;
-    font-weight: 700;
   }
 
   /* The source the client is built from, named once and set large: the documentation's
@@ -583,53 +951,6 @@ const groupFor = (id: string) => downloads?.groups.find((group) => group.id === 
 
   .source-repo:hover {
     text-decoration: underline;
-  }
-
-  /* The full list is reference below the actionable part, so it gets a rule above it. */
-  .panel__files {
-    width: 100%;
-    margin-top: 1.4rem;
-    padding-top: 1.75rem;
-    border-top: 1px solid var(--hairline);
-  }
-
-  /* With `:has()` the checked radio shows its panel. Without it, or with CSS off
-     entirely, every panel stays visible: the page loses the tabs, never the content. */
-  @supports selector(:has(*)) {
-    .panel {
-      display: none;
-    }
-
-    .tabs:has(#tab-linux:checked) #panel-linux,
-    .tabs:has(#tab-macos:checked) #panel-macos,
-    .tabs:has(#tab-windows:checked) #panel-windows,
-    .tabs:has(#tab-containers:checked) #panel-containers,
-    .tabs:has(#tab-source:checked) #panel-source {
-      display: grid;
-    }
-
-    .tabs__input:checked + .tabs__label {
-      color: var(--bar-strong);
-      background: var(--accent);
-    }
-
-    .tabs__input:focus-visible + .tabs__label {
-      outline: 2px solid var(--accent);
-      outline-offset: -4px;
-    }
-  }
-
-  /* The file name is what ends up on disk, so it is set in the documentation's code
-     face and is allowed to wrap rather than widening the table. */
-  .files__name {
-    font-family: var(--font-mono);
-    font-size: 0.9rem;
-    overflow-wrap: anywhere;
-  }
-
-  .files__num {
-    text-align: right;
-    white-space: nowrap;
   }
 
   .plain {
@@ -653,17 +974,5 @@ const groupFor = (id: string) => downloads?.groups.find((group) => group.id === 
 
   .more:hover {
     text-decoration: underline;
-  }
-
-  @media (max-width: 36rem) {
-    .tabs__label {
-      flex: 1 1 40%;
-      padding: 0.7rem 0.75rem;
-      border-bottom: 1px solid var(--hairline);
-    }
-
-    .files__num {
-      text-align: left;
-    }
   }
 </style>
