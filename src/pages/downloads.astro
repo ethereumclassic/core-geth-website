@@ -28,6 +28,10 @@ const downloads = await getDownloads();
 // the asset list comes from the release, and the tag falls back to the repository snapshot. A
 // build that lost the API still publishes commands a reader can run; only the file table, which
 // cannot be known without the API, degrades.
+//
+// Use `latest` where it is an option (maintainer, 2026-11-02). An image tag can say it, so the
+// containers blocks do. A file name cannot, because every asset of a release carries the tag, so
+// archive and image-file commands, and a source build's `--branch`, name the last release.
 const facts = await getRepository();
 const releaseTag = downloads?.tag ?? facts.release.tag;
 
@@ -38,6 +42,9 @@ if (!releaseTag.startsWith(`${RECOMMENDED_LINE}.`)) {
 }
 
 const assetBase = `https://github.com/${REPO.slug}/releases/download/${releaseTag}`;
+
+const attestationMust = (workflow: string, action = "run the file") =>
+  `\`gh attestation verify\` needs the GitHub CLI, signed in with \`gh auth login\`. Once signed in, it must print \`Verification succeeded\` and name \`.github/workflows/${workflow}\`. If it does not, do not ${action}.`;
 
 const windowsCompare =
   "PowerShell has no equivalent of `sha256sum -c`, so compare those two lines yourself: `Get-FileHash` prints uppercase hex and the `.sha256` file holds lowercase followed by the file name, and the letters must match; the case does not.";
@@ -51,32 +58,34 @@ const windowsCompare =
 // into a shell, so a prompt would have to be stripped line by line first. Expected output
 // goes on a comment line of its own, or in the note under the block.
 //
-// The macOS block carries no comments at all, and no block carries one after a command. Stock
+// The macOS blocks carry no comments at all, and no block carries one after a command. Stock
 // zsh, the macOS default, treats `#` in a paste as a command or an argument, so a comment line
-// prints an error and a trailing comment makes `shasum -c` fail on the `#`. The numbered steps
-// on the other tabs stay, because they are safe where those blocks run, and on a Mac the
-// containers and source blocks print one harmless error per comment line.
+// prints an error and a trailing comment makes `shasum -c` fail on the `#`. The Windows block
+// keeps its numbered comments, which PowerShell reads as comments.
+//
+// A pasted block carries on past a failed line. So where a block checks what it downloaded, the
+// lines after the check are chained to it, and the line that starts a node sits in a block of its
+// own, which a failed check cannot reach.
 const PANELS: readonly PlatformPanel[] = [
   {
     id: "linux",
     label: "Linux",
     steps: [
       {
-        title: "From nothing to a running node",
-        code: `# 1. Download the release and its checksum
-curl -LO ${assetBase}/core-geth-linux-${releaseTag}.zip
+        title: "Download the release, check it and install it",
+        code: `curl -LO ${assetBase}/core-geth-linux-${releaseTag}.zip
 curl -LO ${assetBase}/core-geth-linux-${releaseTag}.zip.sha256
-
-# 2. Check it, then unpack and install
-sha256sum -c core-geth-linux-${releaseTag}.zip.sha256
-unzip core-geth-linux-${releaseTag}.zip
-sudo install -m 0755 geth /usr/local/bin/geth
-geth version
-
-# 3. Start a node on Ethereum Classic
-geth --classic`,
+sha256sum -c core-geth-linux-${releaseTag}.zip.sha256 &&
+  unzip -o core-geth-linux-${releaseTag}.zip &&
+  sudo install -m 0755 geth /usr/local/bin/geth &&
+  geth version`,
         after:
-          "For the Mordor test network, run `geth --mordor` instead. On an Arm board, put the name for your processor where the file name says `linux`: `arm64` if `uname -m` prints `aarch64` or `arm64`, `arm7` for `armv7l`, `arm6` for `armv6l`, and `arm5` for `armv5tel`. `sha256sum -c` must print `OK`: if it prints `FAILED`, delete the file and download it again rather than running it.",
+          "From `sha256sum -c` on, each line runs only if the one before it worked. `sha256sum -c` must print `OK`: if it prints `FAILED`, delete the file and download it again rather than running it. On an Arm board, put the name for your processor where the file name says `linux`: `arm64` if `uname -m` prints `aarch64` or `arm64`, `arm7` for `armv7l`, `arm6` for `armv6l`, and `arm5` for `armv5tel`.",
+      },
+      {
+        title: "Start a node on Ethereum Classic",
+        code: "geth --classic",
+        after: "For the Mordor test network, run `geth --mordor` instead.",
       },
     ],
     guide: { label: "Linux users guide", href: `${DOCS_URL}getting-started/run/linux/` },
@@ -86,17 +95,19 @@ geth --classic`,
     label: "macOS",
     steps: [
       {
-        title: "From nothing to a running node",
+        title: "Download the release, check it and install it",
         code: `curl -LO ${assetBase}/core-geth-osx-arm64-${releaseTag}.zip
 curl -LO ${assetBase}/core-geth-osx-arm64-${releaseTag}.zip.sha256
-
-shasum -a 256 -c core-geth-osx-arm64-${releaseTag}.zip.sha256
-unzip core-geth-osx-arm64-${releaseTag}.zip
-sudo install -m 0755 geth /usr/local/bin/geth
-geth version
-
-geth --classic`,
-        after: `The block downloads the release and its checksum, checks the archive, installs the client and starts a node on Ethereum Classic. For the Mordor test network, run \`geth --mordor\` instead. On an Intel Mac, use \`core-geth-osx-${releaseTag}.zip\`. macOS has no \`sha256sum\`, so \`shasum -a 256 -c\` reads the same file; it must print \`OK\`, and if it prints \`FAILED\`, delete the file and download it again rather than running it. macOS also blocks a binary carrying the quarantine attribute: browsers set it and \`curl\` does not, so the commands above avoid it, and \`xattr -d com.apple.quarantine geth\` clears it from a browser download.`,
+shasum -a 256 -c core-geth-osx-arm64-${releaseTag}.zip.sha256 &&
+  unzip -o core-geth-osx-arm64-${releaseTag}.zip &&
+  sudo install -m 0755 geth /usr/local/bin/geth &&
+  geth version`,
+        after: `From \`shasum -a 256 -c\` on, each line runs only if the one before it worked. macOS has no \`sha256sum\`, so \`shasum -a 256 -c\` reads the same file; it must print \`OK\`, and if it prints \`FAILED\`, delete the file and download it again rather than running it. On an Intel Mac, use \`core-geth-osx-${releaseTag}.zip\`. macOS also blocks a binary carrying the quarantine attribute: browsers set it and \`curl\` does not, so the commands above avoid it, and \`xattr -d com.apple.quarantine geth\` clears it from a browser download.`,
+      },
+      {
+        title: "Start a node on Ethereum Classic",
+        code: "geth --classic",
+        after: "For the Mordor test network, run `geth --mordor` instead.",
       },
     ],
     guide: { label: "macOS users guide", href: `${DOCS_URL}getting-started/run/macos/` },
@@ -114,7 +125,7 @@ Invoke-WebRequest "${assetBase}/core-geth-win64-${releaseTag}.zip.sha256" -OutFi
 # 2. Compare these two lines, then unpack
 (Get-FileHash "core-geth-win64-${releaseTag}.zip" -Algorithm SHA256).Hash
 Get-Content "core-geth-win64-${releaseTag}.zip.sha256"
-Expand-Archive "core-geth-win64-${releaseTag}.zip" -DestinationPath C:\\core-geth
+Expand-Archive "core-geth-win64-${releaseTag}.zip" -DestinationPath C:\\core-geth -Force
 
 # 3. Start a node on Ethereum Classic
 cd C:\\core-geth
@@ -130,19 +141,21 @@ cd C:\\core-geth
     label: "Containers",
     steps: [
       {
-        title: "From nothing to a running node",
-        code: `# 1. Pull the published image and check that it runs
-docker pull ghcr.io/${REPO.slug}:latest
-docker run --rm ghcr.io/${REPO.slug}:latest version
-
-# 2. Start a node, keeping the chain in a named volume
+        title: "Pull the published image and check where it came from",
+        code: `docker pull ghcr.io/${REPO.slug}:latest
+gh attestation verify oci://ghcr.io/${REPO.slug}:latest --repo ${REPO.slug}`,
+        after: attestationMust("docker-publish.yml", "run the image"),
+      },
+      {
+        title: "Start a node, keeping the chain in a named volume",
+        code: `docker run --rm ghcr.io/${REPO.slug}:latest version
 docker run -d --name core-geth-classic \\
     --restart unless-stopped --stop-timeout 300 \\
     -v core-geth-classic:/root \\
     -p 30303:30303 -p 30303:30303/udp \\
     ghcr.io/${REPO.slug}:latest --classic`,
         after:
-          "The volume is mounted at `/root`, so the chain survives the container being replaced. For Mordor, run the same command with `core-geth-mordor` as the container and volume name and `--mordor` as the flag.",
+          "The first line confirms that the image runs. The volume is mounted at `/root`, so the chain survives the container being replaced. For Mordor, run the same command with `core-geth-mordor` as the container and volume name and `--mordor` as the flag.",
       },
     ],
     guide: { label: "Docker users guide", href: `${DOCS_URL}getting-started/run/docker/` },
@@ -153,22 +166,29 @@ docker run -d --name core-geth-classic \\
     steps: [
       {
         title: "Build the latest release",
-        code: `# 1. Clone the repository and check out the release
-git clone https://github.com/${REPO.slug}.git
-cd core-geth
-git checkout ${releaseTag}
-
-# 2. Build the node, then confirm it
-make geth
-./build/bin/geth --help`,
+        code: `git clone --branch ${releaseTag} --single-branch https://github.com/${REPO.slug}.git core-geth-${releaseTag} &&
+  cd core-geth-${releaseTag} &&
+  make geth &&
+  ./build/bin/geth version`,
+        after:
+          "Each line runs only if the one before it worked. A second run stops at the clone, because the folder already exists, rather than building an old copy.",
       },
       {
         title: "Build what is in development",
-        code: `# The same, from main: clone, build, confirm
-git clone https://github.com/${REPO.slug}.git
-cd core-geth
-make geth
-./build/bin/geth --help`,
+        code: `git clone https://github.com/${REPO.slug}.git &&
+  cd core-geth &&
+  make geth &&
+  ./build/bin/geth version`,
+        after:
+          "`main` keeps moving, and it is not a release. An existing `core-geth` folder stops this block at the clone, so update or remove that folder first.",
+      },
+      {
+        title: "Build on Windows",
+        code: `git clone --branch ${releaseTag} --single-branch https://github.com/${REPO.slug}.git "core-geth-${releaseTag}"
+cd "core-geth-${releaseTag}"
+go run build/ci.go install ./cmd/geth
+.\\build\\bin\\geth.exe version`,
+        after: `Run these in PowerShell, one line at a time. \`make geth\` runs this same \`go run\` command on other systems. For what is in development, leave out \`--branch ${releaseTag} --single-branch\` and the folder name, and run \`cd core-geth\`.`,
       },
     ],
     guide: { label: "Build from source", href: `${DOCS_URL}developers/build-from-source/` },
@@ -190,9 +210,6 @@ const rotationRequired =
 
 const verifyPointer = "[Verify what you downloaded](#verify) also checks where the file came from.";
 
-const attestationMust = (workflow: string, verb = "run") =>
-  `\`gh attestation verify\` needs the GitHub CLI, signed in with \`gh auth login\`. Once signed in, it must print \`Verification succeeded\` and name \`.github/workflows/${workflow}\`. If it does not, do not ${verb} the file.`;
-
 const keepBinary = `\`geth-${EXPOSED_LINE}\` is the old binary, kept so you can roll back. A second run leaves that copy alone, so you can run this block again after a mistake.`;
 
 const confirmNote = `If an attach line cannot connect, give the node a minute to start and run that line again. The first line must name a \`${RECOMMENDED_LINE}\` release. The enode ID must differ from the one you recorded. If the ID is the same, the node is still on the old key: stop the node cleanly and rename \`geth/nodekey\` in the data directory the node really uses. The peer count climbs within minutes, and a count stuck at zero after ten minutes usually means a peer still lists your old enode ID. The block number resumes where the node stopped. Compare the block number with a block explorer or another node you operate, and if the number settles somewhere else, stop and investigate rather than resyncing.`;
@@ -202,13 +219,13 @@ const confirmNote = `If an attach line cannot connect, give the node a minute to
 // is down, and another, after the start, gives the new ID to the nodes that list this one. Measured
 // across a rotation, from `v1.12.17` up: a two-line file changes nothing but the list, and a console
 // change lasts until that node restarts.
-const staticPeersStep = (mount = "") => ({
+const staticPeersStep = (extra = "") => ({
   title: "If this node lists static peers, update the list",
   before:
     "Static peers are nodes a node keeps connecting to, such as the rest of a mining pool's fleet. They sit under `[Node.P2P]` in the file you pass with `--config`, so edit that file while the node is down:",
   code: `[Node.P2P]
 StaticNodes = ["enode://<node ID>@<IP>:30303"]`,
-  after: `A node that has already moved has a new ID, so put the new ID in its entry and keep the address and port. Separate entries with commas. \`TrustedNodes\`, on a line of its own in the same section, takes the same entries. With no file yet, save these two lines with your own values, then add \`--config\` and the file's path to the start command. The client ignores \`static-nodes.json\` and logs an error at the start, so move any entries from that file into this one. To change the list on a running node instead, use the step after "Confirm the move".${mount}`,
+  after: `A node that has already moved has a new ID, so put the new ID in its entry and keep the address and port. Separate entries with commas. \`TrustedNodes\`, on a line of its own in the same section, takes the same entries. With no file yet, save these two lines with your own values, then add \`--config\` and the file's path to the start command. The client ignores \`static-nodes.json\` and logs an error at the start, so move any entries from that file into this one. To change the list on a running node instead, use the step after "Confirm the move".${extra}`,
 });
 
 const otherNodesStep = (attach: string, ipc: string, extra = "") => ({
@@ -274,7 +291,7 @@ geth attach --exec 'admin.nodeInfo.enode' ~/.ethereum/classic/geth.ipc`,
       },
       {
         title: "Install the release",
-        code: `unzip core-geth-linux-${releaseTag}.zip &&
+        code: `unzip -o core-geth-linux-${releaseTag}.zip &&
   { test -e /usr/local/bin/geth-${EXPOSED_LINE} || sudo mv /usr/local/bin/geth /usr/local/bin/geth-${EXPOSED_LINE}; } &&
   sudo install -m 0755 geth /usr/local/bin/geth &&
   geth version`,
@@ -332,7 +349,7 @@ geth attach --exec 'admin.nodeInfo.enode' ~/Library/Ethereum/classic/geth.ipc`,
       },
       {
         title: "Install the release",
-        code: `unzip core-geth-osx-arm64-${releaseTag}.zip &&
+        code: `unzip -o core-geth-osx-arm64-${releaseTag}.zip &&
   { test -e /usr/local/bin/geth-${EXPOSED_LINE} || sudo mv /usr/local/bin/geth /usr/local/bin/geth-${EXPOSED_LINE}; } &&
   sudo install -m 0755 geth /usr/local/bin/geth &&
   geth version`,
@@ -389,7 +406,7 @@ Get-Content "core-geth-win64-${releaseTag}.zip.sha256"`,
       {
         title: "Install the release",
         code: `Rename-Item .\\geth.exe geth-${EXPOSED_LINE}.exe
-Expand-Archive "core-geth-win64-${releaseTag}.zip" -DestinationPath .
+Expand-Archive "core-geth-win64-${releaseTag}.zip" -DestinationPath . -Force
 .\\geth.exe version`,
         after: `Go on only if \`.\\geth.exe version\` reports a \`${RECOMMENDED_LINE}\` release. \`geth-${EXPOSED_LINE}.exe\` is the old binary, kept so you can roll back.`,
       },
@@ -399,7 +416,9 @@ Expand-Archive "core-geth-win64-${releaseTag}.zip" -DestinationPath .
 Rename-Item $key "nodekey.old-rotated-$(Get-Date -Format yyyy-MM-dd)"`,
         after: `${rotationRequired} The commands use the default data directory, but the node uses \`%USERPROFILE%\\AppData\\Roaming\\Ethereum\\classic\` instead if an older \`AppData\\Roaming\\Ethereum\` folder exists and is not empty. For Mordor, use \`mordor\` in place of \`classic\`; if you pass \`--datadir\`, use yours.`,
       },
-      staticPeersStep(),
+      staticPeersStep(
+        " Save the file as UTF-8 with no byte order mark. A byte order mark, or UTF-16, stops the start with `Fatal: <file>, line 1: invalid TOML syntax`.",
+      ),
       checkFlags,
       {
         title: "Start the node",
@@ -423,9 +442,9 @@ Rename-Item $key "nodekey.old-rotated-$(Get-Date -Format yyyy-MM-dd)"`,
     steps: [
       {
         title: "Pull the release",
-        code: `docker pull ghcr.io/${REPO.slug}:${releaseTag}`,
-        after:
-          "The node can keep running for this step. The image moves from `etclabscore/core-geth` to images built from `ethereumclassic/core-geth`. [Verify what you downloaded](#verify) checks an image file from the release, and the installation guide gives the other ways to get the image.",
+        code: `docker pull ghcr.io/${REPO.slug}:latest
+gh attestation verify oci://ghcr.io/${REPO.slug}:latest --repo ${REPO.slug}`,
+        after: `The node can keep running for this step. The image moves from \`etclabscore/core-geth\` to images built from \`ethereumclassic/core-geth\`. ${attestationMust("docker-publish.yml", "run the image")} [Verify what you downloaded](#verify) checks an image file from the release. A loaded image file carries its release tag and no \`latest\` tag, so put that tag in place of \`latest\` in the steps below, or Docker pulls from the registry instead. The installation guide gives the other ways to get the image.`,
       },
       {
         title: "Record the node's block number and ID",
@@ -442,7 +461,7 @@ docker logs --tail 50 core-geth 2>&1 | grep 'Blockchain stopped'`,
       },
       {
         title: "Rename the old P2P node key",
-        code: `docker run --rm --volumes-from core-geth --entrypoint sh ghcr.io/${REPO.slug}:${releaseTag} \\
+        code: `docker run --rm --volumes-from core-geth --entrypoint sh ghcr.io/${REPO.slug}:latest \\
   -c "mv -n /root/.ethereum/classic/geth/nodekey /root/.ethereum/classic/geth/nodekey.old-rotated-$(date +%F)"`,
         after: `${rotationRequired} This runs in a throwaway container from the new image, so it reaches the key however the old container mounts the data directory, with no \`sudo\`.`,
       },
@@ -458,7 +477,7 @@ docker run -d --name core-geth \\
   --restart unless-stopped --stop-timeout 300 \\
   --volumes-from core-geth-${EXPOSED_LINE} \\
   -p 30303:30303 -p 30303:30303/udp -p 127.0.0.1:8545:8545 \\
-  ghcr.io/${REPO.slug}:${releaseTag} \\
+  ghcr.io/${REPO.slug}:latest \\
   --classic --http --http.addr 0.0.0.0 --http.port 8545`,
         after: `Put your own ports and flags in the last lines of \`docker run\`: \`docker inspect core-geth-${EXPOSED_LINE}\` shows what the old container used. For Mordor, use \`--mordor\` in place of \`--classic\`. The new container takes the old one's volumes, so the chain carries over. The old container stays, stopped, and is what you roll back to.`,
       },
@@ -543,7 +562,7 @@ geth attach --exec 'eth.blockNumber' ~/.ethereum/classic/geth.ipc`,
 // `params/bootnodes_classic.go` in `ethereumclassic/core-geth` builds into the recommended line.
 const discoveryFlag = `geth --classic --discovery.dns "enrtree://APDLRZ2T7ERXPWXX4D5USB32NIFYHXMFVZQ3DZALK6JJJ5L4VSYIQ@all.classic.ethereumclassic.net,enrtree://APDLRZ2T7ERXPWXX4D5USB32NIFYHXMFVZQ3DZALK6JJJ5L4VSYIQ@all.classic.ethclassic.net,enrtree://APDLRZ2T7ERXPWXX4D5USB32NIFYHXMFVZQ3DZALK6JJJ5L4VSYIQ@all.classic.ethereumclassic.network"`;
 
-const moveLede = `${MOVE_RECOMMENDATION} ${UPGRADE_COST} Follow the steps for your platform below rather than the install block at the top of this page, which starts a node before its P2P node key changes. These steps keep your old binary or container so you can roll back, and rotate the key before the node starts again. The rotation is required: one of the flaws in the \`${EXPOSED_LINE}\` line leaks bits of the P2P node key across repeated handshakes, and no fix can take back what already leaked.`;
+const moveLede = `${MOVE_RECOMMENDATION} ${UPGRADE_COST} Follow the steps for your platform below rather than the install steps at the top of this page, which start a node before its P2P node key changes. These steps keep your old binary or container so you can roll back, and rotate the key before the node starts again. The rotation is required: one of the flaws in the \`${EXPOSED_LINE}\` line leaks bits of the P2P node key across repeated handshakes, and no fix can take back what already leaked.`;
 
 const moveNote = `The [migration guide](${DOCS.migration.href}) also says which peers' configuration to update with the new enode ID, and how to roll back. A \`${EXPOSED_LINE}\` binary refuses the \`--mess\` flag, so take that flag out of the start command before you roll back.`;
 
@@ -633,12 +652,12 @@ ${attestationOutput(`core-geth-win64-${releaseTag}.zip`, "release-packages.yml")
 curl -LO ${assetBase}/core-geth-docker-amd64-${releaseTag}.tar.gz.sha256
 sha256sum -c core-geth-docker-amd64-${releaseTag}.tar.gz.sha256
 gh attestation verify core-geth-docker-amd64-${releaseTag}.tar.gz --repo ${REPO.slug}`,
-        after: `Each image file is the published image saved from the registry. On an Arm64 host, put \`docker-arm64\` where the file name says \`docker-amd64\`. \`sha256sum -c\` must print \`OK\`: if it prints \`FAILED\`, delete the file and download it again rather than loading it. ${attestationMust("docker-publish.yml", "load")}`,
+        after: `Each image file is the published image saved from the registry. On an Arm64 host, put \`docker-arm64\` where the file name says \`docker-amd64\`. \`sha256sum -c\` must print \`OK\`: if it prints \`FAILED\`, delete the file and download it again rather than loading it. ${attestationMust("docker-publish.yml", "load the file")}`,
       },
       {
         title: "Load the image",
         code: `docker load -i core-geth-docker-amd64-${releaseTag}.tar.gz`,
-        after: `The loaded image keeps its published name, with \`${releaseTag}\` as its tag.`,
+        after: `The loaded image keeps its published name, with \`${releaseTag}\` as its tag and no \`latest\` tag. Use that name in place of \`latest\` in a \`docker run\` command, because a command that names \`latest\` makes Docker pull from the registry.`,
       },
     ],
     guide: {
