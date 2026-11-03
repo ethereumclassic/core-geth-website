@@ -1,6 +1,7 @@
 ---
 import LinkRow from "@/components/LinkRow.astro";
 import InlineCode from "@/components/InlineCode.astro";
+import ReleaseFacts from "@/components/ReleaseFacts.astro";
 import SectionHead from "@/components/SectionHead.astro";
 import { NETWORK_RUNNING } from "@/data/site";
 
@@ -27,7 +28,7 @@ const { measured, source, evidence, goAdvisories, upgrade, total, unlisted, lede
       <SectionHead
         id="network-title"
         label="Ethereum Classic nodes"
-        title="Most Ethereum Classic nodes are running an exposed release"
+        title="Most Ethereum Classic nodes are running a vulnerable release"
         size="medium"
       >
         <p class="lede">
@@ -105,9 +106,7 @@ const { measured, source, evidence, goAdvisories, upgrade, total, unlisted, lede
                     <InlineCode text={row.running} />
                     {" carries"}
                   </summary>
-                  <p>
-                    <InlineCode text={row.detail} />
-                  </p>
+                  <ReleaseFacts facts={row.carries} />
                   {row.status === "recommended" && (
                     <a class="button button--primary census__cta" href={upgrade.href}>
                       {upgrade.label}
@@ -151,7 +150,7 @@ const { measured, source, evidence, goAdvisories, upgrade, total, unlisted, lede
 
   /* Each row carries its state three ways: a bar at its left edge, a faint tint, and
      a pill that names it. Greyscale, a screenshot or a screen reader keeps the word. */
-  .census__row--exposed {
+  .census__row--vulnerable {
     --state: var(--exposed);
     --state-tint: var(--exposed-tint);
   }
@@ -250,8 +249,8 @@ const { measured, source, evidence, goAdvisories, upgrade, total, unlisted, lede
     font-size: 0.9rem;
   }
 
-  .census__more p {
-    margin: 0.5rem 0 0;
+  .census__more :global(.release-facts) {
+    margin: 0.75rem 0 0.35rem;
     color: var(--text);
     font-size: 0.92rem;
     line-height: 1.55;

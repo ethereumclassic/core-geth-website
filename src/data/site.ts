@@ -378,63 +378,213 @@ export const OPERATOR_ACTIONS: readonly {
  * in `measured`. By the maintainer's decision (2026-09-18) this is the one section that
  * states census figures, advisory counts and versions, each dated and sourced here. A
  * re-measure is an edit to this block: the shares and the total are computed from the
- * counts. `status` is the state each row carries in text as well as in color.
- * Backticks mark code.
+ * counts. `status` is the state each row carries in text as well as in color: "vulnerable"
+ * for a release with a client CVE still open, the word security advisories use for a version
+ * inside a CVE's affected range (maintainer, 2026-11-03; "exposed" stays for a leaked key and a
+ * reachable RPC endpoint). Newest release first, so the recommended row leads and the oldest, most
+ * vulnerable releases close it (maintainer, 2026-11-03). Backticks mark code.
+ *
+ * **Each row lays out its release in full, so it reads alone** (maintainer, 2026-11-03, which
+ * replaces saying the Go build once above the table): what it fixed, what it left open, the
+ * regressions it carries and the toolchain that built it, each as a chip beside its sentence, the
+ * rows the audit and report pages draw. Every claim is the August 2026 follow-up's "Status by
+ * release", the March 2026 audit's release entries and affected ranges, or the Go toolchain
+ * audit's builds and counts.
  */
+export interface ReleaseFact {
+  label:
+    | "Issues fixed"
+    | "Unaddressed issues"
+    | "Added regressions"
+    | "Unsupported toolchain"
+    | "Supported toolchain"
+    | "Source of the fixes"
+    | "Known issues";
+  /** Red where something is still open, a regression is present or the toolchain is out of
+   *  support; green for a fix or a supported toolchain; neutral where the row says there is none. */
+  tone: "vulnerable" | "fixed" | "neutral";
+  text: string;
+}
+
+/** The handshake crash and the key oracle, as each row names them. */
+const HANDSHAKE_CRASH =
+  "CVE-2026-22862, the handshake crash used against Core-Geth `v1.12` bootnodes in March 2026";
+const KEY_ORACLE_FIXED =
+  "CVE-2026-26315, the node key oracle, though a node that kept the key it ran on `v1.12.20` or older is still running an exposed one";
+const GRAPHQL_OPEN =
+  "GraphQL queries can nest without limit, which can exhaust a node that serves GraphQL; the endpoint is off unless `--graphql` is set.";
+const KZG_OPEN =
+  "CVE-2026-22868, a denial of service in blob proof checks, not reached on Ethereum Classic and active on the Ethereum mainnet, Sepolia and Holesky configurations this binary also ships";
+/** Who wrote the fixes the emergency releases were cut from, in the project history's account,
+ *  credited the way the site credits the 2026 work. */
+const EMERGENCY_SOURCE_AUTHORED =
+  "Ethereum Classic core developers wrote these fixes and the Go toolchain upgrade for the `v1.13` line from February 2026, and reported the work privately to the `etclabscore/core-geth` maintainers in February and March 2026.";
+const CUT_FROM_V113_WORK =
+  "This release was cut from the security work Ethereum Classic core developers reported privately for the `v1.13` line.";
+/** The added-regressions sentence for a release older than both `v1.12` regressions. */
+const NO_REGRESSIONS_YET =
+  "None: `eth_syncing` broke in `v1.12.22`, and the snap storage-range cap arrived in `v1.12.23`.";
+const SYNCING_REGRESSION =
+  "a node reports the wrong network head, which misleads the exchanges, explorers and monitoring that read it to decide whether that node has finished syncing. Its report, `etclabscore/core-geth` issue #697, is still open.";
+
+/** The toolchain every 2026 `v1.12` release was built with. */
+const TOOLCHAIN_2026: ReleaseFact = {
+  label: "Unsupported toolchain",
+  tone: "vulnerable",
+  text: "Built with go1.21.13, and go1.22.1 for the Arm archives. Go 1.21 left support in August 2024 and Go 1.22 in February 2025, before this release shipped, so no Go security fix will reach its binaries. Its archives carry 62 Go standard library advisories, 48 of them in code compiled into the binary, and that count only rises; whether a node can reach that code was not assessed.",
+};
+
 const NETWORK_ROWS: readonly {
   running: string;
   nodes: number;
-  status: "exposed" | "recommended";
+  status: "vulnerable" | "recommended";
   /** The tally in the row: counts, in the same shape for every release. */
   summary: string;
   /** What that release carries, under the row and collapsible. */
-  detail: string;
+  carries: readonly ReleaseFact[];
 }[] = [
-  {
-    running: "`v1.12.20` and older",
-    nodes: 158,
-    status: "exposed",
-    summary:
-      "6 client CVEs open, 62 known Go flaws with 48 in the binary, GraphQL queries unbounded",
-    detail:
-      "Every one of the six client CVEs is unpatched here, and one of them was used against Core-Geth `v1.12` bootnodes in March 2026. It was also built with Go 1.21, a version the Go project has since published 62 security fixes for: in 48 of them the flawed code is compiled into the binary you would be running. Whether a node can be made to reach that code was not tested, so treat it as exposure to rule out rather than proven.",
-  },
-  {
-    running: "`v1.12.21`",
-    nodes: 50,
-    status: "exposed",
-    summary:
-      "4 client CVEs open, 62 known Go flaws with 48 in the binary, GraphQL queries unbounded",
-    detail:
-      "Closes the two handshake encryption flaws, CVE-2026-22862 and CVE-2026-26315, and caps the size of a handshake message. Four flaws stay open: CVE-2025-24883, CVE-2026-26314, CVE-2026-26313 and CVE-2026-22868. A GraphQL query can still nest without limit, which can exhaust a node that serves it, and the Go build is the same as above.",
-  },
-  {
-    running: "`v1.12.22`",
-    nodes: 165,
-    status: "exposed",
-    summary:
-      "1 client CVE open and 1 only mitigated, 62 known Go flaws with 48 in the binary, GraphQL queries unbounded, `eth_syncing` regression",
-    detail:
-      "Adds the key checks for CVE-2025-24883 and CVE-2026-26314. For CVE-2026-26313 its own commit says mitigation rather than fix: the node stops a peer exhausting its memory, but still reads the whole message, so the attack still costs it work. CVE-2026-22868 was called not applicable to Ethereum Classic and left unpatched, though the same binary also serves Ethereum, Sepolia and Holesky, where the affected feature is switched on. This release is also where `eth_syncing` starts reporting the wrong sync height, reported in `etclabscore/core-geth` as issue #697 and still open. Same Go build as above.",
-  },
-  {
-    running: "`v1.12.23`",
-    nodes: 138,
-    status: "exposed",
-    summary:
-      "1 client CVE open, 62 known Go flaws with 48 in the binary, GraphQL queries unbounded, `eth_syncing` regression",
-    detail:
-      "Completes the CVE-2026-26313 fix by hardening how peer messages are decoded, and adds a cap on snap sync responses that can disconnect peers which are answering correctly. What stays open: CVE-2026-22868 still unpatched, GraphQL queries still unbounded, and `eth_syncing` still wrong, its report still open. Its archives were built with Go 1.21.13 or Go 1.22.1, versions the Go project had already stopped supporting when this shipped, and all 62 Go fixes above had been published before the release date.",
-  },
   {
     running: "`v1.13.0`",
     nodes: 9,
     status: "recommended",
-    summary: "every client CVE patched, a supported Go build, GraphQL queries bounded",
-    detail:
-      "All six client CVEs the audits found in the `v1.12` client code are closed here, CVE-2026-22868 among them, GraphQL queries are bounded and the `eth_syncing` regression is fixed. Built with Go 1.26.8, a supported version, so none of the 62 Go flaws above is in the binary. Seven months of work cleared the debt behind them: the dependency tree modernized, and the release pipeline rebuilt so each archive carries a checksum and a build attestation. Released September 14, 2026, and the release report lists what is known to be imperfect in it.",
+    summary:
+      "every client CVE patched, a supported Go toolchain, GraphQL queries bounded, about six months of testing on Ethereum Classic mainnet and Mordor from February 2026 until release, the security work the `v1.12.21` and `v1.12.22` emergency releases were cut from",
+    carries: [
+      {
+        label: "Issues fixed",
+        tone: "fixed",
+        text: `All six client CVEs the audits found in the \`v1.12\` client code, each patched with a test: ${HANDSHAKE_CRASH}; CVE-2026-26315, the node key oracle; CVE-2025-24883 and CVE-2026-26314, two missing public key checks; CVE-2026-26313, peer message memory exhaustion; and CVE-2026-22868, the blob proof denial of service. GraphQL query depth is limited.`,
+      },
+      { label: "Unaddressed issues", tone: "neutral", text: "Nothing the 2026 audits found." },
+      {
+        label: "Added regressions",
+        tone: "neutral",
+        text: "Neither `v1.12` regression carries over. Both arrived in releases cut in `etclabscore/core-geth`: `eth_syncing` broke in `v1.12.22`, and the snap storage-range cap arrived in `v1.12.23`.",
+      },
+      {
+        label: "Supported toolchain",
+        tone: "fixed",
+        text: "Built with go1.26.8, the newest Go 1.26 release when `v1.13.0` was cut, with no Go standard library advisory against it that day. Go 1.26 is in support and receives the Go team's security fixes, and each `v1.13` release is cut with the newest patch of its Go version.",
+      },
+      {
+        label: "Source of the fixes",
+        tone: "neutral",
+        text: `${EMERGENCY_SOURCE_AUTHORED} The emergency releases \`v1.12.21\` and \`v1.12.22\` were cut from that work, and the same fixes were published in \`ethereumclassic/core-geth\` as pull requests #10 to #36 on March 20 and 21, 2026.`,
+      },
+      {
+        label: "Known issues",
+        tone: "neutral",
+        text: "Listed in the release report for `v1.13.0`, under [Known issues](/security/2026-09-core-geth-v1.13.0-release-report/#known-issues).",
+      },
+    ],
+  },
+  {
+    running: "`v1.12.23`",
+    nodes: 138,
+    status: "vulnerable",
+    summary:
+      "1 client CVE open, unsupported Go toolchain, 62 known Go flaws with 48 in the binary, GraphQL queries unbounded, `eth_syncing` regression, snap storage-range cap regression",
+    carries: [
+      {
+        label: "Issues fixed",
+        tone: "fixed",
+        text: `${HANDSHAKE_CRASH}; ${KEY_ORACLE_FIXED}; CVE-2025-24883 and CVE-2026-26314, two missing public key checks; and CVE-2026-26313, peer message memory exhaustion, which this release finishes by hardening how peer messages are decoded.`,
+      },
+      {
+        label: "Unaddressed issues",
+        tone: "vulnerable",
+        text: `${KZG_OPEN}. ${GRAPHQL_OPEN} The \`eth_syncing\` regression carried from \`v1.12.22\` stays: ${SYNCING_REGRESSION}`,
+      },
+      {
+        label: "Added regressions",
+        tone: "vulnerable",
+        text: "A cap on snap sync storage-range responses that can disconnect peers answering correctly, measured in the [August 2026 follow-up](/security/2026-08-core-geth-v1.12-security-follow-up/#finding-one-response-cap-in-v11223-can-still-reject-honest-peers).",
+      },
+      TOOLCHAIN_2026,
+    ],
+  },
+  {
+    running: "`v1.12.22`",
+    nodes: 165,
+    status: "vulnerable",
+    summary:
+      "1 client CVE open and 1 partially mitigated, unsupported Go toolchain, 62 known Go flaws with 48 in the binary, GraphQL queries unbounded, `eth_syncing` regression",
+    carries: [
+      {
+        label: "Issues fixed",
+        tone: "fixed",
+        text: `${HANDSHAKE_CRASH}; ${KEY_ORACLE_FIXED}; and CVE-2025-24883 and CVE-2026-26314, two missing public key checks, which this release adds. It also stops the out-of-memory crash in CVE-2026-26313, peer message memory exhaustion, a partial fix its own commit calls a mitigation. ${CUT_FROM_V113_WORK}`,
+      },
+      {
+        label: "Unaddressed issues",
+        tone: "vulnerable",
+        text: `The rest of CVE-2026-26313: a peer can still make the node spend CPU on a message it will reject. CVE-2026-22868, a denial of service in blob proof checks, which \`etclabscore/core-geth\` declared not applicable to Ethereum Classic and left unpatched: the flaw is not reached on Ethereum Classic and is active on the Ethereum mainnet, Sepolia and Holesky configurations this binary also ships. ${GRAPHQL_OPEN}`,
+      },
+      {
+        label: "Added regressions",
+        tone: "vulnerable",
+        text: `The \`eth_syncing\` regression: ${SYNCING_REGRESSION}`,
+      },
+      TOOLCHAIN_2026,
+    ],
+  },
+  {
+    running: "`v1.12.21`",
+    nodes: 50,
+    status: "vulnerable",
+    summary:
+      "4 client CVEs open, unsupported Go toolchain, 62 known Go flaws with 48 in the binary, GraphQL queries unbounded",
+    carries: [
+      {
+        label: "Issues fixed",
+        tone: "fixed",
+        text: `${HANDSHAKE_CRASH}, and ${KEY_ORACLE_FIXED}. It also caps the size of a handshake message. ${CUT_FROM_V113_WORK}`,
+      },
+      {
+        label: "Unaddressed issues",
+        tone: "vulnerable",
+        text: `CVE-2025-24883 and CVE-2026-26314, two missing public key checks; CVE-2026-26313, peer message memory exhaustion; and ${KZG_OPEN}. ${GRAPHQL_OPEN}`,
+      },
+      { label: "Added regressions", tone: "neutral", text: NO_REGRESSIONS_YET },
+      TOOLCHAIN_2026,
+    ],
+  },
+  {
+    running: "`v1.12.20` and older",
+    nodes: 158,
+    status: "vulnerable",
+    summary:
+      "6 client CVEs open, unsupported Go toolchain, 62 known Go flaws with 48 in the binary, GraphQL queries unbounded",
+    carries: [
+      { label: "Issues fixed", tone: "neutral", text: "Nothing the 2026 audits found." },
+      {
+        label: "Unaddressed issues",
+        tone: "vulnerable",
+        text: `All six client CVEs: ${HANDSHAKE_CRASH}; CVE-2026-26315, the node key oracle, which is why a node that ran one of these releases must rotate its P2P key; CVE-2025-24883 and CVE-2026-26314, two missing public key checks; CVE-2026-26313, peer message memory exhaustion; and CVE-2026-22868, a denial of service in blob proof checks, not reached on Ethereum Classic and active on the Ethereum networks the client also ships. ${GRAPHQL_OPEN}`,
+      },
+      {
+        label: "Added regressions",
+        tone: "neutral",
+        text: NO_REGRESSIONS_YET,
+      },
+      {
+        label: "Unsupported toolchain",
+        tone: "vulnerable",
+        text: "`v1.12.20` was built with go1.21.10, and go1.22.1 for the Windows and Arm archives, each already behind its newest patch the day it shipped. Go 1.21 left support in August 2024 and Go 1.22 in February 2025, so no Go security fix will reach these binaries. The `v1.12.20` archives carry 62 Go standard library advisories, 48 of them in code compiled into the binary, and that count only rises; whether a node can reach that code was not assessed. Earlier `v1.12` releases were built with Go 1.13 to Go 1.22, and none of those Go versions is supported today.",
+      },
+    ],
   },
 ];
+
+// Every release lays out the same four states, in the same order, so a row read alone is complete.
+for (const row of NETWORK_ROWS) {
+  const states = row.carries.map((fact) => fact.label.replace(/^(Uns|S)upported /, ""));
+  if (
+    states.slice(0, 4).join("|") !== "Issues fixed|Unaddressed issues|Added regressions|toolchain"
+  ) {
+    throw new Error(`the census row for ${row.running} does not lay out its release in full`);
+  }
+}
 
 /**
  * Counted but not listed as a release row: a development build of the previous repository's
@@ -479,13 +629,13 @@ export const NETWORK_RUNNING = {
   /** The nodes in the total that are not a release row, named in the caption so the rows and
    *  the total reconcile for a reader. */
   unlisted: NETWORK_UNLISTED,
-  /** The line above the table: what the recommended line resolves, in the record's words
-   *  for the release it measured, and the maintainer's recommendation to run one beside the
-   *  current nodes before moving a whole fleet across. The trial node takes no traffic: the
-   *  migration guide asks for one MESS setting per fleet, and `v1.12.x` runs MESS off where
-   *  this line turns it on. Check all of it against the documentation whenever the
-   *  recommended line changes. */
-  lede: `The \`${RECOMMENDED_LINE}\` line patches all six client CVEs the audits found in the \`${EXPOSED_LINE}\` client code, bounds GraphQL queries and is built with a supported Go version, so none of the 62 Go flaws the \`${EXPOSED_LINE}\` builds carry is in it. Run a \`${RECOMMENDED_LINE}\` node beside your current ones without sending it traffic, and when you are comfortable, move your whole fleet to it.`,
+  /** The line above the table: what the recommended line resolves, in the record's words for
+   *  the release it measured, and the maintainer's recommendation to run one beside the current
+   *  nodes before moving a whole fleet across. Each row says its own Go build, so this line does
+   *  not. The trial node takes no traffic: the migration guide asks for one MESS setting per
+   *  fleet, and `v1.12.x` runs MESS off where this line turns it on. Check all of it against the
+   *  documentation whenever the recommended line changes. */
+  lede: `The \`${RECOMMENDED_LINE}\` line patches every client CVE the audits found in the \`${EXPOSED_LINE}\` client code, bounds GraphQL queries, carries neither \`${EXPOSED_LINE}\` regression and is built with a supported Go version. Run a \`${RECOMMENDED_LINE}\` node beside your current ones without sending it traffic, and when you are comfortable, move your whole fleet to it.`,
   rows: NETWORK_ROWS.map((row) => ({ ...row, share: `${networkShare(row.nodes).toFixed(1)}%` })),
 } as const;
 
@@ -954,8 +1104,12 @@ export const REPOSITORY_MOVE = {
  * rail cannot tell those apart from version numbers alone. **Each entry says what it left
  * open**, for the same reason: without that, the rail reads as four releases that each
  * fixed something, and three of them are not safe to run today.
+ *
+ * Written here in the order it happened, so a new entry goes at the end, and drawn newest first
+ * as `RELEASE_TIMELINE`, like every list of releases on the site: the release to run leads and
+ * the most exposed one closes it (maintainer, 2026-11-03).
  */
-export const RELEASE_TIMELINE: readonly HistoryEntry[] = [
+const RELEASE_HISTORY: readonly HistoryEntry[] = [
   {
     when: "June 10, 2024",
     iso: "2024-06-10",
@@ -1035,6 +1189,13 @@ export const RELEASE_TIMELINE: readonly HistoryEntry[] = [
     current: true,
   },
 ];
+
+export const RELEASE_TIMELINE: readonly HistoryEntry[] = [...RELEASE_HISTORY].reverse();
+RELEASE_TIMELINE.forEach((entry, i, all) => {
+  if (i > 0 && (entry.iso ?? "") > (all[i - 1]!.iso ?? "")) {
+    throw new Error(`the release history is out of order at "${entry.title}"`);
+  }
+});
 
 /**
  * How the 2026 work was handled, for `/security/`. Every sentence is the record's:

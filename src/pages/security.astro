@@ -26,8 +26,8 @@ import {
 
 // Every figure in the strip is computed from the census the page already shows, so a
 // tile cannot disagree with the table under it, and a re-measure moves both at once.
-const exposedNodes = NETWORK_RUNNING.rows
-  .filter((row) => row.status === "exposed")
+const vulnerableNodes = NETWORK_RUNNING.rows
+  .filter((row) => row.status === "vulnerable")
   .reduce((sum, row) => sum + row.nodes, 0);
 const recommendedNodes = NETWORK_RUNNING.rows
   .filter((row) => row.status === "recommended")
@@ -63,9 +63,9 @@ const CENSUS_STATS = [
     caption: `Core-Geth nodes seen on ${NETWORK_RUNNING.measured.text}, counted by ${NETWORK_RUNNING.source.label}.`,
   },
   {
-    label: "On an exposed release",
-    value: percent(exposedNodes),
-    caption: `${exposedNodes} nodes running a release with a client CVE still open.`,
+    label: "On a vulnerable release",
+    value: percent(vulnerableNodes),
+    caption: `${vulnerableNodes} nodes running a release with a client CVE still open.`,
     tone: "exposed" as const,
   },
   {
@@ -118,17 +118,18 @@ const CENSUS_STATS = [
       <SectionHead
         id="timeline-title"
         label="The Core-Geth release record"
-        title="Every release since the gap, in order"
+        title="Every release since the gap, newest first"
         em="since the gap"
         size="medium"
       >
         <p class="lede">
-          The 21 months between June 2024 and February 2026 are the gap. This runs from the last
-          release before it to the one that closed it, and each release names the repository that
-          published it: what <code class="namespace--previous">etclabscore/core-geth</code> cut as
-          an emergency patch, and what was built, tested and released in{" "}
+          The 21 months between June 2024 and February 2026 are the gap. This runs from the release
+          that ended the gap back to the last release before it, and each release names the
+          repository that published it: what{" "}
+          <code class="namespace--previous">etclabscore/core-geth</code> cut as an emergency patch,
+          and what was built, tested and released in{" "}
           <code class="namespace--current">ethereumclassic/core-geth</code>. Every release in this
-          timeline but the last is still exposed, and each entry says what it left open.
+          timeline but the first is still vulnerable, and each entry says what it left open.
         </p>
       </SectionHead>
       <VerticalTimeline entries={RELEASE_TIMELINE} label="Releases since the maintenance gap" />

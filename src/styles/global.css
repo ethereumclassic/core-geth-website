@@ -51,6 +51,16 @@
   --exposed-tint: #f7f0f0;
   --recommended-tint: #ecf4f0;
 
+  /* Severity chips on the report pages (maintainer, 2026-11-03): High and Critical take
+     --exposed, Medium orange and Low yellow, each made the way --exposed was, the accent's
+     OKLCH lightness and chroma turned to its own hue (55 and 95), with a tint made the same
+     way from --exposed-tint. Text on tint is 5.22:1 for orange and 5.00:1 for yellow; a
+     brighter yellow does not reach 4.5:1 on a light ground. */
+  --severity-medium: #9a5212;
+  --severity-medium-tint: #f6f1ed;
+  --severity-low: #7b6600;
+  --severity-low-tint: #f3f2ec;
+
   /* Equal to THEME_COLOR in src/data/site.ts. */
   --bar: #14151a;
   --bar-line: #2a2d35;
@@ -545,6 +555,80 @@ code {
   .data-table td {
     color: var(--muted);
     font-size: 0.9rem;
+  }
+}
+
+/* A state as a chip: red for something still open or vulnerable, green for something fixed or
+   supported, orange and yellow for a Medium and a Low severity, ink for anything else. The word
+   always says which, so the color reinforces and is never the only signal. The census on
+   /security/ and the audit and report pages use it. */
+.chip {
+  display: inline-block;
+  padding: 0.05rem 0.55rem;
+  border: 1px solid var(--hairline);
+  border-radius: 999px;
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: 1.6;
+  white-space: nowrap;
+}
+
+.chip--vulnerable {
+  border-color: var(--exposed);
+  background: var(--exposed-tint);
+  color: var(--exposed);
+}
+
+.chip--fixed {
+  border-color: var(--accent);
+  background: var(--recommended-tint);
+  color: var(--accent);
+}
+
+/* Severity below High: orange for Medium, yellow for Low. The word says which. */
+.chip--medium {
+  border-color: var(--severity-medium);
+  background: var(--severity-medium-tint);
+  color: var(--severity-medium);
+}
+
+/* A mitigation, a fix that leaves part of the problem, takes the Low yellow. */
+.chip--low,
+.chip--mitigated {
+  border-color: var(--severity-low);
+  background: var(--severity-low-tint);
+  color: var(--severity-low);
+}
+
+/* What one release carries: a row per state, its chip beside its sentence, the chip above it
+   on a narrow screen. The label column is wide enough for the longest chip, so the rows of
+   every release line up. */
+.release-facts {
+  display: grid;
+  gap: 0.6rem;
+  margin: 0;
+}
+
+.release-facts__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.3rem;
+}
+
+.release-facts dd {
+  min-width: 0;
+  margin: 0;
+}
+
+@media (min-width: 44rem) {
+  .release-facts__row {
+    grid-template-columns: 12rem minmax(0, 1fr);
+    gap: 1rem;
+    align-items: baseline;
   }
 }
 

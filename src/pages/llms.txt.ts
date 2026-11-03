@@ -103,10 +103,12 @@ export const GET: APIRoute = () => {
       `Core-Geth nodes by release on ${NETWORK_RUNNING.measured.text}, ${NETWORK_RUNNING.total} in all, from [${NETWORK_RUNNING.source.label}](${NETWORK_RUNNING.source.href}):`,
     ),
     "",
-    ...NETWORK_RUNNING.rows.map(
-      (row) =>
-        `- ${row.running}: ${row.nodes} nodes, ${row.share}, ${row.status}: ${row.summary}. ${row.detail}`,
-    ),
+    ...NETWORK_RUNNING.rows.flatMap((row) => [
+      `- ${row.running}: ${row.nodes} nodes, ${row.share}, ${row.status}: ${row.summary}.`,
+      ...row.carries.map(
+        (fact) => `  - ${fact.label}: ${fact.text.replaceAll("](/", `](${SITE_URL}/`)}`,
+      ),
+    ]),
     `- [What the network is running](${SITE_URL}/security/): this table, the audits behind it, and how to report a security issue.`,
     `- [The evidence for each row](${NETWORK_RUNNING.evidence})`,
     `- [${NETWORK_RUNNING.upgrade.label}](${absolute(NETWORK_RUNNING.upgrade.href)})`,
@@ -150,7 +152,7 @@ export const GET: APIRoute = () => {
         `- [${audit.title}](${absolute(audit.href)}), ${audit.date.text}: ${audit.summary.replaceAll("`", "")}`,
     ),
     "",
-    "Every release and event in this record, in order, each release naming the repository that published it:",
+    "Every release and event in this record, newest first, each release naming the repository that published it:",
     "",
     ...RELEASE_TIMELINE.map((item) => {
       const quote = item.quote ? ` "${item.quote.text}" (${item.quote.source}).` : "";

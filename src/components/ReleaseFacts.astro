@@ -1,0 +1,28 @@
+---
+import InlineCode from "@/components/InlineCode.astro";
+import type { ReleaseFact } from "@/data/site";
+
+// What one release carries, a row per state: its chip beside its sentence. The audit and report
+// pages draw the same rows from the documentation's own labels, in src/lib/report-html.ts, and
+// global.css styles both.
+interface Props {
+  facts: readonly ReleaseFact[];
+}
+
+const { facts } = Astro.props;
+---
+
+<dl class="release-facts">
+  {facts.map((fact) => (
+    <div class="release-facts__row">
+      <dt>
+        <span class:list={["chip", fact.tone !== "neutral" && `chip--${fact.tone}`]}>
+          {fact.label}
+        </span>
+      </dt>
+      <dd>
+        <InlineCode text={fact.text} />
+      </dd>
+    </div>
+  ))}
+</dl>
