@@ -1251,7 +1251,7 @@ export const AUDITS: readonly {
     title: DOCS.securityAudit.title,
     href: DOCS.securityAudit.href,
     date: { text: "March 2026", iso: "2026-03" },
-    summary: `What 21 months without security maintenance in \`${PREVIOUS_REPO}\` left open in the ${EXPOSED_LINE} client code, and the March 2026 attack that used two of those flaws against Core-Geth \`${EXPOSED_LINE}\` bootnodes. It names which releases carry each flaw.`,
+    summary: `What 21 months without security maintenance in \`${PREVIOUS_REPO}\` left open in the ${EXPOSED_LINE} client code, and the March 2026 attack that used one of those flaws against Core-Geth \`${EXPOSED_LINE}\` bootnodes. It names which releases carry each flaw.`,
   },
   {
     title: `Core-Geth ${EXPOSED_LINE} security follow-up`,

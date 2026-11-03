@@ -41,9 +41,9 @@ Classic's consensus rules itself, every fork from Frontier through Spiral, becau
 not.
 
 The `v1.12` line went 21 months without security maintenance in
-[`etclabscore/core-geth`](https://github.com/etclabscore/core-geth), and an attack on the ETC
-Cooperative's bootnodes in March 2026 used two of the flaws that gap left open. The `v1.13` line,
-published here, closes all six the audits found.
+[`etclabscore/core-geth`](https://github.com/etclabscore/core-geth), and in March 2026 one of the
+flaws that gap left open was used against Core-Geth `v1.12` bootnodes. The `v1.13` line, published
+here, closes all six client CVEs the audits found, that one among them.
 [Security](https://coregeth.com/security/) carries the audits, what each release fixes, and a
 count of which releases Ethereum Classic nodes are still running.
 [About](https://coregeth.com/about/) carries the lineage, from go-ethereum through Multi-Geth, and
