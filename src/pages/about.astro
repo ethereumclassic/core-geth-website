@@ -24,7 +24,7 @@ import {
 <BaseLayout
   title="About Core-Geth: an Ethereum Classic client's history"
   crumb="About"
-  description={`Core-Geth's lineage: forked from multi-geth in 2020, funded by ETC Labs then the ETC Cooperative, and now the ${RECOMMENDED_LINE} line in the ethereumclassic organization.`}
+  description={`Core-Geth's lineage: forked from Multi-Geth in 2020, funded by ETC Labs then the ETC Cooperative, and now the ${RECOMMENDED_LINE} line in the ethereumclassic organization.`}
   path="/about/"
 >
   <PageHero
@@ -60,8 +60,7 @@ import {
         <p class="lede">
           Core-Geth holds Ethereum Classic's chain rules as configuration rather than as code
           branches, which is why one binary serves several networks: adding a network means writing
-          a chain configuration, not forking the client. It inherited that design from multi-geth,
-          the client it was forked from in 2020.
+          a chain configuration, not forking the client.
         </p>
       </SectionHead>
       <VerticalTimeline entries={CODE_LINEAGE} label="The code this client descends from" />

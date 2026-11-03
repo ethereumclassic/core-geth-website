@@ -9,9 +9,9 @@ import Records from "@/components/sections/Records.astro";
 import Support from "@/components/sections/Support.astro";
 import { getRepository } from "@/data/repository";
 
-// A landing page: what Core-Geth is, where its releases come from, what the network
-// is running, what an operator does first, which guide to start with, where the
-// security records are, and how it is funded. Each section is a few lines and a link to the page that says the rest.
+// A landing page: what Core-Geth is, where its releases come from, what went wrong and
+// what fixed it, what an operator does first, which guide to start with, and how it is
+// funded. Each section is a few lines and a link to the page that says the rest.
 // The bands alternate white and grid, starting white under the hero.
 const facts = await getRepository();
 ---
@@ -22,6 +22,7 @@ const facts = await getRepository();
   <Repository facts={facts} />
   <Records
     tone="surface"
+    brief
     cta={{ label: "What the network is running, and every audit", href: "/security/" }}
   />
   <Operators />

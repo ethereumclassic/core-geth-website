@@ -44,10 +44,10 @@ if (!releaseTag.startsWith(`${RECOMMENDED_LINE}.`)) {
 const assetBase = `https://github.com/${REPO.slug}/releases/download/${releaseTag}`;
 
 const attestationMust = (workflow: string, action = "run the file") =>
-  `\`gh attestation verify\` needs the GitHub CLI, signed in with \`gh auth login\`. Once signed in, it must print \`Verification succeeded\` and name \`.github/workflows/${workflow}\`. If it does not, do not ${action}.`;
+  `\`gh attestation verify\` needs the GitHub CLI, signed in with \`gh auth login\`. It must print \`Verification succeeded\` and name \`.github/workflows/${workflow}\`. If it does not, do not ${action}.`;
 
 const windowsCompare =
-  "PowerShell has no equivalent of `sha256sum -c`, so compare those two lines yourself: `Get-FileHash` prints uppercase hex and the `.sha256` file holds lowercase followed by the file name, and the letters must match; the case does not.";
+  "Compare those two lines yourself: the letters must match and the case need not, since `Get-FileHash` prints uppercase and the `.sha256` file holds lowercase followed by the file name.";
 
 // One panel per platform the project publishes for, plus source. Every command is the one
 // its linked guide gives, with that guide's version comment dropped, because this page
@@ -81,7 +81,7 @@ sha256sum -c core-geth-linux-${releaseTag}.zip.sha256 &&
   sudo install -m 0755 geth /usr/local/bin/geth &&
   geth version`,
         after:
-          "From `sha256sum -c` on, each line runs only if the one before it worked. `sha256sum -c` must print `OK`: if it prints `FAILED`, delete the file and download it again rather than running it. On an Arm board, put the name for your processor where the file name says `linux`: `arm64` if `uname -m` prints `aarch64` or `arm64`, `arm7` for `armv7l`, `arm6` for `armv6l`, and `arm5` for `armv5tel`.",
+          "`sha256sum -c` must print `OK`: if it prints `FAILED`, delete the file and download it again rather than running it. On an Arm board, put the name for your processor where the file name says `linux`: `arm64` if `uname -m` prints `aarch64` or `arm64`, `arm7` for `armv7l`, `arm6` for `armv6l`, and `arm5` for `armv5tel`.",
       },
       {
         title: "Start a node on Ethereum Classic",
@@ -103,7 +103,7 @@ shasum -a 256 -c core-geth-osx-arm64-${releaseTag}.zip.sha256 &&
   unzip -o core-geth-osx-arm64-${releaseTag}.zip &&
   sudo install -m 0755 geth /usr/local/bin/geth &&
   geth version`,
-        after: `From \`shasum -a 256 -c\` on, each line runs only if the one before it worked. macOS has no \`sha256sum\`, so \`shasum -a 256 -c\` reads the same file; it must print \`OK\`, and if it prints \`FAILED\`, delete the file and download it again rather than running it. On an Intel Mac, use \`core-geth-osx-${releaseTag}.zip\`. macOS also blocks a binary carrying the quarantine attribute: browsers set it and \`curl\` does not, so the commands above avoid it, and \`xattr -d com.apple.quarantine geth\` clears it from a browser download.`,
+        after: `\`shasum -a 256 -c\` must print \`OK\`: if it prints \`FAILED\`, delete the file and download it again rather than running it. On an Intel Mac, use \`core-geth-osx-${releaseTag}.zip\`. A browser download carries the quarantine attribute, which macOS blocks: \`xattr -d com.apple.quarantine geth\` clears it.`,
       },
       {
         title: "Start a node on Ethereum Classic",
@@ -178,7 +178,7 @@ docker run -d --name core-geth-classic \\
   make geth &&
   ./build/bin/geth version`,
         after:
-          "Each line runs only if the one before it worked. A second run stops at the clone, because the folder already exists, rather than building an old copy.",
+          "A second run stops at the clone, because the folder already exists, rather than building an old copy.",
       },
       {
         title: "Build what is in development",
@@ -195,7 +195,7 @@ docker run -d --name core-geth-classic \\
 cd "core-geth-${releaseTag}"
 go run build/ci.go install ./cmd/geth
 .\\build\\bin\\geth.exe version`,
-        after: `Run these in PowerShell, one line at a time. \`make geth\` runs this same \`go run\` command on other systems. For what is in development, leave out \`--branch ${releaseTag} --single-branch\` and the folder name, and run \`cd core-geth\`.`,
+        after: `Run these in PowerShell, one line at a time. For what is in development, leave out \`--branch ${releaseTag} --single-branch\` and the folder name, and run \`cd core-geth\`.`,
       },
     ],
     guide: { label: "Build from source", href: `${DOCS_URL}developers/build-from-source/` },
@@ -206,10 +206,8 @@ const groupFor = (id: string) => downloads?.groups.find((group) => group.id === 
 
 const cleanStop = "Wait until the log prints `Blockchain stopped` and the process exits.";
 
-const stopSafely = `[Stop it safely](${DOCS_URL}getting-started/run-classic-node/#stop-it-safely) says what each kind of stop does.`;
-
 const keepId =
-  'Keep what this prints. The move changes the enode ID, and "Confirm the move" compares the new ID and the block number with these two lines.';
+  'Keep what this prints: "Confirm the move" compares the new ID and block number with it.';
 
 const rotationRequired =
   "The next start writes a fresh key. If you start the node with `--nodekey` or `--nodekeyhex`, or set `GETH_NODEKEY` or `GETH_NODEKEYHEX`, take that out too: it overrides the file. If the rename prints an error, check the data directory: `geth/nodekey` must not be there when the node starts.";
@@ -296,7 +294,7 @@ geth attach --exec 'admin.nodeInfo.enode' ~/.ethereum/classic/geth.ipc`,
       },
       {
         title: "Stop the node cleanly",
-        after: `Press Ctrl-C once in the node's terminal and wait, or stop the systemd unit you wrote, for example \`sudo systemctl stop core-geth\`. ${cleanStop} Under systemd, \`journalctl -u core-geth\` shows that log. ${stopSafely}`,
+        after: `Press Ctrl-C once in the node's terminal and wait, or stop the systemd unit you wrote, for example \`sudo systemctl stop core-geth\`. ${cleanStop} Under systemd, \`journalctl -u core-geth\` shows that log.`,
       },
       {
         title: "Install the release",
@@ -304,7 +302,7 @@ geth attach --exec 'admin.nodeInfo.enode' ~/.ethereum/classic/geth.ipc`,
   { test -e /usr/local/bin/geth-${EXPOSED_LINE} || sudo mv /usr/local/bin/geth /usr/local/bin/geth-${EXPOSED_LINE}; } &&
   sudo install -m 0755 geth /usr/local/bin/geth &&
   geth version`,
-        after: `Each line runs only if the one before it worked. Go on only if \`geth version\` reports a \`${RECOMMENDED_LINE}\` release. ${keepBinary}`,
+        after: `Go on only if \`geth version\` reports a \`${RECOMMENDED_LINE}\` release. ${keepBinary}`,
       },
       {
         title: "Rename the old P2P node key",
@@ -358,7 +356,7 @@ geth attach --exec 'admin.nodeInfo.enode' ~/Library/Ethereum/classic/geth.ipc`,
   { test -e /usr/local/bin/geth-${EXPOSED_LINE} || sudo mv /usr/local/bin/geth /usr/local/bin/geth-${EXPOSED_LINE}; } &&
   sudo install -m 0755 geth /usr/local/bin/geth &&
   geth version`,
-        after: `Each line runs only if the one before it worked. Go on only if \`geth version\` reports a \`${RECOMMENDED_LINE}\` release. ${keepBinary}`,
+        after: `Go on only if \`geth version\` reports a \`${RECOMMENDED_LINE}\` release. ${keepBinary}`,
       },
       {
         title: "Rename the old P2P node key",
@@ -449,7 +447,7 @@ Rename-Item $key "nodekey.old-rotated-$(Get-Date -Format yyyy-MM-dd)"`,
         title: "Pull the release",
         code: `docker pull ghcr.io/${REPO.slug}:latest
 gh attestation verify oci://ghcr.io/${REPO.slug}:latest --repo ${REPO.slug}`,
-        after: `The node can keep running for this step. The image moves from \`etclabscore/core-geth\` to images built from \`ethereumclassic/core-geth\`. ${attestationMust("docker-publish.yml", "run the image")} [Verify what you downloaded](#verify) checks an image file from the release. A loaded image file carries its release tag and no \`latest\` tag, so put that tag in place of \`latest\` in the steps below, or Docker pulls from the registry instead. The installation guide gives the other ways to get the image.`,
+        after: `The node can keep running for this step. ${attestationMust("docker-publish.yml", "run the image")} [Verify what you downloaded](#verify) checks an image file from the release. A loaded image file carries its release tag and no \`latest\` tag, so put that tag in place of \`latest\` in the steps below, or Docker pulls from the registry instead.`,
       },
       {
         title: "Record the node's block number and ID",
@@ -467,7 +465,7 @@ docker logs --tail 50 core-geth 2>&1 | grep 'Blockchain stopped'`,
         title: "Rename the old P2P node key",
         code: `docker run --rm --volumes-from core-geth --entrypoint sh ghcr.io/${REPO.slug}:latest \\
   -c "mv -n /root/.ethereum/classic/geth/nodekey /root/.ethereum/classic/geth/nodekey.old-rotated-$(date +%F)"`,
-        after: `${rotationRequired} This runs in a throwaway container from the new image, so it reaches the key however the old container mounts the data directory, with no \`sudo\`.`,
+        after: rotationRequired,
       },
       staticPeersStep(
         ' To give the new container the file, add `-v <path>/config.toml:/config.toml:ro` to the `docker run` under "Replace the container", and `--config /config.toml` after the image name.',
@@ -483,7 +481,7 @@ docker run -d --name core-geth \\
   -p 30303:30303 -p 30303:30303/udp -p 127.0.0.1:8545:8545 \\
   ghcr.io/${REPO.slug}:latest \\
   --classic --http --http.addr 0.0.0.0 --http.port 8545`,
-        after: `Put your own ports and flags in the last lines of \`docker run\`: \`docker inspect core-geth-${EXPOSED_LINE}\` shows what the old container used. For Mordor, use \`--mordor\` in place of \`--classic\`. The new container takes the old one's volumes, so the chain carries over. The old container stays, stopped, and is what you roll back to.`,
+        after: `Put your own ports and flags in the last lines of \`docker run\`: \`docker inspect core-geth-${EXPOSED_LINE}\` shows what the old container used. For Mordor, use \`--mordor\` in place of \`--classic\`. The old container stays, stopped, and is what you roll back to.`,
       },
       {
         title: "Confirm the move",
@@ -572,11 +570,11 @@ const moveNote = `The [migration guide](${DOCS.migration.href}) also says what e
 
 const flagIntro = `A node that cannot move yet should read the three peer discovery lists [\`ethereumclassic/discv4-dns-lists\`](https://github.com/ethereumclassic/discv4-dns-lists) publishes for its network, the ones the \`${RECOMMENDED_LINE}\` line reads by default. After a clean stop, add \`--discovery.dns\` with those three lists to the command or unit you already start the node with. \`ethereumclassic/discv4-dns-lists\` records that the lists a \`${EXPOSED_LINE}\` release reads by default stop being updated when the ETC Cooperative dissolves. The flag is a small step, and the node stays exposed: the flag closes none of the flaws the audits found in the \`${EXPOSED_LINE}\` line.`;
 
-const flagNote = `For Mordor, use \`--mordor\` and swap \`all.classic.\` for \`all.mordor.\` in all three lists. On Windows, run \`.\\geth.exe\` in place of \`geth\`. In a container, stop the container with \`docker stop -t 300\` and pass the same flags after the image name. Under systemd, run \`sudo systemctl daemon-reload\` after you edit the unit. The flag replaces the lists built into the release, and the node dials the nodes in those lists directly, so it does not need \`--bootnodes\` as well. [Bootnodes and peer discovery](${DOCS_URL}guides/bootnodes-and-discovery/) covers \`--bootnodes\`.`;
+const flagNote = `For Mordor, use \`--mordor\` and swap \`all.classic.\` for \`all.mordor.\` in all three lists. On Windows, run \`.\\geth.exe\` in place of \`geth\`. In a container, stop the container with \`docker stop -t 300\` and pass the same flags after the image name. Under systemd, run \`sudo systemctl daemon-reload\` after you edit the unit. The flag replaces the lists built into the release, and the node dials the nodes in those lists directly, so it does not need \`--bootnodes\` as well.`;
 
-// What `gh attestation verify` prints, in a terminal, with the policy it enforced left out for
-// the paragraph under the tabs. The archives and the image files are built by different
-// workflows, and the attestation names the one that ran.
+// What `gh attestation verify` prints, in a terminal, less the policy it enforced, which a reader
+// does not act on. The archives and the image files are built by different workflows, and the
+// attestation names the one that ran.
 const attestationOutput = (file: string, workflow: string) =>
   `# Loaded digest sha256:... for file://${file}
 # Loaded 1 attestation from GitHub API
@@ -656,7 +654,7 @@ ${attestationOutput(`core-geth-win64-${releaseTag}.zip`, "release-packages.yml")
 curl -LO ${assetBase}/core-geth-docker-amd64-${releaseTag}.tar.gz.sha256
 sha256sum -c core-geth-docker-amd64-${releaseTag}.tar.gz.sha256
 gh attestation verify core-geth-docker-amd64-${releaseTag}.tar.gz --repo ${REPO.slug}`,
-        after: `Each image file is the published image saved from the registry. On an Arm64 host, put \`docker-arm64\` where the file name says \`docker-amd64\`. \`sha256sum -c\` must print \`OK\`: if it prints \`FAILED\`, delete the file and download it again rather than loading it. ${attestationMust("docker-publish.yml", "load the file")}`,
+        after: `On an Arm64 host, put \`docker-arm64\` where the file name says \`docker-amd64\`. \`sha256sum -c\` must print \`OK\`: if it prints \`FAILED\`, delete the file and download it again rather than loading it. ${attestationMust("docker-publish.yml", "load the file")}`,
       },
       {
         title: "Load the image",
@@ -678,7 +676,7 @@ gh attestation verify core-geth-docker-amd64-${releaseTag}.tar.gz --repo ${REPO.
         code: `git rev-parse HEAD
 go version -m ./build/bin/geth | grep vcs.revision`,
         after:
-          "Run these in the clone: the first line is the commit you checked out and the second is the commit the binary was built from. A build from source has no checksum or attestation of its own, because no file was published for it. What you can check is the commit: both lines must name the same one, and `go version -m` reads the binary without running it. On Windows, run `go version -m .\\build\\bin\\geth.exe` and read its `vcs.revision` line.",
+          "Run these in the clone: the first line is the commit you checked out and the second is the commit the binary was built from. Both lines must name the same commit. On Windows, run `go version -m .\\build\\bin\\geth.exe` and read its `vcs.revision` line.",
       },
     ],
     guide: {
@@ -729,29 +727,24 @@ go version -m ./build/bin/geth | grep vcs.revision`,
       >
         <p class="lede">
           Each block takes the build most machines need: the x86-64 archive on Linux, Apple Silicon
-          on macOS, the published image for containers. The note under each block says what to
-          change for another architecture. For the full version of any step, and the cases these
-          blocks leave out, read <a href={DOCS.installation.href}>the installation guide</a> on
-          docs.coregeth.com. Check an archive against its checksum and its build attestation before
-          you run it: <a href="#verify">both commands</a> are at the foot of this page.
+          on macOS, the published image for containers. Check an archive against its checksum and
+          its build attestation before you run it: <a href="#verify">both commands</a> are at the
+          foot of this page.
         </p>
         <p class="lede">
           {`Every download on this page is the latest ${RECOMMENDED_LINE} release. If you are replacing a `}
           <InlineCode text={EXPOSED_LINE} />
-          {` node, the upgrade is a security action rather than housekeeping, and that node needs a new P2P key before it starts again: `}
+          {` node, that node needs a new P2P key before it starts again: `}
           <a href={`#${UPGRADE_ANCHOR}`}>{`moving a ${EXPOSED_LINE} node`}</a>
-          {` has the commands, and `}
-          <a href="/security/">what the audits found</a>
-          {` says which flaws each ${EXPOSED_LINE} release still carries.`}
+          {` has the commands.`}
         </p>
       </SectionHead>
       <PlatformTabs legend="Choose your platform" panels={PANELS}>
         <Fragment slot="before-source">
           <p class="panel__note">
-            Building needs Go 1.26 or later and a C compiler. Checking out the release tag builds
-            the same source the published archives were built from; a binary built from{" "}
-            <code>main</code> prints <code>unstable</code> as its release stage until a release is
-            prepared. To build with the exact Go toolchain the releases use, run{" "}
+            Building needs Go 1.26 or later and a C compiler. A binary built from <code>main</code>{" "}
+            prints <code>unstable</code> as its release stage until a release is prepared. To build
+            with the exact Go toolchain the releases use, run{" "}
             <code>go run build/ci.go install -dlgo</code> in place of <code>make geth</code>.
           </p>
           <a class="source-repo" href={REPO.url}>
@@ -819,9 +812,8 @@ go version -m ./build/bin/geth | grep vcs.revision`,
         size="medium"
       >
         <p class="lede">
-          Two checks, and they answer different questions. The checksum says the file arrived
-          intact. The attestation says which workflow built it, from which commit, which is the
-          question a checksum cannot answer.
+          The checksum says the file arrived intact. The attestation says which workflow built it,
+          from which commit.
         </p>
       </SectionHead>
       <PlatformTabs
@@ -830,10 +822,6 @@ go version -m ./build/bin/geth | grep vcs.revision`,
         prefix="verify-"
       />
       <div class="downloads__group">
-        <p>
-          The attestation check also prints the policy it enforced, which the blocks leave out: the
-          repository, the workflow identity and the OIDC issuer it requires before it will succeed.
-        </p>
         <h3>What every release carries</h3>
         <ul class="plain" role="list">
           <li>

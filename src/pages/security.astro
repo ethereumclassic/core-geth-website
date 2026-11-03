@@ -77,7 +77,7 @@ const CENSUS_STATS = [
   {
     label: "Audits and reports",
     value: String(AUDITS.length),
-    caption: `${auditsAndReportsLong[0]?.toUpperCase()}${auditsAndReportsLong.slice(1)}. Every finding on this page is measured, dated and linked to one of them.`,
+    caption: `${auditsAndReportsLong[0]?.toUpperCase()}${auditsAndReportsLong.slice(1)}.`,
   },
 ];
 
@@ -150,7 +150,7 @@ const CENSUS_STATS = [
       >
         <p class="lede">
           <InlineCode
-            text={`These ${spell(auditCount)} examine the ${EXPOSED_LINE} line and the work that replaced it: that line's client code, the Go toolchain its binaries inherit, its dependency tree, and the archives it published. Every figure on this page comes from one of them or from the ${RECOMMENDED_LINE} release reports under them. If you run a node, [migrate to the ${RECOMMENDED_LINE} line](/downloads/#${UPGRADE_ANCHOR}) and read these reports with your security engineers: each one carries its method and its raw measurements, so you can verify every claim and judge what running ${EXPOSED_LINE} exposed you to.`}
+            text={`These ${spell(auditCount)} examine the ${EXPOSED_LINE} line and the work that replaced it: that line's client code, the Go toolchain its binaries inherit, its dependency tree, and the archives it published. If you run a node, read these reports with your security engineers: each one carries its method and its raw measurements, so you can verify every claim and judge what running ${EXPOSED_LINE} exposed you to.`}
           />
         </p>
       </SectionHead>
@@ -177,8 +177,8 @@ const CENSUS_STATS = [
       <SectionHead
         id="releases-title"
         label={`The Core-Geth ${RECOMMENDED_LINE} release`}
-        title={`What the Core-Geth ${RECOMMENDED_LINE} fixes, and how to check it`}
-        em="how to check it"
+        title={`What the Core-Geth ${RECOMMENDED_LINE} line fixes, and how to check each claim`}
+        em="how to check each claim"
         size="medium"
       >
         <p class="lede">
@@ -187,9 +187,6 @@ const CENSUS_STATS = [
       </SectionHead>
       <p class="security__paragraph">
         <InlineCode text={DISCOVERY_FLAG_STEP} />
-      </p>
-      <p class="security__paragraph">
-        {`Both reports below cover ${RECOMMENDED_LINE}.0 itself rather than the line it replaced. One reports the release, down to what is known to be imperfect in it; the other answers every claim this site makes about it from the public record.`}
       </p>
       <ul class="audits" role="list">
         {reportDocs.map((report) => (
@@ -242,8 +239,8 @@ const CENSUS_STATS = [
           A vulnerability goes to the security address or to the repository's private advisories,
           never to a public issue or channel, so a fix can ship before the flaw is known. Ethereum
           Classic's core developers read both routes, and they are the people maintaining the
-          client, so a report reaches someone who can cut the release that closes it. The release
-          timeline above shows how quickly that has happened since February 2026.
+          client, so a report reaches someone who can cut the release that fixes the flaw. The
+          release timeline above shows how quickly that has happened since February 2026.
         </p>
       </SectionHead>
       <LinkRow

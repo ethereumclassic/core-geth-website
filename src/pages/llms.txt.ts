@@ -85,7 +85,7 @@ export const GET: APIRoute = () => {
     `- [The latest release](${REPO.latestUrl}): the release itself, at GitHub's address for the newest one, so it resolves to whatever is current. A reader told to upgrade goes to Downloads, which has the commands. Downloads can lag a new release until the site is next deployed.`,
     "",
     wrap(
-      `Every archive and image is published with a \`.sha256\` checksum and a GitHub build attestation, minted against a short-lived certificate issued to the workflow run, recording which workflow built the file from which commit. Check them with \`sha256sum -c\` and \`gh attestation verify\`. On a first run Windows names the publisher as unknown, and macOS blocks a downloaded binary until it is allowed.`,
+      `Every archive and image is published with a \`.sha256\` checksum and a GitHub build attestation, minted against a short-lived certificate issued to the workflow run, recording which workflow built the file from which commit. Check a download with \`sha256sum -c\` and \`gh attestation verify\`. On a first run Windows names the publisher as unknown, and macOS blocks a downloaded binary until it is allowed.`,
     ),
     "",
     wrap(TRANSITION.lede),

@@ -46,7 +46,7 @@ Cooperative's bootnodes in March 2026 used two of the flaws that gap left open. 
 published here, closes all six the audits found.
 [Security](https://coregeth.com/security/) carries the audits, what each release fixes, and a
 count of which releases Ethereum Classic nodes are still running.
-[About](https://coregeth.com/about/) carries the lineage, from go-ethereum through multi-geth, and
+[About](https://coregeth.com/about/) carries the lineage, from go-ethereum through Multi-Geth, and
 the organizations that have funded the work.
 
 No part of the network's fee or issuance revenue pays for any of it.
