@@ -276,9 +276,10 @@ export const DISCOVERY_FLAG_ANCHOR = "discovery-flag";
 export const MOVE_RECOMMENDATION = `Every node still on a \`${EXPOSED_LINE}\` release should move to the \`${RECOMMENDED_LINE}\` line.`;
 const MOVE_WHERE = `[Downloads](${SITE_URL}/downloads/#${UPGRADE_ANCHOR}) has the commands and checksums, and the [migration guide](${DOCS.migration.href}) has the steps, including the required P2P node key rotation.`;
 
-/** What the upgrade costs, in the operators page's and the migration guide's words. */
+/** What the upgrade costs: the time to set aside for the steps, and the far shorter time the
+ *  node is down. */
 export const UPGRADE_COST =
-  "Your chain data carries over, and the upgrade costs about twenty minutes of downtime.";
+  "Your chain data carries over. Budget about twenty minutes for the steps; the node itself usually stops and starts in seconds.";
 
 /**
  * The step for a node that cannot move yet, in the notice below and on `/security/`. /llms.txt

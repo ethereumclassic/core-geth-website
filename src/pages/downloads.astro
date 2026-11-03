@@ -204,8 +204,7 @@ go run build/ci.go install ./cmd/geth
 
 const groupFor = (id: string) => downloads?.groups.find((group) => group.id === id);
 
-const cleanStop =
-  "Go on only once the node's log prints `Blockchain stopped`, which confirms the database is consistent.";
+const cleanStop = "Wait until the log prints `Blockchain stopped` and the process exits.";
 
 const stopSafely = `[Stop it safely](${DOCS_URL}getting-started/run-classic-node/#stop-it-safely) says what each kind of stop does.`;
 
@@ -213,13 +212,13 @@ const keepId =
   'Keep what this prints. The move changes the enode ID, and "Confirm the move" compares the new ID and the block number with these two lines.';
 
 const rotationRequired =
-  "This rename is the required rotation, and the next start writes a fresh key. If it prints an error, look in the node's data directory before you go on. If `geth/nodekey.old-rotated-` with today's date is there, the rename has already happened. If only `geth/nodekey` is there, rename that file, because a node started now would start on the old key.";
+  "The next start writes a fresh key. If you start the node with `--nodekey` or `--nodekeyhex`, or set `GETH_NODEKEY` or `GETH_NODEKEYHEX`, take that out too: it overrides the file. If the rename prints an error, check the data directory: `geth/nodekey` must not be there when the node starts.";
 
 const verifyPointer = "[Verify what you downloaded](#verify) also checks where the file came from.";
 
-const keepBinary = `\`geth-${EXPOSED_LINE}\` is the old binary, kept so you can roll back. A second run leaves that copy alone, so you can run this block again after a mistake.`;
+const keepBinary = `\`geth-${EXPOSED_LINE}\` is the old binary, kept so you can roll back.`;
 
-const confirmNote = `If an attach line cannot connect, give the node a minute to start and run that line again. The first line must name a \`${RECOMMENDED_LINE}\` release. The enode ID must differ from the one you recorded. If the ID is the same, the node is still on the old key: stop the node cleanly and rename \`geth/nodekey\` in the data directory the node really uses. The peer count climbs within minutes, and a count stuck at zero after ten minutes usually means a peer still lists your old enode ID. The block number resumes where the node stopped. Compare the block number with a block explorer or another node you operate, and if the number settles somewhere else, stop and investigate rather than resyncing.`;
+const confirmNote = `If an attach line cannot connect, wait a minute and run it again. The first line must name a \`${RECOMMENDED_LINE}\` release. The enode ID must differ from the one you recorded. If it is the same, the node is still on the old key: stop it and redo the rename step. The peer count climbs within minutes. If it stays at zero, see [Why does the node have no peers?](${DOCS_URL}operate/troubleshooting/#why-does-the-node-have-no-peers) The block number resumes where the node stopped, then catches up. Compare it with a block explorer or another node you run. If it settles somewhere else, stop and investigate rather than resync.`;
 
 // Peers a node lists by ID, in the file it reads at the start or on the console while it runs. The new
 // ID exists only after the first start on the new key, so one step edits this node's own list while it
@@ -229,29 +228,32 @@ const confirmNote = `If an attach line cannot connect, give the node a minute to
 const staticPeersStep = (extra = "") => ({
   title: "If this node lists static peers, update the list",
   before:
-    "Static peers are nodes a node keeps connecting to, such as the rest of a mining pool's fleet. They sit under `[Node.P2P]` in the file you pass with `--config`, so edit that file while the node is down:",
+    "They are under `[Node.P2P]` in the file you pass with `--config`. Edit it while the node is down:",
   code: `[Node.P2P]
 StaticNodes = ["enode://<node ID>@<IP>:30303"]`,
-  after: `A node that has already moved has a new ID, so put the new ID in its entry and keep the address and port. Separate entries with commas. \`TrustedNodes\`, on a line of its own in the same section, takes the same entries. With no file yet, save these two lines with your own values, then add \`--config\` and the file's path to the start command. The client ignores \`static-nodes.json\` and logs an error at the start, so move any entries from that file into this one. To change the list on a running node instead, use the step after "Confirm the move".${extra}`,
+  after: `A peer that has already moved has a new ID, so use that. Separate entries with commas. \`TrustedNodes\` takes the same entries. With no file yet, save these two lines and add \`--config\` and the file's path to the start command. The client ignores \`static-nodes.json\`, so move its entries here.${extra}`,
 });
 
 const otherNodesStep = (attach: string, ipc: string, extra = "") => ({
   title: "If other nodes list this node, give them the new ID",
-  before: `The new ID exists only now that this node has started. A node that still names the old ID no longer connects to this node, and neither node logs the failure. On each node that lists this one, on \`${EXPOSED_LINE}\` or \`${RECOMMENDED_LINE}\`, run these lines with your own values: the old ID you recorded, the new ID from the step above, and the address and port the entry already has.`,
+  before: `They can no longer connect to this node, and neither side logs it at the default verbosity. On each one, on \`${EXPOSED_LINE}\` or \`${RECOMMENDED_LINE}\`, run these lines with the old ID you recorded, the new ID from the step above, and the address and port the entry already has.`,
   code: `${attach} --exec "admin.removePeer('enode://<old ID>@<IP>:30303')" ${ipc}
 ${attach} --exec "admin.addPeer('enode://<new ID>@<IP>:30303')" ${ipc}
 ${attach} --exec "admin.peers.map(function(p){return p.enode})" ${ipc}`,
-  after: `The first two lines each print \`true\` and take effect with no restart, and the third lists the new ID once the two nodes connect. A running node keeps this change only until it restarts, so put the new ID in that node's configuration file too. For an entry in \`TrustedNodes\`, use \`admin.removeTrustedPeer\` and \`admin.addTrustedPeer\`. Send the new ID to anyone else who lists this node. [Static and trusted peers](${DOCS_URL}guides/bootnodes-and-discovery/#static-and-trusted-peers) explains the two lists.${extra}`,
+  after: `The first two lines each print \`true\` and take effect with no restart. The third lists the new ID once the nodes connect. The change lasts only until that node restarts, so put the new ID in its config file too. Send the new ID to anyone else who lists this node. For an entry in \`TrustedNodes\`, use \`admin.removeTrustedPeer\` and \`admin.addTrustedPeer\`. They do not open a connection. [Static and trusted peers](${DOCS_URL}guides/bootnodes-and-discovery/#static-and-trusted-peers) explains the two lists.${extra}`,
 });
 
 // While the node is down, in the guide's order: MESS is in its "What changes" and the RPC check is
 // its step 4. Neither has a command of its own, because both are flags the reader already sets. A
-// file `dumpconfig` wrote on `v1.12` is in neither, and it fails two ways: `v1.13` refuses the
-// `ECBP1100` lines that `v1.12.17` and `v1.12.18` wrote, and from `v1.12.19` up the file loads and
-// silently keeps that release's discovery lists and bootnodes (measured on each release).
+// file `dumpconfig` wrote on `v1.12` is in neither. From `v1.12.19` up it loads and silently keeps
+// that release's discovery lists and bootnodes, so the note says what to delete. The note does not warn
+// about the old `ECBP1100` and `ECBP1100Disable` keys, because that reads as a break the release does
+// not have: `v1.13` reads `OverrideECBP1100`, `OverrideECBP1100Deactivate` and `ECBP1100NoDisable`.
+// `v1.12.17` and `v1.12.18` refuse their own `"<nil>"` dump, every release from `v1.12.19` refuses a
+// value in those two keys, and the `Fatal` line names the key.
 const checkFlags = {
   title: "Check the flags you start the node with",
-  after: `While the node is down, decide MESS, which makes a node resist deep chain reorganizations. An upgrade can change whether a node runs MESS, so set MESS with a flag: \`--mess\` turns it on and \`--mess=false\` turns it off. [Which setting fits which operator](${DOCS.messSetting.href}) sets out the choice, and every node you run should carry the same setting. If you pass \`--config\` a file that \`dumpconfig\` wrote on \`${EXPOSED_LINE}\`, delete its \`BootstrapNodes\`, \`EthDiscoveryURLs\` and \`SnapDiscoveryURLs\` lines, which would keep the \`${EXPOSED_LINE}\` peer lists in place of the ones built into \`${RECOMMENDED_LINE}\`. Delete any \`ECBP1100\` line too, because \`${RECOMMENDED_LINE}\` will not start with one in the file. Then go through the [RPC exposure checklist](${DOCS.migration.href}#re-check-rpc-exposure).`,
+  after: `While the node is down, decide MESS, which makes a node resist deep chain reorganizations. An upgrade can change whether a node runs MESS, so set it yourself: \`--mess\` turns it on and \`--mess=false\` turns it off. [Which setting fits which operator](${DOCS.messSetting.href}) sets out the choice. An exchange setting its confirmation policy can use the [MESS confirmation calculator](${DOCS_URL}guides/mess-calculator/) to see what that policy asks of an attacker. Give every node you run the same setting. If you use a config file that \`dumpconfig\` wrote on \`${EXPOSED_LINE}\`, delete its \`BootstrapNodes\`, \`EthDiscoveryURLs\` and \`SnapDiscoveryURLs\` lines, or the node keeps that release's peer lists. Then go through the [RPC exposure checklist](${DOCS.migration.href}#re-check-rpc-exposure).`,
 };
 
 // Moving a node off the exposed line. Another page links this section rather than carrying a
@@ -323,13 +325,9 @@ geth attach --exec 'admin.nodeInfo.enode' ~/.ethereum/classic/geth.ipc`,
 geth attach --exec 'admin.nodeInfo.enode' ~/.ethereum/classic/geth.ipc
 geth attach --exec 'net.peerCount' ~/.ethereum/classic/geth.ipc
 geth attach --exec 'eth.blockNumber' ~/.ethereum/classic/geth.ipc`,
-        after: `${confirmNote} On the unit in the Linux run guide, attach with the \`sudo -u geth -H\` form from the recording step.`,
+        after: confirmNote,
       },
-      otherNodesStep(
-        "geth attach",
-        "~/.ethereum/classic/geth.ipc",
-        " On the unit in the Linux run guide, attach with the `sudo -u geth -H` form from the recording step.",
-      ),
+      otherNodesStep("geth attach", "~/.ethereum/classic/geth.ipc"),
     ],
     guide: { label: "Linux users guide", href: `${DOCS_URL}tutorials/migration/linux/` },
   },
@@ -352,7 +350,7 @@ geth attach --exec 'admin.nodeInfo.enode' ~/Library/Ethereum/classic/geth.ipc`,
       },
       {
         title: "Stop the node cleanly",
-        after: `Press Ctrl-C once in the node's terminal and wait, or stop the launchd job you created. ${cleanStop}`,
+        after: `Press Ctrl-C once in the node's terminal and wait, or unload the launchd job. [Stop it cleanly](${DOCS_URL}getting-started/run/macos/#7-stop-it-cleanly) has the command for the run guide's agent. ${cleanStop}`,
       },
       {
         title: "Install the release",
@@ -408,7 +406,7 @@ Get-Content "core-geth-win64-${releaseTag}.zip.sha256"`,
       },
       {
         title: "Stop the node cleanly",
-        after: `Press Ctrl+C once in the node's console window and wait, or stop the service with the tool you installed it with. ${cleanStop}`,
+        after: `Press Ctrl+C once in the node's console window and wait. A window opened from the Startup folder then asks \`Terminate batch job (Y/N)?\`; type \`Y\`. Under a service wrapper, stop it with that tool. ${cleanStop}`,
       },
       {
         title: "Install the release",
@@ -424,7 +422,7 @@ Rename-Item $key "nodekey.old-rotated-$(Get-Date -Format yyyy-MM-dd)"`,
         after: `${rotationRequired} The commands use the default data directory, but the node uses \`%USERPROFILE%\\AppData\\Roaming\\Ethereum\\classic\` instead if an older \`AppData\\Roaming\\Ethereum\` folder exists and is not empty. For Mordor, use \`mordor\` in place of \`classic\`; if you pass \`--datadir\`, use yours.`,
       },
       staticPeersStep(
-        " Save the file as UTF-8 with no byte order mark. A byte order mark, or UTF-16, stops the start with `Fatal: <file>, line 1: invalid TOML syntax`.",
+        " Save the file as UTF-8 with no byte order mark. A byte order mark, or UTF-16, stops the start with `invalid TOML syntax`.",
       ),
       checkFlags,
       {
@@ -463,8 +461,7 @@ docker exec core-geth geth attach --exec 'admin.nodeInfo.enode' /root/.ethereum/
         title: "Stop the node cleanly",
         code: `docker stop -t 300 core-geth
 docker logs --tail 50 core-geth 2>&1 | grep 'Blockchain stopped'`,
-        after:
-          "Go on only once the second command prints `Blockchain stopped`. `-t 300` is required: a plain `docker stop` waits 10 seconds and then kills the process, and a node killed while it writes to disk is the one thing in this upgrade that costs a resync.",
+        after: `Continue only once the second command prints \`Blockchain stopped\`. Use \`-t 300\`: a plain \`docker stop\` kills the node if it has not stopped within 10 seconds. A killed node that was importing blocks moves its head back on its next start and imports them again ([After an unclean stop](${DOCS_URL}operate/maintenance/#after-an-unclean-stop)).`,
       },
       {
         title: "Rename the old P2P node key",
@@ -473,7 +470,7 @@ docker logs --tail 50 core-geth 2>&1 | grep 'Blockchain stopped'`,
         after: `${rotationRequired} This runs in a throwaway container from the new image, so it reaches the key however the old container mounts the data directory, with no \`sudo\`.`,
       },
       staticPeersStep(
-        ' The new container has to see the file: add `-v <path>/config.toml:/config.toml:ro` to the `docker run` under "Replace the container", and `--config /config.toml` after the image name.',
+        ' To give the new container the file, add `-v <path>/config.toml:/config.toml:ro` to the `docker run` under "Replace the container", and `--config /config.toml` after the image name.',
       ),
       checkFlags,
       {
@@ -505,7 +502,7 @@ docker exec core-geth geth attach --exec 'eth.blockNumber' /root/.ethereum/class
   docker update --restart unless-stopped core-geth &&
   docker start core-geth`,
         after:
-          "The old container keeps its own flags and takes the same volumes. Put its restart policy in place of `unless-stopped`. The rotated key stays rotated: rolling back does not un-expose the old key.",
+          "Put the old container's restart policy in place of `unless-stopped`. Keep the new key: rolling back does not make the old key safe.",
       },
     ],
     guide: { label: "Docker users guide", href: `${DOCS_URL}tutorials/migration/docker/` },
@@ -571,7 +568,7 @@ const discoveryFlag = `geth --classic --discovery.dns "enrtree://APDLRZ2T7ERXPWX
 
 const moveLede = `${MOVE_RECOMMENDATION} ${UPGRADE_COST} Follow the steps for your platform below rather than the install steps at the top of this page, which start a node before its P2P node key changes. These steps keep your old binary or container so you can roll back, and rotate the key before the node starts again. The rotation is required: one of the flaws in the \`${EXPOSED_LINE}\` line leaks bits of the P2P node key across repeated handshakes, and no fix can take back what already leaked.`;
 
-const moveNote = `The [migration guide](${DOCS.migration.href}) also says which peers' configuration to update with the new enode ID, and how to roll back. A \`${EXPOSED_LINE}\` binary refuses the \`--mess\` flag, so take that flag out of the start command before you roll back.`;
+const moveNote = `The [migration guide](${DOCS.migration.href}) also says what else names this node, and how to roll back. A \`${EXPOSED_LINE}\` binary refuses the \`--mess\` flag, so take it out of the start command before you roll back.`;
 
 const flagIntro = `A node that cannot move yet should read the three peer discovery lists [\`ethereumclassic/discv4-dns-lists\`](https://github.com/ethereumclassic/discv4-dns-lists) publishes for its network, the ones the \`${RECOMMENDED_LINE}\` line reads by default. After a clean stop, add \`--discovery.dns\` with those three lists to the command or unit you already start the node with. \`ethereumclassic/discv4-dns-lists\` records that the lists a \`${EXPOSED_LINE}\` release reads by default stop being updated when the ETC Cooperative dissolves. The flag is a small step, and the node stays exposed: the flag closes none of the flaws the audits found in the \`${EXPOSED_LINE}\` line.`;
 
