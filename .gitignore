@@ -52,9 +52,12 @@ keystore/
 *.keystore
 wallet.json
 mnemonic.txt
-# The client's node private key, which sets a node's identity on the network. The
-# client names the file with no extension, so *.key catches only a renamed copy.
+# The client's node private key, which sets a node's identity on the network, the
+# copy a key rotation renames it to, and the client's JWT secret. The client names
+# these files with no extension, so *.key matches none of them.
 nodekey
+nodekey.*
+jwtsecret
 
 # ---- Package-registry auth -----------------------------------------------------
 #
