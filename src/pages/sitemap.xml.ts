@@ -16,12 +16,13 @@ import { SITE_URL } from "@/data/site";
  * ever writes `sitemap-1.xml`, this route has to list that too.
  */
 export const GET: APIRoute = () => {
-  // The build's date, as the integration stamps on its own index.
-  const lastmod = new Date().toISOString();
+  // No lastmod, which an index may leave out: each URL in sitemap-0.xml carries its own date
+  // (src/lib/page-dates.mjs), set after this route has rendered. The integration's own index
+  // gives sitemap-0.xml the newest of those dates.
   const xml = [
     '<?xml version="1.0" encoding="UTF-8"?>',
     '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
-    `<sitemap><loc>${SITE_URL}/sitemap-0.xml</loc><lastmod>${lastmod}</lastmod></sitemap>`,
+    `<sitemap><loc>${SITE_URL}/sitemap-0.xml</loc></sitemap>`,
     "</sitemapindex>",
     "",
   ].join("\n");
