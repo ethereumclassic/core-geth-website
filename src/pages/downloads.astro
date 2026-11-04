@@ -98,7 +98,7 @@ sha256sum -c core-geth-linux-${releaseTag}.zip.sha256 &&
   sudo install -m 0755 geth /usr/local/bin/geth &&
   geth version`,
         after:
-          "`sha256sum -c` must print `OK`: if it prints `FAILED`, delete the file and download it again rather than running it. On an Arm board, put the name for your processor where the file name says `linux`: `arm64` if `uname -m` prints `aarch64` or `arm64`, `arm7` for `armv7l`, `arm6` for `armv6l`, and `arm5` for `armv5tel`.",
+          "`sha256sum -c` must print `OK`: if it prints `FAILED`, delete the file and download it again rather than running it. On an Arm machine, put the name for your processor where the file name says `linux`: `arm64` if `uname -m` prints `aarch64` or `arm64`, `arm7` for `armv7l`, `arm6` for `armv6l`, and `arm5` for `armv5tel`.",
       },
       {
         title: "Start a node on Ethereum Classic",
@@ -120,7 +120,7 @@ shasum -a 256 -c core-geth-osx-arm64-${releaseTag}.zip.sha256 &&
   unzip -o core-geth-osx-arm64-${releaseTag}.zip &&
   sudo install -m 0755 geth /usr/local/bin/geth &&
   geth version`,
-        after: `\`shasum -a 256 -c\` must print \`OK\`: if it prints \`FAILED\`, delete the file and download it again rather than running it. On an Intel Mac, use \`core-geth-osx-${releaseTag}.zip\`. A browser download carries the quarantine attribute, which macOS blocks: \`xattr -d com.apple.quarantine geth\` clears it.`,
+        after: `\`shasum -a 256 -c\` must print \`OK\`: if it prints \`FAILED\`, delete the file and download it again rather than running it. On an Intel Mac, put \`osx\` where the file names say \`osx-arm64\`. A browser download carries the quarantine attribute, which macOS blocks: \`xattr -d com.apple.quarantine geth\` clears it.`,
       },
       {
         title: "Start a node on Ethereum Classic",
@@ -209,7 +209,8 @@ go run build/ci.go install ./cmd/geth
 
 const groupFor = (id: string) => downloads?.groups.find((group) => group.id === id);
 
-const cleanStop = "Wait until the log prints `Blockchain stopped` and the process exits.";
+const cleanStop =
+  "Wait until the log prints `Blockchain stopped` and the process exits. If it exits without that line, the stop was not clean: the node recovers at its next start, and its block number can start lower than the one you recorded.";
 
 const keepId =
   'Keep what this prints: "Confirm the move" compares the new ID and block number with it.';
@@ -243,13 +244,13 @@ StaticNodes = ["enode://<node ID>@<IP>:30303"]`,
   after: `A peer that has already moved has a new ID, so use that. Separate entries with commas. \`TrustedNodes\` takes the same entries. With no file yet, save these two lines and add \`--config\` and the file's path to the start command. The client ignores \`static-nodes.json\`, so move its entries here.${extra}`,
 });
 
-const otherNodesStep = (attach: string, ipc: string, extra = "") => ({
+const otherNodesStep = (attach: string, ipc: string, extra = "", beforeExtra = "") => ({
   title: "If other nodes list this node, give them the new ID",
-  before: `They can no longer connect to this node, and neither side logs it at the default verbosity. On each one, on \`${EXPOSED_LINE}\` or \`${RECOMMENDED_LINE}\`, run these lines with the old ID you recorded, the new ID from the step above, and the address and port the entry already has.`,
+  before: `They can no longer connect to this node, and neither side logs it at the default verbosity. On each one, on \`${EXPOSED_LINE}\` or \`${RECOMMENDED_LINE}\`, run these lines with the old ID you recorded, the new ID from the step above, and the address and port the entry already has.${beforeExtra}`,
   code: `${attach} --exec "admin.removePeer('enode://<old ID>@<IP>:30303')" ${ipc}
 ${attach} --exec "admin.addPeer('enode://<new ID>@<IP>:30303')" ${ipc}
 ${attach} --exec "admin.peers.map(function(p){return p.enode})" ${ipc}`,
-  after: `The first two lines each print \`true\` and take effect with no restart. The third lists the new ID once the nodes connect. The change lasts only until that node restarts, so put the new ID in its config file too. Send the new ID to anyone else who lists this node. For an entry in \`TrustedNodes\`, use \`admin.removeTrustedPeer\` and \`admin.addTrustedPeer\`. They do not open a connection. [Static and trusted peers](${DOCS_URL}guides/bootnodes-and-discovery/#static-and-trusted-peers) explains the two lists.${extra}`,
+  after: `The first two lines each print \`true\` and take effect with no restart. The third lists the new ID once the nodes connect. The change lasts only until that node restarts, so put the new ID in that node's own config file too. Send the new ID to anyone else who lists this node. For an entry in \`TrustedNodes\`, use \`admin.removeTrustedPeer\` and \`admin.addTrustedPeer\` in place of the first two lines, or as well as them if the entry is in \`StaticNodes\` too. Neither opens a connection. [Static and trusted peers](${DOCS_URL}guides/bootnodes-and-discovery/#static-and-trusted-peers) explains the two lists.${extra}`,
 });
 
 // While the node is down, in the guide's order: MESS is in its "What changes" and the RPC check is
@@ -261,8 +262,8 @@ ${attach} --exec "admin.peers.map(function(p){return p.enode})" ${ipc}`,
 // `v1.12.17` and `v1.12.18` refuse their own `"<nil>"` dump, every release from `v1.12.19` refuses a
 // value in those two keys, and the `Fatal` line names the key.
 const checkFlags = {
-  title: "Check the flags you start the node with",
-  after: `While the node is down, decide MESS, which makes a node resist deep chain reorganizations. An upgrade can change whether a node runs MESS, so set it yourself: \`--mess\` turns it on and \`--mess=false\` turns it off. [Which setting fits which operator](${DOCS.messSetting.href}) sets out the choice. An exchange setting its confirmation policy can use the [MESS confirmation calculator](${DOCS_URL}guides/mess-calculator/) to see what that policy asks of an attacker. Give every node you run the same setting. If you use a config file that \`dumpconfig\` wrote on \`${EXPOSED_LINE}\`, delete its \`BootstrapNodes\`, \`EthDiscoveryURLs\` and \`SnapDiscoveryURLs\` lines, or the node keeps that release's peer lists. Then go through the [RPC exposure checklist](${DOCS.migration.href}#re-check-rpc-exposure).`,
+  title: "Check the flags and settings you start the node with",
+  after: `While the node is down, decide MESS, which makes a node resist deep chain reorganizations. An upgrade can change whether a node runs MESS, so set it yourself: \`--mess\` turns it on and \`--mess=false\` turns it off. [Which setting fits which operator](${DOCS.messSetting.href}) sets out the choice. An exchange setting its confirmation policy can use the [MESS confirmation calculator](${DOCS_URL}guides/mess-calculator/) to see what that policy asks of an attacker. Give every node you run the same setting. Take out any \`--discovery.dns\` or \`--bootnodes\` flag you added on \`${EXPOSED_LINE}\`: the \`${RECOMMENDED_LINE}\` line reads its own lists and bootnodes, and with \`--discovery.dns\` it reads no snap lists. If the node starts with \`--config\`, delete the file's \`BootstrapNodes\`, \`EthDiscoveryURLs\` and \`SnapDiscoveryURLs\` lines unless you set them yourself: a file \`dumpconfig\` wrote on \`${EXPOSED_LINE}\` has all three, and the node keeps what they name in place of what the \`${RECOMMENDED_LINE}\` line ships. Then go through the [RPC exposure checklist](${DOCS.migration.href}#re-check-rpc-exposure) for the flags, any \`GETH_\` environment variables, and the file's \`[Node]\` settings: \`HTTPHost\`, \`HTTPModules\`, \`HTTPCors\`, \`WSHost\`, \`WSModules\` and \`WSOrigins\`.`,
 };
 
 // For an operator who has not run the recommended line yet: one new node first, beside the nodes they
@@ -329,7 +330,7 @@ geth attach --exec 'admin.nodeInfo.enode' ~/.ethereum/classic/geth.ipc`,
   { test -e /usr/local/bin/geth-${EXPOSED_LINE} || sudo mv /usr/local/bin/geth /usr/local/bin/geth-${EXPOSED_LINE}; } &&
   sudo install -m 0755 geth /usr/local/bin/geth &&
   geth version`,
-        after: `Go on only if \`geth version\` reports a \`${RECOMMENDED_LINE}\` release. ${keepBinary}`,
+        after: `Go on only if \`geth version\` reports a \`${RECOMMENDED_LINE}\` release. ${keepBinary} ${binaryPath}`,
       },
       {
         title: "Rename the old P2P node key",
@@ -384,7 +385,7 @@ geth attach --exec 'admin.nodeInfo.enode' ~/Library/Ethereum/classic/geth.ipc`,
   { test -e /usr/local/bin/geth-${EXPOSED_LINE} || sudo mv /usr/local/bin/geth /usr/local/bin/geth-${EXPOSED_LINE}; } &&
   sudo install -m 0755 geth /usr/local/bin/geth &&
   geth version`,
-        after: `Go on only if \`geth version\` reports a \`${RECOMMENDED_LINE}\` release. ${keepBinary}`,
+        after: `Go on only if \`geth version\` reports a \`${RECOMMENDED_LINE}\` release. ${keepBinary} ${binaryPath}`,
       },
       {
         title: "Rename the old P2P node key",
@@ -449,7 +450,7 @@ Rename-Item $key "nodekey.old-rotated-$(Get-Date -Format yyyy-MM-dd)"`,
         after: `${rotationRequired} The commands use the default data directory, but the node uses \`%USERPROFILE%\\AppData\\Roaming\\Ethereum\\classic\` instead if an older \`AppData\\Roaming\\Ethereum\` folder exists and is not empty. For Mordor, use \`mordor\` in place of \`classic\`; if you pass \`--datadir\`, use yours.`,
       },
       staticPeersStep(
-        " Save the file as UTF-8 with no byte order mark. A byte order mark, or UTF-16, stops the start with `invalid TOML syntax`.",
+        " Save the file as UTF-8 with no byte order mark, after this edit and any other. A byte order mark, or UTF-16, stops the start with `invalid TOML syntax`.",
       ),
       checkFlags,
       {
@@ -480,10 +481,11 @@ gh attestation verify oci://ghcr.io/${REPO.slug}:latest --repo ${REPO.slug}`,
         after: `The node can keep running for this step. ${attestationMust("docker-publish.yml", "run the image")} [Verify what you downloaded](#verify) checks an image file from the release. A loaded image file carries its release tag and no \`latest\` tag, so put that tag in place of \`latest\` in the steps below, or Docker pulls from the registry instead.`,
       },
       {
-        title: "Record the node's block number and ID",
+        title: "Record the node's block number, ID and restart policy",
         code: `docker exec core-geth geth attach --exec 'eth.blockNumber' /root/.ethereum/classic/geth.ipc
-docker exec core-geth geth attach --exec 'admin.nodeInfo.enode' /root/.ethereum/classic/geth.ipc`,
-        after: `${keepId} These commands use a container named \`core-geth\` with its data at \`/root\`, so put your own name in its place. For Mordor, use \`.ethereum/mordor\` in the paths.`,
+docker exec core-geth geth attach --exec 'admin.nodeInfo.enode' /root/.ethereum/classic/geth.ipc
+docker inspect core-geth --format '{{.HostConfig.RestartPolicy.Name}}'`,
+        after: `${keepId} The last line prints the container's restart policy, which the rollback puts back. These commands use a container named \`core-geth\` with its data at \`/root\`, so put your own name in its place. For Mordor, use \`.ethereum/mordor\` in the paths.`,
       },
       // A container started without `-v` keeps the chain in its own layer, because neither image
       // declares a volume, and `--volumes-from` does not reach it: the rename fails and the new
@@ -499,7 +501,7 @@ docker exec core-geth geth attach --exec 'admin.nodeInfo.enode' /root/.ethereum/
         title: "Stop the node cleanly",
         code: `docker stop -t 300 core-geth
 docker logs --tail 50 core-geth 2>&1 | grep 'Blockchain stopped'`,
-        after: `Continue only once the second command prints \`Blockchain stopped\`. Use \`-t 300\`: a plain \`docker stop\` kills the node if it has not stopped within 10 seconds. A killed node that was importing blocks moves its head back on its next start and imports them again ([After an unclean stop](${DOCS_URL}operate/maintenance/#after-an-unclean-stop)).`,
+        after: `The second command prints \`Blockchain stopped\` after a clean stop. If it prints nothing, the node did not stop cleanly: it recovers at its next start, moving its head back and importing those blocks again ([After an unclean stop](${DOCS_URL}operate/maintenance/#after-an-unclean-stop)), so its block number can start lower than the one you recorded. Use \`-t 300\`: a plain \`docker stop\` kills the node if it has not stopped within 10 seconds.`,
       },
       {
         title: "Rename the old P2P node key",
@@ -544,7 +546,12 @@ docker exec core-geth geth attach --exec 'net.peerCount' /root/.ethereum/classic
 docker exec core-geth geth attach --exec 'eth.blockNumber' /root/.ethereum/classic/geth.ipc`,
         after: confirmNote(),
       },
-      otherNodesStep("docker exec core-geth geth attach", "/root/.ethereum/classic/geth.ipc"),
+      otherNodesStep(
+        "docker exec core-geth geth attach",
+        "/root/.ethereum/classic/geth.ipc",
+        "",
+        " Put that node's container name in place of `core-geth`, which here is the node you just moved. On a node outside a container, run `geth attach` with that node's IPC path, as this section's other tabs show.",
+      ),
       {
         title: "If you need to roll back",
         before: `If you copied the data out, do not run this block, because the old container's own copy of the data still holds the old key. Stop and remove the new container as its first two lines do, then run the image the old one used, \`docker inspect core-geth-${EXPOSED_LINE} --format '{{.Config.Image}}'\`, on the copy, with \`-v $HOME/core-geth-data:/root\`, the old container's ports and flags, and no \`--mess\`.`,
@@ -554,7 +561,7 @@ docker exec core-geth geth attach --exec 'eth.blockNumber' /root/.ethereum/class
   docker update --restart unless-stopped core-geth &&
   docker start core-geth`,
         after:
-          "Put the old container's restart policy in place of `unless-stopped`. Keep the new key: rolling back does not make the old key safe.",
+          "Put the restart policy you recorded in place of `unless-stopped`. Keep the new key: rolling back does not make the old key safe.",
       },
     ],
     guide: { label: "Docker users guide", href: `${DOCS_URL}tutorials/migration/docker/` },
@@ -675,7 +682,7 @@ ${attestationOutput(`core-geth-linux-${releaseTag}.zip`, "release-packages.yml")
         title: "Check an archive",
         code: `shasum -a 256 -c core-geth-osx-arm64-${releaseTag}.zip.sha256
 gh attestation verify core-geth-osx-arm64-${releaseTag}.zip --repo ${REPO.slug}`,
-        after: `\`shasum -a 256 -c\` must print \`OK\`. If it prints \`FAILED\`, delete the file and download it again rather than running it. ${attestationMust("release-packages.yml")} On an Intel Mac, use \`core-geth-osx-${releaseTag}.zip\`.`,
+        after: `\`shasum -a 256 -c\` must print \`OK\`. If it prints \`FAILED\`, delete the file and download it again rather than running it. ${attestationMust("release-packages.yml")} On an Intel Mac, put \`osx\` where the file names say \`osx-arm64\`.`,
       },
     ],
     guide: installationVerify,

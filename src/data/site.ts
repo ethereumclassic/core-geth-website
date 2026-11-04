@@ -279,7 +279,7 @@ const MOVE_WHERE = `[Downloads](${SITE_URL}/downloads/#${UPGRADE_ANCHOR}) has th
 /** What the upgrade costs: the time to set aside for the steps, and the far shorter time the
  *  node is down. */
 export const UPGRADE_COST =
-  "Your chain data carries over. Budget about twenty minutes for the steps; the node itself usually stops and starts in seconds.";
+  "Your chain data carries over. Budget about twenty minutes for the steps; the node is down only between its stop and its start, and each of those takes seconds.";
 
 /**
  * The step for a node that cannot move yet, in the notice below and on `/security/`. /llms.txt
