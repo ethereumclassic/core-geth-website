@@ -632,10 +632,11 @@ export const NETWORK_RUNNING = {
   /** The line above the table: what the recommended line resolves, in the record's words for
    *  the release it measured, and the maintainer's recommendation to run one beside the current
    *  nodes before moving a whole fleet across. Each row says its own Go build, so this line does
-   *  not. The trial node takes no traffic: the migration guide asks for one MESS setting per
-   *  fleet, and `v1.12.x` runs MESS off where this line turns it on. Check all of it against the
-   *  documentation whenever the recommended line changes. */
-  lede: `The \`${RECOMMENDED_LINE}\` line patches every client CVE the audits found in the \`${EXPOSED_LINE}\` client code, bounds GraphQL queries, carries neither \`${EXPOSED_LINE}\` regression and is built with a supported Go version. Run a \`${RECOMMENDED_LINE}\` node beside your current ones without sending it traffic, and when you are comfortable, move your whole fleet to it.`,
+   *  not. The trial node, optional and best practice, peers and syncs, but no RPC clients or miners
+   *  point at it: the migration guide asks for one MESS setting per fleet, and a release's MESS
+   *  default need not match the fleet's. Check all of it against the documentation whenever the
+   *  recommended line changes. */
+  lede: `The \`${RECOMMENDED_LINE}\` line patches every client CVE the audits found in the \`${EXPOSED_LINE}\` client code, bounds GraphQL queries, carries neither the \`eth_syncing\` regression nor the snap storage-range regression of the last \`${EXPOSED_LINE}\` releases, and is built with a supported Go version. As a best practice, first run one \`${RECOMMENDED_LINE}\` node on a machine of its own beside your current ones, with no RPC clients or miners pointed at it. Once it has caught up with the network and holds peers, move your whole fleet to the \`${RECOMMENDED_LINE}\` line.`,
   rows: NETWORK_ROWS.map((row) => ({ ...row, share: `${networkShare(row.nodes).toFixed(1)}%` })),
 } as const;
 
