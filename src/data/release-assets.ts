@@ -52,7 +52,7 @@ type GroupId = "linux" | "macos" | "windows" | "containers";
 const GROUPS: Readonly<Record<GroupId, { heading: string; note: string }>> = {
   linux: {
     heading: "Linux",
-    note: "`uname -m` decides which archive you need, whatever distribution you run: a 64-bit capable board can still be running a 32-bit system. The x86-64 and Arm64 archives need glibc 2.17 or newer, which is RHEL 7, CentOS 7 and anything more recent; the 32-bit Arm archives need 2.28.",
+    note: "`uname -m` decides which archive you need, whatever distribution you run: a 64-bit capable board can still be running a 32-bit system.",
   },
   macos: {
     heading: "macOS",

@@ -255,6 +255,17 @@ const checkFlags = {
   after: `While the node is down, decide MESS, which makes a node resist deep chain reorganizations. An upgrade can change whether a node runs MESS, so set it yourself: \`--mess\` turns it on and \`--mess=false\` turns it off. [Which setting fits which operator](${DOCS.messSetting.href}) sets out the choice. An exchange setting its confirmation policy can use the [MESS confirmation calculator](${DOCS_URL}guides/mess-calculator/) to see what that policy asks of an attacker. Give every node you run the same setting. If you use a config file that \`dumpconfig\` wrote on \`${EXPOSED_LINE}\`, delete its \`BootstrapNodes\`, \`EthDiscoveryURLs\` and \`SnapDiscoveryURLs\` lines, or the node keeps that release's peer lists. Then go through the [RPC exposure checklist](${DOCS.migration.href}#re-check-rpc-exposure).`,
 };
 
+// For an operator who has not run the recommended line yet: one new node first, beside the nodes they
+// run, then the move (maintainer, 2026-11-03). The install steps at the top of this page suit it,
+// because it has no old key. It takes no traffic, as the census lede on `/security/` says, because the
+// migration guide asks for one MESS setting per fleet and the recommended line turns MESS on where
+// `v1.12.x` runs it off. It syncs from the network, because a copied data directory carries the old
+// node's `geth/nodekey`.
+const trialNode = {
+  title: `If you have not run ${RECOMMENDED_LINE} yet, sync one new node first`,
+  after: `Before you move a \`${EXPOSED_LINE}\` node, set up one new node on the \`${RECOMMENDED_LINE}\` line beside the nodes you run, with the [install steps](#install) at the top of this page, and send it no traffic. Let the new node sync from the network rather than from a copy of a \`${EXPOSED_LINE}\` node's data directory, which would carry that node's exposed key. When the new node behaves as you expect, move each \`${EXPOSED_LINE}\` node with the steps below.`,
+};
+
 // Moving a node off the exposed line. Another page links this section rather than carrying a
 // block of its own, because only this page's script gives a code block its copy button.
 //
@@ -280,6 +291,7 @@ const MOVE_PANELS: readonly PlatformPanel[] = [
     id: "linux",
     label: "Linux",
     steps: [
+      trialNode,
       {
         title: "Download the release and check it",
         code: `curl -LO ${assetBase}/core-geth-linux-${releaseTag}.zip
@@ -334,6 +346,7 @@ geth attach --exec 'eth.blockNumber' ~/.ethereum/classic/geth.ipc`,
     id: "macos",
     label: "macOS",
     steps: [
+      trialNode,
       {
         title: "Download the release and check it",
         code: `curl -LO ${assetBase}/core-geth-osx-arm64-${releaseTag}.zip
@@ -386,6 +399,7 @@ geth attach --exec 'eth.blockNumber' ~/Library/Ethereum/classic/geth.ipc`,
     id: "windows",
     label: "Windows",
     steps: [
+      trialNode,
       {
         title: "Download the release and check it",
         code: `# In PowerShell, in the folder that holds your current geth.exe
@@ -444,6 +458,7 @@ Rename-Item $key "nodekey.old-rotated-$(Get-Date -Format yyyy-MM-dd)"`,
     id: "containers",
     label: "Containers",
     steps: [
+      trialNode,
       {
         title: "Pull the release",
         code: `docker pull ghcr.io/${REPO.slug}:latest
@@ -510,6 +525,7 @@ docker exec core-geth geth attach --exec 'eth.blockNumber' /root/.ethereum/class
     id: "source",
     label: "Source",
     steps: [
+      trialNode,
       {
         title: "Build the release",
         code: `git clone --branch ${releaseTag} --single-branch https://github.com/${REPO.slug}.git core-geth-${releaseTag} &&
@@ -718,7 +734,7 @@ go version -m ./build/bin/geth | grep vcs.revision`,
     )}
   </PageHero>
 
-  <section class="band band--surface" aria-labelledby="install-title">
+  <section class="band band--surface" id="install" aria-labelledby="install-title">
     <div class="container downloads__install">
       <SectionHead
         id="install-title"
@@ -741,6 +757,12 @@ go version -m ./build/bin/geth | grep vcs.revision`,
         </p>
       </SectionHead>
       <PlatformTabs legend="Choose your platform" panels={PANELS}>
+        <p class="panel__note" slot="before-linux">
+          The x86-64 and Arm64 archives need glibc 2.17 or newer, which is RHEL 7, CentOS 7 and
+          anything more recent; the 32-bit Arm archives need glibc 2.28 or newer. The{" "}
+          <a href={`${DOCS.releaseReport.href}#archives`}>release report</a> lists every archive and
+          its platform.
+        </p>
         <Fragment slot="before-source">
           <p class="panel__note">
             Building needs Go 1.26 or later and a C compiler. A binary built from <code>main</code>{" "}
