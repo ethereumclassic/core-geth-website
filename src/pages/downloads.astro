@@ -474,6 +474,16 @@ gh attestation verify oci://ghcr.io/${REPO.slug}:latest --repo ${REPO.slug}`,
 docker exec core-geth geth attach --exec 'admin.nodeInfo.enode' /root/.ethereum/classic/geth.ipc`,
         after: `${keepId} These commands use a container named \`core-geth\` with its data at \`/root\`, so put your own name in its place. For Mordor, use \`.ethereum/mordor\` in the paths.`,
       },
+      // A container started without `-v` keeps the chain in its own layer, because neither image
+      // declares a volume, and `--volumes-from` does not reach it: the rename fails and the new
+      // container starts empty. So the data's place is checked while the node runs, and a container
+      // that holds its own data takes the copy step in place of the rename.
+      {
+        title: "Check where the container keeps its data",
+        code: "docker inspect core-geth --format '{{range .Mounts}}{{.Destination}} {{end}}'",
+        after:
+          "This prints `/root`, or `/root/.ethereum`, when the data is in a host directory or a named volume, which the steps below carry to the new container. If it prints neither, the data is inside the container itself: after the stop, take the copy step below in place of the rename, or the new container starts with no chain and resyncs.",
+      },
       {
         title: "Stop the node cleanly",
         code: `docker stop -t 300 core-geth
@@ -482,9 +492,20 @@ docker logs --tail 50 core-geth 2>&1 | grep 'Blockchain stopped'`,
       },
       {
         title: "Rename the old P2P node key",
+        before: "If the check printed `/root` or `/root/.ethereum`:",
         code: `docker run --rm --volumes-from core-geth --entrypoint sh ghcr.io/${REPO.slug}:latest \\
   -c "mv -n /root/.ethereum/classic/geth/nodekey /root/.ethereum/classic/geth/nodekey.old-rotated-$(date +%F)"`,
         after: rotationRequired,
+      },
+      {
+        title: "If the data is inside the container, copy it out and rename the key there",
+        before:
+          "If the check printed neither, run this in place of the rename above. It copies the data out of the stopped container and renames the key in the copy, which needs as much free space as the chain takes:",
+        code: `mkdir -p $HOME/core-geth-data &&
+  docker cp core-geth:/root/. $HOME/core-geth-data/ &&
+  docker run --rm -v $HOME/core-geth-data:/root --entrypoint sh ghcr.io/${REPO.slug}:latest \\
+    -c "mv -n /root/.ethereum/classic/geth/nodekey /root/.ethereum/classic/geth/nodekey.old-rotated-$(date +%F)"`,
+        after: `${rotationRequired} The chain comes with the copy, so the node does not resync.`,
       },
       staticPeersStep(
         ' To give the new container the file, add `-v <path>/config.toml:/config.toml:ro` to the `docker run` under "Replace the container", and `--config /config.toml` after the image name.',
@@ -492,6 +513,7 @@ docker logs --tail 50 core-geth 2>&1 | grep 'Blockchain stopped'`,
       checkFlags,
       {
         title: "Replace the container",
+        before: `Before you run this block, put the old container's flags in its last line and its \`GETH_\` variables in as \`-e\` options: \`docker inspect core-geth-${EXPOSED_LINE} --format '{{json .Args}} {{json .Config.Env}}'\` prints both. Keep its two P2P port mappings. The RPC check applies to the published RPC port, which stays on \`127.0.0.1\` even if the old container published it everywhere; \`--http.addr 0.0.0.0\` inside the container reaches only that port. If the old container ran with \`--network host\`, run this one that way too, without the \`-p\` options and with \`--http.addr 127.0.0.1\`. If you copied the data out, put \`-v $HOME/core-geth-data:/root\` in place of \`--volumes-from core-geth-${EXPOSED_LINE}\`.`,
         code: `docker rename core-geth core-geth-${EXPOSED_LINE}
 docker update --restart no core-geth-${EXPOSED_LINE}
 docker run -d --name core-geth \\
@@ -500,7 +522,8 @@ docker run -d --name core-geth \\
   -p 30303:30303 -p 30303:30303/udp -p 127.0.0.1:8545:8545 \\
   ghcr.io/${REPO.slug}:latest \\
   --classic --http --http.addr 0.0.0.0 --http.port 8545`,
-        after: `Put your own ports and flags in the last lines of \`docker run\`: \`docker inspect core-geth-${EXPOSED_LINE}\` shows what the old container used. For Mordor, use \`--mordor\` in place of \`--classic\`. The old container stays, stopped, and is what you roll back to.`,
+        after:
+          "For Mordor, use `--mordor` in place of `--classic`. The old container stays, stopped, and is what you roll back to.",
       },
       {
         title: "Confirm the move",
@@ -513,6 +536,7 @@ docker exec core-geth geth attach --exec 'eth.blockNumber' /root/.ethereum/class
       otherNodesStep("docker exec core-geth geth attach", "/root/.ethereum/classic/geth.ipc"),
       {
         title: "If you need to roll back",
+        before: `If you copied the data out, do not run this block, because the old container's own copy of the data still holds the old key. Stop and remove the new container as its first two lines do, then run the image the old one used, \`docker inspect core-geth-${EXPOSED_LINE} --format '{{.Config.Image}}'\`, on the copy, with \`-v $HOME/core-geth-data:/root\`, the old container's ports and flags, and no \`--mess\`.`,
         code: `docker stop -t 300 core-geth &&
   docker rm core-geth &&
   docker rename core-geth-${EXPOSED_LINE} core-geth &&
