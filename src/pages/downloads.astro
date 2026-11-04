@@ -32,9 +32,14 @@ const downloads = await getDownloads();
 //
 // Use `latest` where it is an option (maintainer, 2026-11-02). An image tag can say it, so the
 // containers blocks do. A file name cannot, because every asset of a release carries the tag, so
-// archive and image-file commands, and a source build's `--branch`, name the last release.
+// archive and image-file commands name the last release. Every build from source clones `main`
+// (maintainer, 2026-11-04), which takes the patches and dependency updates reviewed into it before a
+// release ships them, and the page offers no tagged clone.
 const facts = await getRepository();
 const releaseTag = downloads?.tag ?? facts.release.tag;
+
+// The line as `geth version` prints it, which carries no `v`.
+const LINE_VERSION = RECOMMENDED_LINE.replace(/^v/, "");
 
 // The notes below tell a reader to stop unless a command reports the recommended line, so the
 // release this build read has to be on that line.
@@ -49,6 +54,17 @@ const attestationMust = (workflow: string, action = "run the file") =>
 
 const windowsCompare =
   "Compare those two lines yourself: the letters must match and the case need not, since `Get-FileHash` prints uppercase and the `.sha256` file holds lowercase followed by the file name.";
+
+// Every build from source clones `main`, and the install and move tabs run this same block. `main` is
+// described by what the branch ruleset of `ethereumclassic/core-geth` enforces and no more: a pull
+// request that needs an approving review and the required checks.
+const buildMain = `git clone --branch main --single-branch https://github.com/${REPO.slug}.git &&
+  cd core-geth &&
+  make geth &&
+  ./build/bin/geth version`;
+
+const mainBranch =
+  "`main` carries patches and dependency updates before a release does: every change reaches it through a pull request that needs an approving review and the project's required checks. It keeps moving, so two builds a day apart can be different code. It is not a release: until a release is prepared, `geth version` ends its first line with `-unstable`, and its `Git Commit` line names the commit you built.";
 
 // One panel per platform the project publishes for, plus source. Every command is the one
 // its linked guide gives, with that guide's version comment dropped, because this page
@@ -173,30 +189,18 @@ docker run -d --name core-geth-classic \\
     label: "Source",
     steps: [
       {
-        title: "Build the latest release",
-        code: `git clone --branch ${releaseTag} --single-branch https://github.com/${REPO.slug}.git core-geth-${releaseTag} &&
-  cd core-geth-${releaseTag} &&
-  make geth &&
-  ./build/bin/geth version`,
-        after:
-          "A second run stops at the clone, because the folder already exists, rather than building an old copy.",
-      },
-      {
-        title: "Build what is in development",
-        code: `git clone https://github.com/${REPO.slug}.git &&
-  cd core-geth &&
-  make geth &&
-  ./build/bin/geth version`,
-        after:
-          "`main` keeps moving, and it is not a release. An existing `core-geth` folder stops this block at the clone, so update or remove that folder first.",
+        title: "Build the main branch",
+        code: buildMain,
+        after: `${mainBranch} An existing \`core-geth\` folder stops this block at the clone rather than building an old copy: to build \`main\` again, run \`git pull\` in that folder and build there, or remove the folder first.`,
       },
       {
         title: "Build on Windows",
-        code: `git clone --branch ${releaseTag} --single-branch https://github.com/${REPO.slug}.git "core-geth-${releaseTag}"
-cd "core-geth-${releaseTag}"
+        code: `git clone --branch main --single-branch https://github.com/${REPO.slug}.git
+cd core-geth
 go run build/ci.go install ./cmd/geth
 .\\build\\bin\\geth.exe version`,
-        after: `Run these in PowerShell, one line at a time. For what is in development, leave out \`--branch ${releaseTag} --single-branch\` and the folder name, and run \`cd core-geth\`.`,
+        after:
+          "Run these in PowerShell, one line at a time. If `git clone` reports that `core-geth` already exists, run `git pull` in that folder before the build line.",
       },
     ],
     guide: { label: "Build from source", href: `${DOCS_URL}developers/build-from-source/` },
@@ -217,7 +221,13 @@ const verifyPointer = "[Verify what you downloaded](#verify) also checks where t
 
 const keepBinary = `\`geth-${EXPOSED_LINE}\` is the old binary, kept so you can roll back.`;
 
-const confirmNote = `If an attach line cannot connect, wait a minute and run it again. The first line must name a \`${RECOMMENDED_LINE}\` release. The enode ID must differ from the one you recorded. If it is the same, the node is still on the old key: stop it and redo the rename step. The peer count climbs within minutes. If it stays at zero, see [Why does the node have no peers?](${DOCS_URL}operate/troubleshooting/#why-does-the-node-have-no-peers) The block number resumes where the node stopped, then catches up. Compare it with a block explorer or another node you run. If it settles somewhere else, stop and investigate rather than resync.`;
+const binaryPath =
+  "These commands install over `/usr/local/bin/geth`. If your unit or start command runs a `geth` at another path, use that path wherever they say `/usr/local/bin/geth`.";
+
+// The first line names a release on every tab but Source, which builds `main`, so that tab checks the
+// running node against what its own build printed.
+const confirmNote = (version = `The first line must name a \`${RECOMMENDED_LINE}\` release.`) =>
+  `If an attach line cannot connect, wait a minute and run it again. ${version} The enode ID must differ from the one you recorded. If it is the same, the node is still on the old key: stop it and redo the rename step. The peer count climbs within minutes. If it is still zero after five minutes, see [Why does the node have no peers?](${DOCS_URL}operate/troubleshooting/#why-does-the-node-have-no-peers) The block number starts near the one you recorded, or lower after an unclean stop, and climbs to the network's head: compare it with a block explorer or another node you run. If it stops climbing short of the head, investigate rather than resync.`;
 
 // Peers a node lists by ID, in the file it reads at the start or on the console while it runs. The new
 // ID exists only after the first start on the new key, so one step edits this node's own list while it
@@ -283,12 +293,13 @@ const trialNode = {
 // Every command is the one that platform's migration guide gives, apart from what keeps a paste safe
 // and the rollback intact. `mv -n` keeps a second paste from overwriting the old key, and the install
 // saves the old binary only once, so the block can run again after a mistake. The source panel clones
-// the tag into its own folder, so an old clone cannot be rebuilt by mistake. The containers panel
-// renames the key from a throwaway container and gives the new container the old one's volumes, which
-// needs no `sudo` and no host path, and it keeps the old container to roll back to. "Confirm the move"
-// reads the release from the running node, because `geth version` reads the binary on `PATH`, which
-// need not be the binary a unit starts. Every console line that carries an enode wraps it in single
-// quotes inside double quotes, the one form PowerShell 5.1 passes to a native program unchanged.
+// `main` with the install tab's block, which stops at an old clone rather than rebuilding it. The
+// containers panel renames the key from a throwaway container and gives the new container the old
+// one's volumes, which needs no `sudo` and no host path, and it keeps the old container to roll back
+// to. "Confirm the move" reads the release from the running node, because `geth version` reads the
+// binary on `PATH`, which need not be the binary a unit starts. Every console line that carries an
+// enode wraps it in single quotes inside double quotes, the one form PowerShell 5.1 passes to a native
+// program unchanged.
 const MOVE_PANELS: readonly PlatformPanel[] = [
   {
     id: "linux",
@@ -339,7 +350,7 @@ geth attach --exec 'admin.nodeInfo.enode' ~/.ethereum/classic/geth.ipc`,
 geth attach --exec 'admin.nodeInfo.enode' ~/.ethereum/classic/geth.ipc
 geth attach --exec 'net.peerCount' ~/.ethereum/classic/geth.ipc
 geth attach --exec 'eth.blockNumber' ~/.ethereum/classic/geth.ipc`,
-        after: confirmNote,
+        after: confirmNote(),
       },
       otherNodesStep("geth attach", "~/.ethereum/classic/geth.ipc"),
     ],
@@ -392,7 +403,7 @@ geth attach --exec 'admin.nodeInfo.enode' ~/Library/Ethereum/classic/geth.ipc`,
 geth attach --exec 'admin.nodeInfo.enode' ~/Library/Ethereum/classic/geth.ipc
 geth attach --exec 'net.peerCount' ~/Library/Ethereum/classic/geth.ipc
 geth attach --exec 'eth.blockNumber' ~/Library/Ethereum/classic/geth.ipc`,
-        after: confirmNote,
+        after: confirmNote(),
       },
       otherNodesStep("geth attach", "~/Library/Ethereum/classic/geth.ipc"),
     ],
@@ -451,7 +462,7 @@ Rename-Item $key "nodekey.old-rotated-$(Get-Date -Format yyyy-MM-dd)"`,
 .\\geth.exe attach --exec 'admin.nodeInfo.enode' \\\\.\\pipe\\geth.ipc
 .\\geth.exe attach --exec 'net.peerCount' \\\\.\\pipe\\geth.ipc
 .\\geth.exe attach --exec 'eth.blockNumber' \\\\.\\pipe\\geth.ipc`,
-        after: confirmNote,
+        after: confirmNote(),
       },
       otherNodesStep(".\\geth.exe attach", "\\\\.\\pipe\\geth.ipc"),
     ],
@@ -531,7 +542,7 @@ docker run -d --name core-geth \\
 docker exec core-geth geth attach --exec 'admin.nodeInfo.enode' /root/.ethereum/classic/geth.ipc
 docker exec core-geth geth attach --exec 'net.peerCount' /root/.ethereum/classic/geth.ipc
 docker exec core-geth geth attach --exec 'eth.blockNumber' /root/.ethereum/classic/geth.ipc`,
-        after: confirmNote,
+        after: confirmNote(),
       },
       otherNodesStep("docker exec core-geth geth attach", "/root/.ethereum/classic/geth.ipc"),
       {
@@ -554,18 +565,15 @@ docker exec core-geth geth attach --exec 'eth.blockNumber' /root/.ethereum/class
     steps: [
       trialNode,
       {
-        title: "Build the release",
-        code: `git clone --branch ${releaseTag} --single-branch https://github.com/${REPO.slug}.git core-geth-${releaseTag} &&
-  cd core-geth-${releaseTag} &&
-  make geth &&
-  ./build/bin/geth version`,
-        after: `The node can keep running for this step. Go on only if the last line reports a \`${RECOMMENDED_LINE}\` release. [Build from source](${DOCS_URL}developers/build-from-source/) lists what a build needs. On Windows, run the commands one at a time, with \`go run build/ci.go install ./cmd/geth\` in place of \`make geth\`, then follow the Windows tab, copying \`build\\bin\\geth.exe\` into the node's folder in place of its \`Expand-Archive\` line.`,
+        title: "Build the main branch",
+        code: buildMain,
+        after: `The node can keep running for this step. Go on only if the first line \`geth version\` prints names version ${LINE_VERSION} or later; a build of \`main\` ends it with \`-unstable\`, and two builds a day apart can be different code. Keep the \`Git Commit\` line: "Confirm the move" checks the running node against it. If a \`core-geth\` folder is already there, run \`git pull\` in it and build there, or remove it first. The Source tab under [Install](#install) says why these steps build \`main\`, and [Build from source](${DOCS_URL}developers/build-from-source/) lists what a build needs. On Windows, run the commands one at a time, with \`go run build/ci.go install ./cmd/geth\` in place of \`make geth\`, then follow this section's Windows tab from "Record the node's block number and ID", copying \`build\\bin\\geth.exe\` into the node's folder in place of the \`Expand-Archive\` line in its "Install the release" step.`,
       },
       {
         title: "Record the node's block number and ID",
         code: `geth attach --exec 'eth.blockNumber' ~/.ethereum/classic/geth.ipc
 geth attach --exec 'admin.nodeInfo.enode' ~/.ethereum/classic/geth.ipc`,
-        after: `${keepId} The commands in this tab use the default data directory on Linux. On macOS, put \`~/Library/Ethereum\` where they say \`~/.ethereum\`. For Mordor, use \`mordor\` in place of \`classic\`; if you pass \`--datadir\`, use yours. The Linux tab has the forms for the unit in the Linux run guide.`,
+        after: `${keepId} The commands in this tab use the default data directory on Linux. On macOS, put \`~/Library/Ethereum\` where they say \`~/.ethereum\`. For Mordor, use \`mordor\` in place of \`classic\`; if you pass \`--datadir\`, use yours. This section's Linux tab has the forms for the unit in the Linux run guide.`,
       },
       {
         title: "Stop the node cleanly",
@@ -577,7 +585,7 @@ geth attach --exec 'admin.nodeInfo.enode' ~/.ethereum/classic/geth.ipc`,
   { test -e /usr/local/bin/geth-${EXPOSED_LINE} || sudo mv /usr/local/bin/geth /usr/local/bin/geth-${EXPOSED_LINE}; } &&
   sudo install -m 0755 build/bin/geth /usr/local/bin/geth &&
   geth version`,
-        after: `Run this in the folder the build step left you in: the first line stops the block anywhere else. Go on only if \`geth version\` reports a \`${RECOMMENDED_LINE}\` release. ${keepBinary}`,
+        after: `Run this in the folder the build step left you in: the first line stops the block anywhere else. Go on only if \`geth version\` prints the same first line and \`Git Commit\` line it printed after the build. ${keepBinary} ${binaryPath}`,
       },
       {
         title: "Rename the old P2P node key",
@@ -596,7 +604,9 @@ geth attach --exec 'admin.nodeInfo.enode' ~/.ethereum/classic/geth.ipc`,
 geth attach --exec 'admin.nodeInfo.enode' ~/.ethereum/classic/geth.ipc
 geth attach --exec 'net.peerCount' ~/.ethereum/classic/geth.ipc
 geth attach --exec 'eth.blockNumber' ~/.ethereum/classic/geth.ipc`,
-        after: confirmNote,
+        after: confirmNote(
+          "The first line must name the version the build printed, followed by the first eight characters of its `Git Commit`.",
+        ),
       },
       otherNodesStep("geth attach", "~/.ethereum/classic/geth.ipc"),
     ],
@@ -739,9 +749,9 @@ go version -m ./build/bin/geth | grep vcs.revision`,
 >
   <PageHero label="Core-Geth downloads" title="Get the Core-Geth client." em="Core-Geth">
     <p class="lede">
-      Download a release for Linux, macOS or Windows, run it as a container, or build it from
-      source. Every archive and image is published with a checksum and a build attestation, so you
-      can confirm what you downloaded before you run it.
+      Download a release for Linux, macOS or Windows, run it as a container, or build the client
+      from source. Every archive and image is published with a checksum and a build attestation, so
+      you can confirm what you downloaded before you run it.
     </p>
     <div class="downloads__actions">
       <a class="button button--primary" href={REPO.latestUrl}>
@@ -776,7 +786,7 @@ go version -m ./build/bin/geth | grep vcs.revision`,
           foot of this page.
         </p>
         <p class="lede">
-          {`Every download on this page is the latest ${RECOMMENDED_LINE} release. If you are replacing a `}
+          {`Every archive and image on this page is from the latest ${RECOMMENDED_LINE} release. If you are replacing a `}
           <InlineCode text={EXPOSED_LINE} />
           {` node, that node needs a new P2P key before it starts again: `}
           <a href={`#${UPGRADE_ANCHOR}`}>{`moving a ${EXPOSED_LINE} node`}</a>
@@ -792,10 +802,9 @@ go version -m ./build/bin/geth | grep vcs.revision`,
         </p>
         <Fragment slot="before-source">
           <p class="panel__note">
-            Building needs Go 1.26 or later and a C compiler. A binary built from <code>main</code>{" "}
-            prints <code>unstable</code> as its release stage until a release is prepared. To build
-            with the exact Go toolchain the releases use, run{" "}
-            <code>go run build/ci.go install -dlgo</code> in place of <code>make geth</code>.
+            Building needs Go 1.26 or later and a C compiler. To build with the exact Go toolchain
+            the releases use, run <code>go run build/ci.go install -dlgo</code> in place of{" "}
+            <code>make geth</code>.
           </p>
           <a class="source-repo" href={REPO.url}>
             github.com/{REPO.slug.split("/")[0]}/<wbr />
