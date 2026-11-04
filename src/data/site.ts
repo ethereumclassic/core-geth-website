@@ -1174,7 +1174,7 @@ const RELEASE_HISTORY: readonly HistoryEntry[] = [
     when: "August 28, 2026",
     iso: "2026-08-28",
     title: "Bootnodes and peer discovery move to this organization",
-    body: `A node finds its first peers through bootnodes and the peer discovery lists. \`ethereumclassic/discv4-dns-lists\` was created on August 28, 2026 to publish those lists from the \`ethereumclassic\` organization, the first crawl of the network followed on September 10, and \`${RECOMMENDED_LINE}.0\` ships with three Ethereum Classic and two Mordor bootnodes run by the Core-Geth maintainers and reads the new lists by default.`,
+    body: `A node finds its first peers through bootnodes and the peer discovery lists. \`ethereumclassic/discv4-dns-lists\` was created on August 28, 2026 to publish those lists from the \`ethereumclassic\` organization, the first trees were published on September 10, 2026, and \`${RECOMMENDED_LINE}.0\` ships with three Ethereum Classic and two Mordor bootnodes run by the Core-Geth maintainers and reads the new lists by default.`,
     link: {
       label: "ethereumclassic/discv4-dns-lists",
       href: "https://github.com/ethereumclassic/discv4-dns-lists",
