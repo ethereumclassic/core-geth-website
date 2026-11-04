@@ -1291,6 +1291,17 @@ export const AUDITS: readonly {
   },
 ];
 
+// Two kinds of document sit in AUDITS, told apart by address rather than written down twice:
+// the release's own documents, the v1.13.0 release report and record, and the audits, the rest.
+// The slug holds for the docs URLs ("release-reports/") and the site's ("...release-report/",
+// "...release-record/") alike, and no audit slug contains either (the release pipeline audit is
+// "release-pipeline"). The security page lists each group in a band of its own, and a report
+// page's Previous and Next stay inside its group.
+const isReleaseDoc = (href: string) =>
+  href.includes("release-report") || href.includes("release-record");
+export const AUDIT_DOCS = AUDITS.filter((doc) => !isReleaseDoc(doc.href));
+export const REPORT_DOCS = AUDITS.filter((doc) => isReleaseDoc(doc.href));
+
 /** The pages the brand in the header opens, in the order a reader meets them. */
 export const BRAND_MENU: readonly { label: string; href: string }[] = [
   { label: "Home", href: "/" },

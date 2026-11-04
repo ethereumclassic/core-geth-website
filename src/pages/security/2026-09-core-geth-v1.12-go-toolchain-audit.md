@@ -11,8 +11,6 @@ kind: "audit"
 sourceDoc: "https://docs.coregeth.com/audits/2026-09-go-toolchain/"
 ---
 
-# Go toolchain: v1.12.x archive to v1.13.0
-
 This document records which Go toolchain built each published `v1.12.x` release, the Go standard
 library advisories those binaries carry, what `v1.13.0` ships instead, and why an operator on the
 older line should move. It is a companion to `2026-08-dependency-modernization.md`, which covers the
@@ -281,6 +279,7 @@ listed vulnerable functions was found.
 | 62 | GO-2026-6218 | CVE-2026-56860 | `net/url` | Avoid quadratic complexity in resolvePath in net/url | 2026-08-13 | go1.25.13 | symbol | `v1.12.20` to `v1.12.23`: all archives |
 
 </details>
+
 ## Finding: the v1.12.x source does not build on a supported Go
 
 Rebuilding a `v1.12.x` release with a supported Go would take the standard library fixes if the
@@ -435,6 +434,7 @@ changes themselves.
 | 44 | GO-2024-2611 | CVE-2024-24786, GHSA-8r3f-844c-mc37 | `google.golang.org/protobuf` | Infinite loop in JSON unmarshaling in google.golang.org/protobuf | 1.33.0 | 2024-03-05 | no |
 
 </details>
+
 ## What a vulnerability scanner reports against v1.13.0
 
 **Standard library: nothing.** No Go standard library advisory applies to any of the nine `v1.13.0`

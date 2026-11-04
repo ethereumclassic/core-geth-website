@@ -11,8 +11,6 @@ kind: "report"
 sourceDoc: "https://docs.coregeth.com/release-reports/v1.13.0-record/"
 ---
 
-# v1.13.0: the record behind the release
-
 **Last edited:** October 12, 2026
 
 **Core-Geth `v1.13.0` is stable, and it is the recommended client.** It was released on September 14, 2026 after

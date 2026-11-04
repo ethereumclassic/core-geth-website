@@ -1,5 +1,6 @@
 ---
 import ArrowText from "@/components/ArrowText.astro";
+import CopyButtons from "@/components/CopyButtons.astro";
 import InlineCode from "@/components/InlineCode.astro";
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import PageHero from "@/components/PageHero.astro";
@@ -852,47 +853,7 @@ go version -m ./build/bin/geth | grep vcs.revision`,
   </section>
 </BaseLayout>
 
-<script is:inline>
-  // The copy button on each code block, and the only script this site ships beyond the
-  // JSON-LD in the head. Maintainer decision, 2026-10-07.
-  //
-  // It is `is:inline` so Astro leaves it in the page rather than bundling it to a file:
-  // one small script, no extra request, and `dist` stays free of JavaScript files. The
-  // button is created here rather than rendered in the markup, so a reader with no
-  // JavaScript, or a browser without the clipboard API, sees no button that cannot work.
-  (function () {
-    if (!navigator.clipboard) return;
-    for (const wrap of document.querySelectorAll(".shell-wrap")) {
-      const code = wrap.querySelector("pre.shell > code");
-      if (!code) continue;
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = "copy";
-      button.textContent = "Copy";
-      // The label is the button's text, so a change of state is announced rather than
-      // hidden behind a fixed aria-label.
-      button.setAttribute("aria-live", "polite");
-      let reset;
-      button.addEventListener("click", function () {
-        navigator.clipboard.writeText(code.textContent).then(
-          function () {
-            button.textContent = "Copied";
-            button.classList.add("copy--done");
-          },
-          function () {
-            button.textContent = "Copy failed";
-          },
-        );
-        clearTimeout(reset);
-        reset = setTimeout(function () {
-          button.textContent = "Copy";
-          button.classList.remove("copy--done");
-        }, 2000);
-      });
-      wrap.appendChild(button);
-    }
-  })();
-</script>
+<CopyButtons />
 
 <style>
   .downloads__actions {

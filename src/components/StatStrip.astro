@@ -1,5 +1,6 @@
 ---
 import InlineCode from "@/components/InlineCode.astro";
+import { caseRuns } from "@/lib/keep-case";
 
 export interface Stat {
   /** The eyebrow above the figure, in the mono face. */
@@ -28,7 +29,11 @@ const { stats, label } = Astro.props;
 <dl class="stats" aria-label={label}>
   {stats.map((stat) => (
     <div class:list={["stat", stat.tone && `stat--${stat.tone}`]}>
-      <dt class="stat__label">{stat.label}</dt>
+      <dt class="stat__label">
+        {caseRuns(stat.label).map((run) =>
+          run.keep ? <span class="keep-case">{run.text}</span> : run.text,
+        )}
+      </dt>
       <dd class="stat__value">{stat.value}</dd>
       <p class="stat__caption">
         <InlineCode text={stat.caption} />

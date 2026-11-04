@@ -10,6 +10,7 @@ import SectionHead from "@/components/SectionHead.astro";
 import StatStrip from "@/components/StatStrip.astro";
 import VerticalTimeline from "@/components/VerticalTimeline.astro";
 import {
+  AUDIT_DOCS,
   AUDITS,
   DISCLOSURE,
   DISCOVERY_FLAG_STEP,
@@ -19,6 +20,7 @@ import {
   RELEASE_FIXES,
   RELEASE_TIMELINE,
   REPO,
+  REPORT_DOCS,
   SECURITY_EMAIL,
   SECURITY_POLICY_URL,
   UPGRADE_ANCHOR,
@@ -34,18 +36,10 @@ const recommendedNodes = NETWORK_RUNNING.rows
   .reduce((sum, row) => sum + row.nodes, 0);
 const percent = (nodes: number) => `${((nodes / NETWORK_RUNNING.total) * 100).toFixed(1)}%`;
 
-// Two kinds of document sit in one index, and the split is told from the address rather
-// than written down twice: the two bands, the stat tile and both ledes read these, so
-// none can be left behind when one is published.
-// Reports are the v1.13.0 release report and record; audits are the rest. The slug holds for the
-// docs URLs ("release-reports/") and the apex URLs ("...release-report/", "...release-record/")
-// alike, and no audit slug contains either (the release pipeline audit is "release-pipeline").
-const reportDocs = AUDITS.filter(
-  (audit) => audit.href.includes("release-report") || audit.href.includes("release-record"),
-);
-const auditDocs = AUDITS.filter(
-  (audit) => !(audit.href.includes("release-report") || audit.href.includes("release-record")),
-);
+// Two kinds of document sit in one index, split in site.ts by address: the two bands, the stat
+// tile and both ledes read these, so none can be left behind when one is published.
+const reportDocs = REPORT_DOCS;
+const auditDocs = AUDIT_DOCS;
 const reportCount = reportDocs.length;
 const auditCount = auditDocs.length;
 const SPELLED = ["no", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"];
@@ -300,8 +294,11 @@ const CENSUS_STATS = [
     }
   }
 
+  /* A card is as tall as the tallest in its row; its own rows stay packed at the top rather than
+     spreading to fill that height. */
   .audit {
     display: grid;
+    align-content: start;
     gap: 0.4rem;
     padding-top: 1rem;
     border-top: 2px solid var(--ink);

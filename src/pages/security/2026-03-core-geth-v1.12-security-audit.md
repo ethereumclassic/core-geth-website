@@ -11,8 +11,6 @@ kind: "audit"
 sourceDoc: "https://docs.coregeth.com/audits/2026-03-security-audit/"
 ---
 
-# Core-Geth v1.12 line Security Audit: March 2026
-
 - **Client:** Core-Geth (Ethereum Classic)
 - **Audit Date:** March 2026
 - **Repository audited:** [<code class="namespace--previous">github.com/etclabscore/core-geth</code>](https://github.com/etclabscore/core-geth)

@@ -11,8 +11,6 @@ kind: "report"
 sourceDoc: "https://docs.coregeth.com/release-reports/v1.13.0/"
 ---
 
-# Core-Geth v1.13.0 release report
-
 **As of:** the `v1.13.0` release, September 14, 2026
 
 The [v1.13.0 release notes](https://github.com/ethereumclassic/core-geth/releases/tag/v1.13.0) summarize this
@@ -291,7 +289,7 @@ Neither file is compiled into `geth`.
 The documentation now covers running and operating a node end to end: hardware requirements, running an Ethereum
 Classic or Mordor node, sync modes, security and network exposure, MESS, maintenance and upgrades, troubleshooting
 and monitoring. New guides cover production operations, a public RPC endpoint, an archive node, mining, a mining
-pool node, mining on Mordor, and bootnodes and peer discovery. [Choose your role](https://docs.coregeth.com/guides/index/) points each
+pool node, mining on Mordor, and bootnodes and peer discovery. [Choose your role](https://docs.coregeth.com/guides/) points each
 kind of operator to the pages they need.
 
 [Running a node](https://docs.coregeth.com/getting-started/run-a-node/) has a guide for Linux, macOS, Windows and Docker, with the

@@ -11,8 +11,6 @@ kind: "audit"
 sourceDoc: "https://docs.coregeth.com/audits/2026-08-security-followup/"
 ---
 
-# Core-Geth Security Follow-Up: August 2026
-
 - **Follows:** [`2026-03-security-audit.md`](/security/2026-03-core-geth-v1.12-security-audit/)
 - **Subject:** <code class="namespace--previous">etclabscore/core-geth</code> v1.12.23 ("Argos"), released August 14, 2026
 - **Prepared by:** The core-geth Authors

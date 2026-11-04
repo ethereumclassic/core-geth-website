@@ -156,6 +156,13 @@ code {
   font-size: 0.9em;
 }
 
+/* Code, and a version or identifier in a label set in capitals, keep the case they were written
+   in (src/lib/keep-case.ts). */
+code,
+.keep-case {
+  text-transform: none;
+}
+
 .container {
   width: min(100% - 2 * var(--gutter), var(--container));
   margin-inline: auto;

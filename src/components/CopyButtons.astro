@@ -1,0 +1,46 @@
+---
+// The copy button on each code block, and the only script this site ships beyond the JSON-LD in
+// the head: on `/downloads/` (maintainer decision, 2026-10-07) and on the audit and release report
+// pages (2026-11-03). A page places this once, after its content.
+//
+// The script is `is:inline` so Astro leaves it in the page rather than bundling it to a file: one
+// small script, no extra request, and `dist` stays free of JavaScript files. The button is created
+// here rather than rendered in the markup, so a reader with no JavaScript, or a browser without the
+// clipboard API, sees no button that cannot work. It finds the code in any `.shell-wrap`, whether
+// the block is the downloads page's own or one the report pages' rehype step wrapped.
+---
+
+<script is:inline>
+  (function () {
+    if (!navigator.clipboard) return;
+    for (const wrap of document.querySelectorAll(".shell-wrap")) {
+      const code = wrap.querySelector("pre > code");
+      if (!code) continue;
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "copy";
+      button.textContent = "Copy";
+      // The label is the button's text, so a change of state is announced rather than
+      // hidden behind a fixed aria-label.
+      button.setAttribute("aria-live", "polite");
+      let reset;
+      button.addEventListener("click", function () {
+        navigator.clipboard.writeText(code.textContent).then(
+          function () {
+            button.textContent = "Copied";
+            button.classList.add("copy--done");
+          },
+          function () {
+            button.textContent = "Copy failed";
+          },
+        );
+        clearTimeout(reset);
+        reset = setTimeout(function () {
+          button.textContent = "Copy";
+          button.classList.remove("copy--done");
+        }, 2000);
+      });
+      wrap.appendChild(button);
+    }
+  })();
+</script>

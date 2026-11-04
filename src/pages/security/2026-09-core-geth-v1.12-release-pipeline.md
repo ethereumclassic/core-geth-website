@@ -11,8 +11,6 @@ kind: "audit"
 sourceDoc: "https://docs.coregeth.com/audits/2026-09-release-pipeline/"
 ---
 
-# Release artifacts: v1.12.x archive to v1.13.0
-
 This document records what the published `v1.12.x` releases actually contain, what
 `v1.13.0` ships instead, and why an operator on the older line should move. It is a
 companion to `2026-03-security-audit.md` and `2026-08-security-followup.md`, which

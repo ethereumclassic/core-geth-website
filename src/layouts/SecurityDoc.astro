@@ -1,22 +1,71 @@
 ---
-import BaseLayout from "@/layouts/BaseLayout.astro";
-import PageHero from "@/components/PageHero.astro";
 import ArrowText from "@/components/ArrowText.astro";
-import { SITE_URL } from "@/data/site";
+import CopyButtons from "@/components/CopyButtons.astro";
+import InlineCode from "@/components/InlineCode.astro";
+import PageHero from "@/components/PageHero.astro";
+import StatStrip from "@/components/StatStrip.astro";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { REPORT_ACTION, REPORTS } from "@/data/reports";
+import { designReport } from "@/lib/report-html";
+import {
+  AUDIT_DOCS,
+  DISCOVERY_FLAG_STEP,
+  DOCS,
+  EXPOSED_LINE,
+  REPORT_DOCS,
+  SITE_URL,
+  UPGRADE_ANCHOR,
+} from "@/data/site";
 
-// The layout for the apex security documents under /security/<slug>/: the audits and the
-// release report, rendered here as the canonical, designed version of the content the
-// documentation publishes. A markdown page sets `layout` to this file and carries its own
-// title, description, label, em, crumb, date, iso, kind and sourceDoc in front matter.
+// The layout for the mirrored audits and release reports under /security/<slug>/, the canonical,
+// designed version of what the documentation publishes. A markdown page sets `layout` to this file
+// and carries title, description, label, em, crumb, date, iso, kind and sourceDoc in front matter.
 //
-// The page's only h1 is PageHero's; each source document's own H1 is stripped by
-// .local/scratch/apex-transform.py so the body opens at h2. The TechArticle JSON-LD sits in
-// the body, which is valid and keeps BaseLayout's head graph untouched.
+// The report's words are the documentation's. This layout adds what the site writes about it, from
+// `src/data/reports.ts`: the summary a reader, a search engine or a language model meets first, the
+// figures, and the move from the `v1.12` line it supports. `src/lib/report-html.ts` gives the
+// rendered report its design. The page's only h1 is PageHero's; the mirror pipeline strips the
+// source's own H1, so the body opens at h2.
+interface Props {
+  frontmatter: Record<string, string>;
+}
 const { frontmatter } = Astro.props;
-const { title, description, label, em, crumb, date, iso, kind } = frontmatter;
+const { title, label, em, crumb, date, iso, kind, sourceDoc } = frontmatter;
+
+const slug = Astro.url.pathname.split("/").filter(Boolean).pop() ?? "";
+const report = REPORTS[slug];
+const description = report?.description ?? frontmatter.description;
+const designed = designReport(await Astro.slots.render("default"));
+// The site's panel is "Overview", a heading no report uses: the follow-up has a "Summary" of its own,
+// and two sections cannot share an anchor.
+const contents = [
+  ...(report ? [{ slug: "overview", text: "Overview" }] : []),
+  ...designed.contents,
+];
+
+// Previous and Next walk the page's own group in the order the security page lists it, the audits
+// one run and the release reports another (maintainer, 2026-11-03), and each run opens and closes on
+// the security page's band for that group. The link back to it then sits in the pager, so the line
+// under the pager carries it only on a page between the two ends.
+const group = REPORT_DOCS.some((d) => d.href === Astro.url.pathname) ? REPORT_DOCS : AUDIT_DOCS;
+const all = {
+  title: "All Core-Geth audits and reports",
+  href: group === REPORT_DOCS ? "/security/#release-reports" : "/security/#audits",
+};
+const at = group.findIndex((d) => d.href === Astro.url.pathname);
+const previous = at < 0 ? undefined : (group[at - 1] ?? all);
+const next = at < 0 ? undefined : (group[at + 1] ?? all);
+const backInPager = previous === all || next === all;
 
 const canonical = new URL(Astro.url.pathname, SITE_URL).href;
+// The address under the hero, cut after the host and after each path segment so a phone can wrap it
+// there rather than mid-word.
+const canonicalParts = [
+  `${new URL(canonical).origin}/`,
+  ...new URL(canonical).pathname.slice(1).split(/(?<=\/)/),
+].filter(Boolean);
 const kindLabel = kind === "report" ? "Release report" : "Audit";
+const plain = (s: string) => s.replaceAll("`", "").replace(/\[([^\]]*)\]\([^)]*\)/g, "$1");
 
 const techArticle = {
   "@context": "https://schema.org",
@@ -24,6 +73,7 @@ const techArticle = {
   "@id": `${canonical}#techarticle`,
   headline: title,
   description,
+  ...(report ? { abstract: report.summary.map(plain).join(" ") } : {}),
   inLanguage: "en",
   datePublished: iso,
   mainEntityOfPage: canonical,
@@ -37,6 +87,14 @@ const techArticleText = JSON.stringify(techArticle).replaceAll("<", "\\u003c");
 <BaseLayout title={title} description={description} crumb={crumb}>
   <PageHero label={label} title={title} em={em}>
     <p class="lede">{description}</p>
+    <p class="doc__url">
+      {canonicalParts.map((part, i) => (
+        <>
+          {i > 0 && <wbr />}
+          {part}
+        </>
+      ))}
+    </p>
   </PageHero>
 
   <section class="band band--surface">
@@ -45,29 +103,112 @@ const techArticleText = JSON.stringify(techArticle).replaceAll("<", "\\u003c");
         <span class="doc__kind">{kindLabel}</span>
         <span aria-hidden="true">·</span>
         <time datetime={iso}>{date}</time>
+        {sourceDoc && (
+          <>
+            <span aria-hidden="true">·</span>
+            <a href={sourceDoc}>Also on docs.coregeth.com</a>
+          </>
+        )}
       </p>
-      <article class="prose">
-        <slot />
-      </article>
-      <p class="doc__back">
-        <a href="/security/">
-          <ArrowText text="All Core-Geth audits and reports" />
-        </a>
-      </p>
+
+      {report && (
+        <section class="doc__summary" aria-labelledby="overview">
+          <h2 id="overview" class="doc__summary-title">
+            Overview
+          </h2>
+          {report.summary.map((paragraph) => (
+            <p>
+              <InlineCode text={paragraph} />
+            </p>
+          ))}
+          <StatStrip stats={report.figures} label={`${title}, in figures`} />
+          <div class="doc__action">
+            <p class="doc__action-text">
+              <InlineCode text={REPORT_ACTION} />
+            </p>
+            <div class="doc__buttons">
+              <a class="button button--primary" href={`/downloads/#${UPGRADE_ANCHOR}`}>
+                {`Move a ${EXPOSED_LINE} node`}
+              </a>
+              <a class="button" href={DOCS.migration.href}>
+                The migration guide
+              </a>
+            </div>
+            <p class="doc__flag">
+              <InlineCode text={DISCOVERY_FLAG_STEP} />
+            </p>
+          </div>
+        </section>
+      )}
+
+      <div class="doc__layout">
+        {contents.length > 0 && (
+          <nav class="doc__toc" aria-label="Contents">
+            <p class="doc__toc-title">Contents</p>
+            <ol>
+              {contents.map((h) => (
+                <li>
+                  <a href={`#${h.slug}`}>{h.text}</a>
+                </li>
+              ))}
+            </ol>
+          </nav>
+        )}
+        {contents.length > 0 && (
+          <details class="doc__toc-compact">
+            <summary>Contents</summary>
+            <ol>
+              {contents.map((h) => (
+                <li>
+                  <a href={`#${h.slug}`}>{h.text}</a>
+                </li>
+              ))}
+            </ol>
+          </details>
+        )}
+        <article class="prose" set:html={designed.html} />
+      </div>
+
+      {(previous || next) && (
+        <nav class="doc__pager" aria-label="Other audits and reports">
+          {previous && (
+            <a class="doc__page doc__page--previous" href={previous.href}>
+              <span class="doc__page-label">Previous</span>
+              <span class="doc__page-title">{previous.title}</span>
+            </a>
+          )}
+          {next && (
+            <a class="doc__page doc__page--next" href={next.href}>
+              <span class="doc__page-label">Next</span>
+              <span class="doc__page-title">{next.title}</span>
+            </a>
+          )}
+        </nav>
+      )}
+      {!backInPager && (
+        <p class="doc__back">
+          <a href={all.href}>
+            <ArrowText text={all.title} />
+          </a>
+        </p>
+      )}
     </div>
   </section>
 
+  <CopyButtons />
   <script is:inline type="application/ld+json" set:html={techArticleText}></script>
 </BaseLayout>
 
 <style>
   .doc {
     display: grid;
-    gap: 1.5rem;
+    grid-template-columns: minmax(0, 1fr);
+    gap: clamp(1.5rem, 3vw, 2.25rem);
   }
 
   .doc__meta {
     display: flex;
+    flex-wrap: wrap;
     gap: 0.6rem;
     align-items: center;
     margin: 0;
@@ -78,9 +219,221 @@ const techArticleText = JSON.stringify(techArticle).replaceAll("<", "\\u003c");
     text-transform: uppercase;
   }
 
+  .doc__meta a {
+    color: var(--muted);
+  }
+
+  /* The page's own address, so a screenshot or a printout says where it lives. One click selects
+     all of it, with no script. */
+  .doc__url {
+    max-width: 100%;
+    margin: 0;
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-size: 0.82rem;
+    overflow-wrap: anywhere;
+    user-select: all;
+  }
+
   .doc__kind {
     color: var(--accent);
     font-weight: 600;
+  }
+
+  /* The summary: what the document found and what to do about it, before the document. */
+  .doc__summary {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.1rem;
+    overflow-wrap: break-word;
+    padding: clamp(1.25rem, 3.5vw, 2.25rem);
+    border: 1px solid var(--hairline);
+    border-top: 4px solid var(--accent);
+    border-radius: var(--radius);
+    background: var(--ground);
+  }
+
+  .doc__summary-title {
+    margin: 0;
+    color: var(--ink);
+    font-size: clamp(1.3rem, 2.6vw, 1.6rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    scroll-margin-top: 1.5rem;
+  }
+
+  .doc__summary > p {
+    margin: 0;
+    color: var(--text);
+    font-size: 1.04rem;
+    line-height: 1.7;
+    text-wrap: pretty;
+  }
+
+  .doc__summary > p:first-of-type {
+    color: var(--ink);
+    font-size: clamp(1.08rem, 2vw, 1.2rem);
+  }
+
+  .doc__action {
+    display: grid;
+    gap: 1rem;
+    justify-items: start;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--hairline);
+  }
+
+  .doc__action-text {
+    margin: 0;
+    color: var(--ink);
+    font-weight: 600;
+    line-height: 1.6;
+  }
+
+  .doc__buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .doc__flag {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.92rem;
+    line-height: 1.6;
+  }
+
+  /* The contents beside the document on a wide screen, folded above it on a narrow one. */
+  .doc__layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.5rem;
+  }
+
+  .doc__toc {
+    display: none;
+  }
+
+  .doc__toc-title {
+    margin: 0 0 0.75rem;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .doc__toc ol,
+  .doc__toc-compact ol {
+    display: grid;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border-left: 2px solid var(--hairline);
+  }
+
+  .doc__toc a,
+  .doc__toc-compact a {
+    display: block;
+    margin-left: -2px;
+    padding: 0.32rem 0 0.32rem 0.9rem;
+    border-left: 2px solid transparent;
+    color: var(--text);
+    font-size: 0.88rem;
+    line-height: 1.35;
+    text-decoration: none;
+  }
+
+  .doc__toc a:hover,
+  .doc__toc a:focus-visible,
+  .doc__toc-compact a:hover {
+    border-left-color: var(--accent);
+    color: var(--accent);
+  }
+
+  .doc__toc-compact {
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius);
+    background: var(--ground);
+  }
+
+  .doc__toc-compact summary {
+    padding: 0.85rem 1.1rem;
+    color: var(--ink);
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .doc__toc-compact ol {
+    margin: 0 1.1rem 1rem;
+  }
+
+  /* The contents column is narrow enough to leave the report a column its widest tables fit
+     (maintainer, 2026-11-03): at 14rem and a 3rem gap the Go toolchain audit's tables scrolled. */
+  @media (min-width: 72rem) {
+    .doc__layout {
+      grid-template-columns: 12rem minmax(0, 1fr);
+      gap: 2rem;
+      align-items: start;
+    }
+
+    .doc__toc {
+      display: block;
+      position: sticky;
+      top: 1.5rem;
+      max-height: calc(100vh - 3rem);
+      overflow-y: auto;
+    }
+
+    .doc__toc-compact {
+      display: none;
+    }
+  }
+
+  .doc__pager {
+    display: grid;
+    gap: 1rem;
+  }
+
+  @media (min-width: 40rem) {
+    .doc__pager {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .doc__page--next {
+      grid-column: 2;
+      text-align: right;
+    }
+  }
+
+  /* The two cards share a height; each one's label and title stay at its top. */
+  .doc__page {
+    display: grid;
+    align-content: start;
+    gap: 0.3rem;
+    padding: 1rem 1.2rem;
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius);
+    color: var(--ink);
+    text-decoration: none;
+  }
+
+  .doc__page:hover {
+    border-color: var(--accent);
+  }
+
+  .doc__page-label {
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .doc__page-title {
+    color: var(--accent);
+    font-weight: 700;
   }
 
   .doc__back {
@@ -98,46 +451,65 @@ const techArticleText = JSON.stringify(techArticle).replaceAll("<", "\\u003c");
     text-decoration: underline;
   }
 
-  /* The rendered document. Text runs a reading measure; tables, code and the collapsible
-     advisory lists span the band so their columns stay legible. */
+  /* The document. One column as wide as the space beside the contents. An implicit track sizes
+     itself to the widest content in it, and a grid item will not shrink below its own longest
+     line, so a long table or a code line would otherwise widen the page; with both settled,
+     those scroll in their own box. */
   .prose {
     display: grid;
-    gap: 1.15rem;
+    grid-template-columns: minmax(0, 1fr);
+    gap: clamp(2rem, 4vw, 2.75rem);
     color: var(--text);
     font-size: 1.02rem;
-    line-height: 1.65;
+    line-height: 1.7;
+    /* A run like "block/body/receipt/transaction/snap" has no break opportunity, so on a phone it
+       breaks where it must rather than widening the page. */
+    overflow-wrap: break-word;
   }
 
-  .prose > :global(p),
-  .prose > :global(ul),
-  .prose > :global(ol),
-  .prose > :global(blockquote),
-  .prose > :global(h2),
-  .prose > :global(h3),
-  .prose > :global(h4) {
-    max-width: 46rem;
+  .prose > :global(*),
+  .prose :global(.report-section > *),
+  .prose :global(.finding > *),
+  .prose :global(.report-front > *) {
+    min-width: 0;
+  }
+
+  .prose :global(.report-section),
+  .prose :global(.report-front) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1.1rem;
+  }
+
+  .prose :global(p) {
+    margin: 0;
+    text-wrap: pretty;
   }
 
   .prose :global(h2) {
-    margin: 1.9rem 0 0;
-    padding-top: 1.4rem;
+    margin: 0;
+    padding-top: 1.25rem;
     border-top: 2px solid var(--ink);
     color: var(--ink);
-    font-size: clamp(1.4rem, 3vw, 1.75rem);
-    font-weight: 750;
+    font-size: clamp(1.45rem, 3vw, 1.85rem);
+    font-weight: 800;
     letter-spacing: -0.02em;
     line-height: 1.2;
+    scroll-margin-top: 1.5rem;
   }
 
   .prose :global(h3) {
-    margin: 1.4rem 0 0;
+    margin: 0.6rem 0 0;
     color: var(--ink);
     font-size: 1.2rem;
-    font-weight: 700;
+    font-weight: 750;
+    letter-spacing: -0.01em;
+    line-height: 1.3;
+    scroll-margin-top: 1.5rem;
   }
 
   .prose :global(h4) {
-    margin: 1.1rem 0 0;
+    margin: 0.4rem 0 0;
     color: var(--ink);
     font-size: 1.02rem;
     font-weight: 700;
@@ -154,19 +526,36 @@ const techArticleText = JSON.stringify(techArticle).replaceAll("<", "\\u003c");
     font-weight: 700;
   }
 
+  /* A link to a release, in the tone of the repository that published it. Written against the
+     link itself so it outranks the page green every link above takes. */
+  .prose :global(a.namespace--previous) {
+    color: var(--exposed);
+  }
+
+  .prose :global(a.namespace--current) {
+    color: var(--accent);
+  }
+
   .prose :global(ul),
-  .prose :global(ol) {
+  .prose :global(ol:not(.report-rail)) {
     display: grid;
-    gap: 0.5rem;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.55rem;
+    margin: 0;
     padding-left: 1.4rem;
   }
 
   .prose :global(li) {
+    min-width: 0;
     padding-left: 0.2rem;
   }
 
-  /* Inline code keeps the ink color; a namespace span keeps its red or green tone, which
-     the rehype pass in astro.config.mjs sets and global.css colors. */
+  .prose :global(li::marker) {
+    color: var(--accent);
+  }
+
+  /* Inline code keeps the ink color; a namespace span keeps its red or green tone, which the
+     mirror pipeline sets and global.css colors. */
   .prose :global(:not(pre) > code) {
     padding: 0.1rem 0.35rem;
     border-radius: calc(var(--radius) / 2.5);
@@ -180,52 +569,726 @@ const techArticleText = JSON.stringify(techArticle).replaceAll("<", "\\u003c");
     color: var(--ink);
   }
 
-  .prose :global(pre) {
+  /* Code that is a link's text reads as the link does. */
+  .prose :global(a > code:not(.namespace--current, .namespace--previous)) {
+    color: inherit;
+  }
+
+  /* A run of changes, "`#34787` (stop serving ...)", one a row, in the box and spacing of the
+     commit table it usually sits under. */
+  .prose :global(.series) {
+    display: grid;
+    gap: 0;
     margin: 0;
-    padding: 1rem 1.15rem;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid var(--hairline);
     border-radius: var(--radius);
+    font-size: 0.88rem;
+    line-height: 1.5;
+    list-style: none;
+  }
+
+  .prose :global(.series li) {
+    display: grid;
+    grid-template-columns: 5.5rem minmax(0, 1fr);
+    gap: 0.85rem;
+    align-items: baseline;
+    margin: 0;
+    padding: 0.6rem 0.85rem;
+    border-bottom: 1px solid var(--hairline);
+  }
+
+  .prose :global(.series li:last-child) {
+    border-bottom: 0;
+  }
+
+  .prose :global(.series code) {
+    justify-self: start;
+  }
+
+  /* A status table's legend: each word in its chip, its meaning beside it. */
+  .prose :global(.legend) {
+    display: grid;
+    gap: 0.45rem;
+  }
+
+  .prose :global(.legend__label) {
+    margin: 0;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .prose :global(.legend__list) {
+    display: grid;
+    gap: 0.4rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    font-size: 0.92rem;
+  }
+
+  /* One issue's identifiers, one a line: the first as written, its aliases in the code face. */
+  .prose :global(.ids) {
+    display: grid;
+    gap: 0.15rem;
+  }
+
+  .prose :global(.ids__alias) {
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+  }
+
+  /* Code: a dark block with the copy button `/downloads/` uses, and room for the button so a
+     long line scrolls past it rather than starting underneath. */
+  .prose :global(.shell-wrap pre) {
+    margin: 0;
+    padding: 1rem 5.5rem 1rem 1.15rem;
     overflow-x: auto;
+    border-radius: var(--radius);
     font-size: 0.85rem;
+    line-height: 1.6;
+  }
+
+  /* A labeled fact list: the label in the code face beside its value, stacked on a phone. */
+  .prose :global(.facts) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+    margin: 0;
+    border-top: 1px solid var(--hairline);
+  }
+
+  .prose :global(.facts__row) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.15rem;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid var(--hairline);
+  }
+
+  .prose :global(.facts dt) {
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  .prose :global(.facts dd) {
+    min-width: 0;
+    margin: 0;
+    color: var(--ink);
+  }
+
+  /* The rest of a fact that opens with a repository and its chip, on the line under them. */
+  .prose :global(.facts__line) {
+    display: block;
+  }
+
+  @media (min-width: 40rem) {
+    .prose :global(.facts__row) {
+      grid-template-columns: 12rem minmax(0, 1fr);
+      gap: 1.25rem;
+      align-items: baseline;
+    }
+  }
+
+  /* A paragraph that opens with a label carries it as an eyebrow. */
+  .prose :global(.labeled__label) {
+    display: block;
+    margin-bottom: 0.2rem;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.74rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .prose :global(.report-kicker) {
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .prose :global(.report-kicker strong) {
+    color: inherit;
+  }
+
+  .prose :global(.footnote) {
+    color: var(--muted);
+    font-size: 0.88rem;
+    line-height: 1.6;
+  }
+
+  /* The document's opening facts, as a card. */
+  .prose :global(.report-front) {
+    padding: clamp(1.1rem, 3vw, 1.75rem);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius);
+  }
+
+  /* Sections a reader acts on, or reads first, as panels. */
+  .prose :global(.report-section--action),
+  .prose :global(.report-section--summary) {
+    padding: clamp(1.1rem, 3vw, 1.75rem);
+    border: 1px solid var(--hairline);
+    border-left: 4px solid var(--accent);
+    border-radius: var(--radius);
+    background: var(--ground);
+  }
+
+  .prose :global(.report-section--action > h2),
+  .prose :global(.report-section--summary > h2) {
+    padding-top: 0;
+    border-top: 0;
+  }
+
+  /* A release in the section an operator acts on, in its tab: its name and date, then a row per
+     state, the rows the census on /security/ draws. */
+  .prose :global(.release) {
+    display: grid;
+    gap: 0.75rem;
+    padding: clamp(1.1rem, 3vw, 1.75rem);
+  }
+
+  .prose :global(.release-name) {
+    display: block;
+    font-size: 1.1rem;
+  }
+
+  .prose :global(.report-section--references),
+  .prose :global(.report-section--support) {
+    font-size: 0.94rem;
+  }
+
+  @media (min-width: 60rem) {
+    .prose :global(.report-section--references ul) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      column-gap: 2.5rem;
+    }
+  }
+
+  /* Under each reference, where it goes, in the code face; a repository keeps its tone. */
+  .prose :global(.ref-host) {
+    display: block;
+    margin-top: 0.1rem;
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.76rem;
+    overflow-wrap: anywhere;
+  }
+
+  .prose :global(.ref-host.namespace--previous) {
+    color: var(--exposed);
+  }
+
+  .prose :global(.ref-host.namespace--current) {
+    color: var(--accent);
+  }
+
+  /* The sponsor note inside the site's corner brackets, as the support band on the home page is. */
+  .prose :global(.report-section--support.bracketed) {
+    padding: clamp(1.4rem, 4vw, 2.25rem);
+  }
+
+  /* Two labeled lists side by side, such as what an audit covered and what it left out: the first
+     under the accent, the "Out of" one muted. */
+  .prose :global(.label-lists) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+  }
+
+  .prose :global(.label-list) {
+    display: grid;
+    align-content: start;
+    gap: 0.7rem;
+    padding: 1.1rem 1.25rem;
+    border: 1px solid var(--hairline);
+    border-top: 3px solid var(--accent);
+    border-radius: var(--radius);
+    background: var(--surface);
+  }
+
+  .prose :global(.label-list--out) {
+    border-top-color: var(--muted);
+    background: var(--ground);
+  }
+
+  .prose :global(.label-list--out li) {
+    color: var(--muted);
+  }
+
+  .prose :global(.label-list--out li::marker) {
+    color: var(--muted);
+  }
+
+  /* Methods, a labeled paragraph each, as cards side by side. */
+  .prose :global(.labeled-grid) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+  }
+
+  .prose :global(.labeled-grid > .labeled) {
+    padding: 1.1rem 1.25rem;
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius);
+    background: var(--surface);
+  }
+
+  @media (min-width: 48rem) {
+    .prose :global(.label-lists),
+    .prose :global(.labeled-grid),
+    .prose :global(.credits) {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  /* A finding that is not a CVE, drawn as the CVE cards are, and so is every "Finding:" section. */
+  .prose :global(.report-section--card),
+  .prose :global(.report-section--finding) {
+    padding: clamp(1.1rem, 3vw, 1.75rem);
+    border: 1px solid var(--hairline);
+    border-top: 3px solid var(--ink);
+    border-radius: var(--radius);
+    background: var(--surface);
+  }
+
+  .prose :global(.report-section--card > h2),
+  .prose :global(.report-section--finding > h2),
+  .prose :global(.report-section--support > h2) {
+    padding-top: 0;
+    border-top: 0;
+  }
+
+  /* The people whose reports the work builds on, a card each, the handle in the code face. */
+  .prose :global(.credits) {
+    gap: 0.8rem;
+    padding-left: 0;
+    list-style: none;
+  }
+
+  .prose :global(.credit) {
+    padding: 1rem 1.15rem;
+    border: 1px solid var(--hairline);
+    border-left: 3px solid var(--accent);
+    border-radius: var(--radius);
+    background: var(--surface);
+  }
+
+  /* Inline: the handle is the subject of the item's sentence, which may go on with a comma. */
+  .prose :global(.credit__handle) {
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-size: 0.9rem;
+  }
+
+  .prose :global(.credit__handle a) {
+    font-weight: inherit;
+  }
+
+  /* A finding: a card with its severity, and whether it was exploited, as chips. */
+  .prose :global(.finding) {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+    padding: clamp(1.1rem, 3vw, 1.75rem);
+    border: 1px solid var(--hairline);
+    border-top: 3px solid var(--ink);
+    border-radius: var(--radius);
+    background: var(--surface);
+    box-shadow: 0 1px 0 var(--hairline);
+  }
+
+  .prose :global(.finding > h3) {
+    margin: 0;
+  }
+
+  .prose :global(.finding__chips) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  /* Tabs with no script, for the findings and for the releases an operator picks from
+     (maintainer, 2026-11-03). Each tab is a link to an anchor in its panel, and the panel holding
+     the link target shows; with nothing targeted, the first does. The tabs wrap as a strip above
+     the panels: each tab's wrapper steps out of the layout, so its label and panel order
+     themselves in the strip's flex row. Without `:has()` every panel shows, stacked. */
+  .prose :global(.report-tabs) {
+    display: flex;
+    flex-wrap: wrap;
+    overflow: hidden;
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius);
+    background: var(--surface);
+  }
+
+  .prose :global(.report-tab) {
+    display: contents;
+  }
+
+  .prose :global(.report-tab__label) {
+    display: grid;
+    flex: 1 1 7.5rem;
+    order: 0;
+    gap: 0.35rem;
+    justify-items: center;
+    align-content: start;
+    padding: 0.75rem 0.6rem;
+    border-right: 1px solid var(--hairline);
+    border-bottom: 1px solid var(--hairline);
+    background: var(--ground);
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    font-weight: 650;
+    text-align: center;
+    text-decoration: none;
+  }
+
+  .prose :global(.report-tab__label:hover) {
+    color: var(--ink);
+  }
+
+  .prose :global(.report-tab__chips) {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem;
+    justify-content: center;
+  }
+
+  .prose :global(.report-tab__panel) {
+    flex: 1 1 100%;
+    order: 1;
+    min-width: 0;
+  }
+
+  /* A finding's card fills its panel: the strip above it is its frame. */
+  .prose :global(.report-tab__panel .finding) {
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  /* An anchor reached by a link keeps the strip in view above it. */
+  .prose :global(.report-tab__panel [id]) {
+    scroll-margin-top: 9rem;
+  }
+
+  @supports selector(:has(*)) {
+    .prose :global(.report-tab__panel) {
+      display: none;
+    }
+
+    .prose :global(.report-tab__panel:has(:target)),
+    .prose :global(.report-tabs:not(:has(:target)) .report-tab:first-child .report-tab__panel) {
+      display: block;
+    }
+
+    .prose :global(.report-tab:has(:target) .report-tab__label),
+    .prose :global(.report-tabs:not(:has(:target)) .report-tab:first-child .report-tab__label) {
+      border-bottom-color: transparent;
+      background: var(--surface);
+      box-shadow: inset 0 3px 0 var(--accent);
+      color: var(--ink);
+    }
+  }
+
+  @media (max-width: 40rem) {
+    .prose :global(.report-tab__panel [id]) {
+      scroll-margin-top: 18rem;
+    }
+  }
+
+  /* Dates and events, as the site's timeline rail. */
+  .prose :global(.report-rail) {
+    display: grid;
+    gap: 1.15rem;
+    margin: 0;
+    padding: 0 0 0 1.4rem;
+    border-left: 2px solid var(--hairline);
+    list-style: none;
+  }
+
+  .prose :global(.report-rail__item) {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.2rem;
+  }
+
+  .prose :global(.report-rail__item > *) {
+    min-width: 0;
+  }
+
+  .prose :global(.report-rail__item::before) {
+    position: absolute;
+    top: 0.3rem;
+    left: calc(-1.4rem - 6px);
+    width: 10px;
+    height: 10px;
+    border: 2px solid var(--accent);
+    border-radius: 50%;
+    background: var(--surface);
+    content: "";
+  }
+
+  .prose :global(.report-rail__date) {
+    color: var(--muted);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+    font-weight: 650;
+  }
+
+  .prose :global(.report-rail__title) {
+    color: var(--ink);
+    font-weight: 700;
+  }
+
+  .prose :global(.report-rail__body) {
+    color: var(--text);
+    line-height: 1.6;
+  }
+
+  /* Tables scroll in their own box; a status or severity cell carries a chip. */
+  .prose :global(.table-wrap) {
+    overflow-x: auto;
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius);
+  }
+
+  .prose :global(.table-wrap:focus-visible) {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  .prose :global(table) {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+    font-variant-numeric: tabular-nums;
     line-height: 1.5;
   }
 
-  /* A wide table scrolls within the band rather than forcing the page wide. */
-  .prose :global(table) {
-    display: block;
-    width: 100%;
-    overflow-x: auto;
-    border-collapse: collapse;
-    font-size: 0.86rem;
-    font-variant-numeric: tabular-nums;
+  .prose :global(thead th) {
+    background: var(--ground);
+    color: var(--ink);
+    font-size: 0.74rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-align: left;
+    text-transform: uppercase;
   }
 
-  .prose :global(thead th) {
-    border-bottom: 1px solid var(--ink);
-    color: var(--muted);
-    font-weight: 600;
-    text-align: left;
+  /* A head wraps rather than widen its column (maintainer, 2026-11-03): set on one line, a head
+     such as "…already published that day" pushed the Go toolchain tables past a desktop column,
+     and a table that fits on one line keeps it. A table of eight or more columns, the advisory
+     lists, also takes slightly smaller type and tighter cells, so it fits a desktop column whole. */
+  .prose :global(.table--dense) {
+    font-size: 0.78rem;
+  }
+
+  .prose :global(.table--dense th),
+  .prose :global(.table--dense td) {
+    padding: 0.5rem 0.35rem;
+  }
+
+  /* A list whose every item opens in bold, as cards: a bold sentence heads its card on a line of
+     its own, a bold subject or label stays in its sentence. */
+  .prose :global(.claims) {
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .prose :global(.claim) {
+    padding: 1rem 1.15rem;
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius);
+    background: var(--surface);
+  }
+
+  .prose :global(.claim > :is(p, ul, ol, .shell-wrap, .table-wrap)) {
+    margin-top: 0.75rem;
+  }
+
+  .prose :global(.claim > :first-child) {
+    margin-top: 0;
+  }
+
+  /* A label card that holds a code block or a list as well as its text; one holding a code block
+     takes the grid's full width, so a long command is not squeezed under its copy button. */
+  .prose :global(.labeled > * + *) {
+    margin-top: 0.6rem;
+  }
+
+  .prose :global(.labeled-grid > .labeled:has(> .shell-wrap)) {
+    grid-column: 1 / -1;
+  }
+
+  .prose :global(.claim__lead--block) {
+    display: block;
+    margin-bottom: 0.3rem;
+    font-size: 1.02rem;
+  }
+
+  /* What the network runs, in the security page census's tones: a bar at the row's left edge, a
+     faint tint, and a chip naming the state under the release. */
+  .prose :global(.network-row--vulnerable td) {
+    background: var(--exposed-tint);
+  }
+
+  .prose :global(.network-row--recommended td) {
+    background: var(--recommended-tint);
+  }
+
+  .prose :global(.network-row--vulnerable td:first-child) {
+    box-shadow: inset 3px 0 0 var(--exposed);
+  }
+
+  .prose :global(.network-row--recommended td:first-child) {
+    box-shadow: inset 3px 0 0 var(--accent);
+  }
+
+  .prose :global(.cell-state) {
+    display: block;
+    margin-top: 0.4rem;
+  }
+
+  /* In a collapsed list, a dense table runs to the list's own edges rather than inside its
+     margins, which is the width it needs to fit whole. */
+  .prose :global(details > .table-wrap--dense) {
+    margin-inline: 0;
+    border-inline: 0;
+    border-radius: 0;
+  }
+
+  /* A version, a commit or a date in a cell is read whole: squeezed, a column broke "v1.12.23"
+     after its sixth character and a date at its hyphen. A phone keeps breaking code, where a
+     table that cannot fit scrolls in its box. */
+  .prose :global(.nowrap) {
     white-space: nowrap;
+  }
+
+  @media (min-width: 48rem) {
+    .prose :global(td code) {
+      overflow-wrap: normal;
+    }
+  }
+
+  .prose :global(thead th code) {
+    text-transform: none;
   }
 
   .prose :global(th),
   .prose :global(td) {
-    padding: 0.5rem 0.75rem;
+    padding: 0.6rem 0.85rem;
     border-bottom: 1px solid var(--hairline);
     text-align: left;
     vertical-align: top;
   }
 
+  /* An identifier in the first column, a CVE or a release, is read whole, never broken at its
+     hyphens. */
+  .prose :global(.table-wrap td:first-child a) {
+    white-space: nowrap;
+  }
+
+  .prose :global(tbody tr:last-child td) {
+    border-bottom: 0;
+  }
+
+  /* Under a chip: the release its state belongs to, in the code face, then any parenthetical
+     note, each on a line of its own. */
+  .prose :global(.cell-release) {
+    display: block;
+    margin-top: 0.3rem;
+    color: var(--text);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+  }
+
+  .prose :global(.cell-note) {
+    display: block;
+    margin-top: 0.25rem;
+    color: var(--muted);
+    font-size: 0.82rem;
+  }
+
+  /* A table of changes: the old value muted, the new one in the accent, so a reader scans what
+     moved; a removed module is struck through beside its successor. The column headers say which
+     is which, so the color and the line only reinforce them. */
+  /* The code selectors repeat the inline-code rule's own exclusion, which is what lets them outrank
+     it; a repository name keeps its namespace tone either way. */
+  .prose :global(.delta__before),
+  .prose :global(.delta__before code:not(.namespace--current, .namespace--previous)) {
+    color: var(--muted);
+  }
+
+  .prose :global(.delta__after),
+  .prose :global(.delta__after code:not(.namespace--current, .namespace--previous)) {
+    color: var(--accent);
+    font-weight: 650;
+  }
+
+  .prose :global(.delta-table--renames .delta__before code) {
+    text-decoration: line-through;
+    text-decoration-color: var(--muted);
+  }
+
+  /* A run of module paths, one a cell, as many to a row as fit; removed ones as the Removed
+     column draws them. */
+  .prose :global(.modules) {
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr));
+    gap: 0.45rem 1rem;
+    padding: 0;
+    list-style: none;
+  }
+
+  .prose :global(.modules li) {
+    padding: 0;
+  }
+
+  .prose :global(.modules--added code:not(.namespace--current, .namespace--previous)) {
+    color: var(--accent);
+    font-weight: 650;
+  }
+
+  .prose :global(.modules--removed code:not(.namespace--current, .namespace--previous)) {
+    color: var(--muted);
+    text-decoration: line-through;
+    text-decoration-color: var(--muted);
+  }
+
   .prose :global(blockquote) {
     margin: 0;
-    padding-left: 1rem;
-    border-left: 0.25rem solid var(--accent);
-    color: var(--text);
+    padding: 1rem 1.2rem;
+    border-left: 3px solid var(--accent);
+    background: var(--quote-ground);
+  }
+
+  .prose :global(blockquote p) {
+    color: var(--accent);
+    font-family: var(--font-mono);
+    font-size: 0.92rem;
+    line-height: 1.65;
   }
 
   .prose :global(hr) {
     width: 100%;
     height: 1px;
-    margin: 0.5rem 0;
+    margin: 0;
     border: 0;
     background: var(--hairline);
   }

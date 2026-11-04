@@ -1,4 +1,5 @@
 import type { APIRoute } from "astro";
+import { REPORT_ACTION, REPORTS } from "@/data/reports";
 import {
   ABOUT,
   AUDITS,
@@ -152,6 +153,21 @@ export const GET: APIRoute = () => {
         `- [${audit.title}](${absolute(audit.href)}), ${audit.date.text}: ${audit.summary.replaceAll("`", "")}`,
     ),
     "",
+    // The summary each report page opens with, the same words, so a reader of this file meets what
+    // a reader of the page meets first.
+    ...Object.entries(REPORTS).flatMap(([slug, report]) => {
+      const audit = AUDITS.find((a) => a.href === `/security/${slug}/`);
+      return [
+        `### [${audit?.title ?? slug}](${SITE_URL}/security/${slug}/)`,
+        "",
+        ...report.summary.flatMap((paragraph) => [
+          wrap(paragraph.replaceAll("](/", `](${SITE_URL}/`)),
+          "",
+        ]),
+        wrap(REPORT_ACTION),
+        "",
+      ];
+    }),
     "Every release and event in this record, newest first, each release naming the repository that published it:",
     "",
     ...RELEASE_TIMELINE.map((item) => {

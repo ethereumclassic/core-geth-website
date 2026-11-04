@@ -11,8 +11,6 @@ kind: "audit"
 sourceDoc: "https://docs.coregeth.com/audits/2026-08-dependency-modernization/"
 ---
 
-# Dependency and toolchain modernization: v1.12.x archive to v1.13.x
-
 This document records the dependency and toolchain changes that take Core-Geth
 from its December 2024 archive state to the `v1.13.x` line. It is a companion to
 `2026-03-security-audit.md` and `2026-08-security-followup.md`, which cover the
