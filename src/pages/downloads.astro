@@ -187,20 +187,30 @@ const macosCheck = {
   after: `Each line must print a version, and \`go version\` must print \`${go.version}\`. \`gcc --version\` prints Apple clang, the C compiler on macOS. A line that prints an error names a tool the steps above did not install. If \`go version\` prints another release, a Go earlier on \`PATH\`, such as one from Homebrew, runs in its place: uninstall that Go.`,
 };
 
-// Windows: WinGet, which comes with Windows 11 and current Windows 10, installs Git and MinGW-w64's GCC, the
-// compiler cgo uses there. The agreement flags keep WinGet from stopping at a prompt, which would take the
-// next pasted line as its answer. Go is go.dev's installer for the pinned release, checked by a line that
-// prints `True` or `False` against the SHA-256 go.dev publishes, since the pin lists archives only.
-// A window open before an install does not see the new `PATH`, so the check runs in a new one, which opens
-// in the home folder, where the build then clones `core-geth`.
-const windowsTools = (lead = "") => ({
-  title: "Install Git and a C compiler",
-  before: `${lead}In PowerShell. WinGet, which comes with Windows 11 and current Windows 10, installs Git and MinGW-w64, the C compiler a build needs on Windows:`,
-  code: `winget install --id Git.Git -e --source winget --accept-source-agreements --accept-package-agreements
-winget install --id BrechtSanders.WinLibs.POSIX.UCRT -e --source winget --accept-source-agreements --accept-package-agreements`,
+// Windows: the build guide's route, Chocolatey's `mingw` and `git`. `mingw` is MinGW-Builds, the MinGW-w64
+// distribution GitHub's Windows runners install, with the same thread, exception and runtime settings, so a
+// reader's compiler is the kind the release builds use. WinGet, which comes with Windows 11 and current
+// Windows 10, installs Chocolatey from its publisher, so no script is piped into PowerShell, and its
+// agreement flags keep it from stopping at a prompt that would take the next pasted line as its answer. Go is
+// go.dev's installer for the pinned release, checked by a line that prints `True` or `False` against the
+// SHA-256 go.dev publishes, since the pin lists archives only. A window open before an install does not see
+// the new `PATH`, so Chocolatey runs in a new window, and the check in another, which opens in the home
+// folder, where the build then clones `core-geth`.
+const windowsChocolatey = (lead = "") => ({
+  title: "Install Chocolatey",
+  before: `${lead}In PowerShell. WinGet, which comes with Windows 11 and current Windows 10, installs Chocolatey, the package manager the build guide uses on Windows:`,
+  code: "winget install --id Chocolatey.Chocolatey -e --source winget --accept-source-agreements --accept-package-agreements",
   after:
-    "Approve any prompt an installer shows. With Chocolatey instead, run `choco install mingw git -y` in a PowerShell window opened with Run as administrator.",
+    "Approve the prompt the installer shows. The next step needs a new window: one opened before the install does not find Chocolatey.",
 });
+
+const windowsTools = {
+  title: "Install Git and a C compiler",
+  before: "In a new PowerShell window, opened with Run as administrator:",
+  code: "choco install mingw git -y",
+  after:
+    "`mingw` is MinGW-w64, the C compiler cgo needs on Windows. The next two steps can run in this window.",
+};
 
 const windowsGoDownload = {
   title: `Download Go ${GO_RELEASE} and check it`,
@@ -272,7 +282,8 @@ const SOURCE_PANELS: readonly PlatformPanel[] = [
     label: "Windows",
     heading: "Build from source on Windows",
     steps: [
-      windowsTools(),
+      windowsChocolatey(),
+      windowsTools,
       windowsGoDownload,
       windowsGoInstall,
       windowsCheck,
@@ -882,7 +893,8 @@ const MOVE_SOURCE_PANELS: readonly PlatformPanel[] = [
     heading: "Build from source and move the node on Windows",
     steps: [
       trialNode,
-      windowsTools(nodeKeepsRunning),
+      windowsChocolatey(nodeKeepsRunning),
+      windowsTools,
       windowsGoDownload,
       windowsGoInstall,
       windowsCheck,
