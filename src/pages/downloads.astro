@@ -318,7 +318,42 @@ cd core-geth
 go run build/ci.go install ./cmd/geth
 .\\build\\bin\\geth.exe version`;
 
-// The build-from-source tabs under Install: one per platform, each from nothing installed to a built `main`.
+// Starting a node is the last step of every install tab, a download or a build from source, in a block of its
+// own that a failed check or install above it cannot reach.
+const startUnix = {
+  title: "Start a node on Ethereum Classic",
+  code: "geth --classic",
+  after: "For the Mordor test network, run `geth --mordor` instead.",
+};
+
+const startWindows = {
+  title: "Start a node on Ethereum Classic",
+  code: `cd C:\\core-geth
+.\\geth.exe --classic`,
+  after: "For the Mordor test network, run `.\\geth.exe --mordor` instead.",
+};
+
+// A build from source installs where the downloads do, so it starts the same way: `/usr/local/bin` on Linux
+// and macOS, which a new Mac can lack, and `C:\core-geth` on Windows, where the Windows download unpacks.
+const installBuild = (mac = false) => ({
+  title: "Install the build",
+  code: `ls build/bin/geth &&${mac ? "\n  sudo mkdir -p /usr/local/bin &&" : ""}
+  sudo install -m 0755 build/bin/geth /usr/local/bin/geth &&
+  geth version`,
+  after:
+    "Run this in the folder the build step left you in: the first line stops the block anywhere else. `geth version` must print the same first line and `Git Commit` line the build printed.",
+});
+
+const installBuildWindows = {
+  title: "Install the build",
+  code: `New-Item -ItemType Directory -Force C:\\core-geth | Out-Null
+Copy-Item .\\build\\bin\\geth.exe C:\\core-geth\\geth.exe
+C:\\core-geth\\geth.exe version`,
+  after:
+    "Run these in the `core-geth` folder the build step left you in. The last line must print the same first line and `Git Commit` line the build printed. `C:\\core-geth` is where the Windows download puts the client, so a node starts the same way from either.",
+};
+
+// The build-from-source tabs under Install: one per platform, each from nothing installed to a running node.
 const SOURCE_PANELS: readonly PlatformPanel[] = [
   {
     id: "linux",
@@ -333,6 +368,8 @@ const SOURCE_PANELS: readonly PlatformPanel[] = [
         code: buildMain,
         after: `${mainBranch} An existing \`core-geth\` folder stops this block at the clone rather than building an old copy: to build \`main\` again, run \`git pull\` in that folder and build there, or remove the folder first.`,
       },
+      installBuild(),
+      startUnix,
     ],
     guide: { label: "Build from source", href: DOCS.buildFromSource.href },
   },
@@ -350,6 +387,8 @@ const SOURCE_PANELS: readonly PlatformPanel[] = [
         code: buildMain,
         after: `${mainBranch} An existing \`core-geth\` folder stops this block at the clone rather than building an old copy: to build \`main\` again, run \`git pull\` in that folder and build there, or remove the folder first.`,
       },
+      installBuild(true),
+      startUnix,
     ],
     guide: { label: "Build from source", href: DOCS.buildFromSource.href },
   },
@@ -370,6 +409,8 @@ const SOURCE_PANELS: readonly PlatformPanel[] = [
         code: windowsBuild,
         after: `${mainBranch} Run these in PowerShell, one line at a time. If \`git clone\` reports that \`core-geth\` already exists, run \`git pull\` in that folder before the build line.`,
       },
+      installBuildWindows,
+      startWindows,
     ],
     guide: { label: "Build from source", href: DOCS.buildFromSource.href },
   },
@@ -410,11 +451,7 @@ sha256sum -c core-geth-linux-${releaseTag}.zip.sha256 &&
         after:
           "`sha256sum -c` must print `OK`: if it prints `FAILED`, delete the file and download it again rather than running it. On an Arm machine, put the name for your processor where the file name says `linux`: `arm64` if `uname -m` prints `aarch64` or `arm64`, `arm7` for `armv7l`, `arm6` for `armv6l`, and `arm5` for `armv5tel`.",
       },
-      {
-        title: "Start a node on Ethereum Classic",
-        code: "geth --classic",
-        after: "For the Mordor test network, run `geth --mordor` instead.",
-      },
+      startUnix,
     ],
     guide: { label: "Linux users guide", href: `${DOCS_URL}getting-started/run/linux/` },
   },
@@ -433,11 +470,7 @@ shasum -a 256 -c core-geth-osx-arm64-${releaseTag}.zip.sha256 &&
   geth version`,
         after: `\`shasum -a 256 -c\` must print \`OK\`: if it prints \`FAILED\`, delete the file and download it again rather than running it. On an Intel Mac, put \`osx\` where the file names say \`osx-arm64\`. A browser download carries the quarantine attribute, which macOS blocks: \`xattr -d com.apple.quarantine geth\` clears it.`,
       },
-      {
-        title: "Start a node on Ethereum Classic",
-        code: "geth --classic",
-        after: "For the Mordor test network, run `geth --mordor` instead.",
-      },
+      startUnix,
     ],
     guide: { label: "macOS users guide", href: `${DOCS_URL}getting-started/run/macos/` },
   },
@@ -462,12 +495,7 @@ Get-Content "core-geth-win64-${releaseTag}.zip.sha256"`,
 C:\\core-geth\\geth.exe version`,
         after: `The first line \`geth.exe version\` prints must name a \`${RECOMMENDED_LINE}\` release.`,
       },
-      {
-        title: "Start a node on Ethereum Classic",
-        code: `cd C:\\core-geth
-.\\geth.exe --classic`,
-        after: "For the Mordor test network, run `.\\geth.exe --mordor` instead.",
-      },
+      startWindows,
     ],
     guide: { label: "Windows users guide", href: `${DOCS_URL}getting-started/run/windows/` },
   },
@@ -577,6 +605,13 @@ const trialNode = {
   after: `Best practice before you move a \`${EXPOSED_LINE}\` node: set up one new node on the \`${RECOMMENDED_LINE}\` line, on a machine of its own beside the nodes you run, with the [install steps](#install) at the top of this page, and point no RPC clients or miners at it. It can sync from the network, or start from a copy of a stopped \`${EXPOSED_LINE}\` node's data directory without its \`geth/nodekey\`. Once \`eth.syncing\` returns \`false\` and \`net.peerCount\` is above zero ([How to tell it is done](${DOCS_URL}getting-started/run-classic-node/#how-to-tell-it-is-done)), move each \`${EXPOSED_LINE}\` node with the steps below.`,
 };
 
+// Every move tab ends with a running node (maintainer, 2026-11-05: "when i finish the instruction i am running
+// an ethereum classic node"). The start block is the run guide's own start line, and the note above it, which
+// a reader meets before pasting, says to add the node's own flags, the MESS setting just decided among them,
+// or to start the node the way its run guide's service does.
+const startFlags =
+  "Add the flags you just checked to this line, `--mess` or `--mess=false` among them, and any other flag you start the node with: a node on `--datadir` started without it starts an empty chain in the default directory.";
+
 // Moving a node off the exposed line. Another page links this section rather than carrying a
 // block of its own, because only this page's script gives a code block its copy button.
 //
@@ -641,7 +676,7 @@ geth attach --exec 'admin.nodeInfo.enode' ~/.ethereum/classic/geth.ipc`,
         title: "Start the node",
         code: "sudo systemctl daemon-reload && sudo systemctl start core-geth",
         after:
-          "`core-geth` stands for the systemd unit you wrote, and the reload picks up any flag you changed in that unit. From a terminal, start the node the way you always do, with the flags you just checked.",
+          "`core-geth` stands for the systemd unit you wrote, and the reload picks up any flag you changed in that unit. From a terminal, run `geth --classic` instead, with the flags you just checked, `--mess` or `--mess=false` among them, and any other flag you start the node with, then run the next steps in a second terminal.",
       },
       {
         title: "Confirm the move",
@@ -694,7 +729,10 @@ geth attach --exec 'admin.nodeInfo.enode' ~/Library/Ethereum/classic/geth.ipc`,
       checkFlags,
       {
         title: "Start the node",
-        after: "Start the node the way you always do, with the flags you just checked.",
+        before: `In a terminal. ${startFlags} If the node runs under the run guide's launchd agent, start the agent instead, as [Keep it running](${DOCS_URL}getting-started/run/macos/#6-keep-it-running-a-launchd-agent) shows:`,
+        code: "geth --classic",
+        after:
+          "The node runs in this terminal until you stop it, so run the next steps in a second terminal. For Mordor, use `--mordor` in place of `--classic`.",
       },
       {
         title: "Confirm the move",
@@ -753,7 +791,10 @@ Rename-Item $key "nodekey.old-rotated-$(Get-Date -Format yyyy-MM-dd)"`,
       checkFlags,
       {
         title: "Start the node",
-        after: "Start the node the way you always do, with the flags you just checked.",
+        before: `In PowerShell, in the folder that holds the node's \`geth.exe\`. ${startFlags} If the node starts from the Startup folder, as the run guide's [Keep it running](${DOCS_URL}getting-started/run/windows/#6-keep-it-running-start-it-when-you-sign-in) sets up, run that command file instead:`,
+        code: ".\\geth.exe --classic",
+        after:
+          "The node runs in this window until you stop it, so run the next steps in a second PowerShell window, in the same folder. For Mordor, use `--mordor` in place of `--classic`.",
       },
       {
         title: "Confirm the move",
