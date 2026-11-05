@@ -9,6 +9,7 @@ import ReleaseFiles from "@/components/ReleaseFiles.astro";
 import SectionHead from "@/components/SectionHead.astro";
 import { getDownloads } from "@/data/release-assets";
 import { formatAsOf, getRepository } from "@/data/repository";
+import { getGoToolchain, type GoFile } from "@/data/toolchain";
 import {
   DOCS,
   DISCOVERY_FLAG_ANCHOR,
@@ -96,6 +97,194 @@ const buildMain = `git clone --branch main --single-branch https://github.com/${
 
 const mainBranch =
   "`main` carries patches and dependency updates before a release does: every change reaches it through a pull request that needs an approving review and the project's required checks. It keeps moving, so two builds a day apart can be different code. It is not a release: until a release is prepared, `geth version` ends its first line with `-unstable`, and its `Git Commit` line names the commit you built.";
+
+// A build from source starts from a machine with none of its tools (maintainer, 2026-11-05), so each
+// platform's tab installs them, checks each one's version, and builds. A build needs Git to clone the code
+// and to stamp the commit into the binary, Go, a C compiler for the parts written in C, and `make` outside
+// Windows. Go is the release `main` pins in `build/checksums.txt` for its own release builds, read at
+// build time with the SHA-256 the pin lists for each archive (src/data/toolchain.ts), so a pull request
+// that moves the pin moves these steps at this site's next build (maintainer, 2026-11-05: "pinned to
+// whatever version is on main"). Each download is checked against its SHA-256 before it is installed. The
+// rest comes from each platform's own source: the distribution's packages, Apple's Command Line Tools,
+// and WinGet.
+const go = await getGoToolchain();
+const GO_RELEASE = go.version.replace(/^go/, "");
+const goFile = (file: GoFile) => go.files[file];
+
+const goPinned = `\`main\` pins Go ${GO_RELEASE} in its \`build/checksums.txt\`, the Go its release builds use`;
+const goArchive = `${goPinned}. This installs Go ${GO_RELEASE} from the Go project's downloads at go.dev, and checks the download against the SHA-256 the same file pins`;
+
+const buildTools = `git --version
+go version
+gcc --version
+make --version`;
+
+// Linux: the distribution's compiler, `make` and Git, then Go from go.dev into `/usr/local/go`, as go.dev
+// installs it, linked from `/usr/local/bin`, which every major distribution puts before `/usr/bin` on
+// `PATH`, so it runs in place of an older Go from the distribution. `hash -r` makes the shell look `go` up
+// again, in case this terminal already ran an older one.
+const linuxTools = (lead = "") => ({
+  title: "Install Git, a C compiler and make",
+  before: `${lead}On Debian or Ubuntu:`,
+  code: "sudo apt-get update && sudo apt-get install -y build-essential git curl",
+  after:
+    "On Fedora or RHEL, run `sudo dnf install -y gcc make git` instead, and on Arch, `sudo pacman -S --needed base-devel git`. `build-essential` and `base-devel` carry the C compiler and `make`, and the next step downloads with `curl`.",
+});
+
+const linuxGo = {
+  title: `Install Go ${GO_RELEASE}`,
+  before: `${goArchive}:`,
+  code: `curl -LO https://go.dev/dl/${goFile("linuxAmd64").filename}
+echo "${goFile("linuxAmd64").sha256}  ${goFile("linuxAmd64").filename}" | sha256sum -c &&
+  sudo rm -rf /usr/local/go &&
+  sudo tar -C /usr/local -xzf ${goFile("linuxAmd64").filename} &&
+  sudo ln -sf /usr/local/go/bin/go /usr/local/bin/go &&
+  hash -r &&
+  go version`,
+  after: `\`sha256sum -c\` must print \`OK\`: if it prints \`FAILED\`, delete the file and download it again rather than installing it. The block replaces any Go in \`/usr/local/go\`, and \`go version\` must then print \`${go.version}\`. On a 64-bit Arm machine, where \`uname -m\` prints \`aarch64\`, put \`${goFile("linuxArm64").filename}\` in place of the file name and \`${goFile("linuxArm64").sha256}\` in place of the SHA-256. On 32-bit Arm, use \`${goFile("linuxArmv6l").filename}\` and \`${goFile("linuxArmv6l").sha256}\`.`,
+};
+
+const linuxCheck = {
+  title: "Check the tools",
+  code: buildTools,
+  after: `Each line must print a version, and \`go version\` must print \`${go.version}\`. A line that prints an error names a tool the steps above did not install. If \`go version\` prints another release, a Go earlier on \`PATH\` than \`/usr/local/bin\` runs in its place: uninstall that Go.`,
+};
+
+// macOS: Apple's Command Line Tools carry Git, the C compiler and `make`. Go is the pinned archive,
+// installed as on Linux, so its SHA-256 is the pin's own. `/usr/local/bin` comes first on macOS's `PATH`,
+// and may not exist yet on Apple Silicon.
+const macosTools = (lead = "") => ({
+  title: "Install the Xcode Command Line Tools",
+  ...(lead ? { before: lead.trim() } : {}),
+  code: "xcode-select --install",
+  after:
+    "A window asks whether to install the tools: choose Install, and wait until it says the software was installed. The tools carry Git, the C compiler and `make`. If they are already installed, the command says so: go on to the next step.",
+});
+
+const macosGo = (file: "darwinArm64" | "darwinAmd64") => ({
+  title:
+    file === "darwinArm64"
+      ? `On an Apple Silicon Mac, install Go ${GO_RELEASE}`
+      : `On an Intel Mac, install Go ${GO_RELEASE}`,
+  before:
+    file === "darwinArm64"
+      ? `${goArchive}. \`uname -m\` prints \`arm64\` on Apple Silicon and \`x86_64\` on Intel:`
+      : "The same release, built for Intel:",
+  code: `curl -LO https://go.dev/dl/${goFile(file).filename}
+echo "${goFile(file).sha256}  ${goFile(file).filename}" | shasum -a 256 -c &&
+  sudo rm -rf /usr/local/go &&
+  sudo tar -C /usr/local -xzf ${goFile(file).filename} &&
+  sudo mkdir -p /usr/local/bin &&
+  sudo ln -sf /usr/local/go/bin/go /usr/local/bin/go &&
+  hash -r &&
+  go version`,
+  after: `\`shasum -a 256 -c\` must print \`OK\`: if it prints \`FAILED\`, delete the file and download it again rather than installing it. The block replaces any Go in \`/usr/local/go\`, and \`go version\` must then print \`${go.version}\`.`,
+});
+
+const macosCheck = {
+  title: "Check the tools",
+  code: buildTools,
+  after: `Each line must print a version, and \`go version\` must print \`${go.version}\`. \`gcc --version\` prints Apple clang, the C compiler on macOS. A line that prints an error names a tool the steps above did not install. If \`go version\` prints another release, a Go earlier on \`PATH\`, such as one from Homebrew, runs in its place: uninstall that Go.`,
+};
+
+// Windows: WinGet, which comes with Windows 11 and current Windows 10, installs Git and MinGW-w64's GCC, the
+// compiler cgo uses there. The agreement flags keep WinGet from stopping at a prompt, which would take the
+// next pasted line as its answer. Go is go.dev's installer for the pinned release, checked by a line that
+// prints `True` or `False` against the SHA-256 go.dev publishes, since the pin lists archives only.
+// A window open before an install does not see the new `PATH`, so the check runs in a new one, which opens
+// in the home folder, where the build then clones `core-geth`.
+const windowsTools = (lead = "") => ({
+  title: "Install Git and a C compiler",
+  before: `${lead}In PowerShell. WinGet, which comes with Windows 11 and current Windows 10, installs Git and MinGW-w64, the C compiler a build needs on Windows:`,
+  code: `winget install --id Git.Git -e --source winget --accept-source-agreements --accept-package-agreements
+winget install --id BrechtSanders.WinLibs.POSIX.UCRT -e --source winget --accept-source-agreements --accept-package-agreements`,
+  after:
+    "Approve any prompt an installer shows. With Chocolatey instead, run `choco install mingw git -y` in a PowerShell window opened with Run as administrator.",
+});
+
+const windowsGoDownload = {
+  title: `Download Go ${GO_RELEASE} and check it`,
+  before: `${goPinned}. This downloads the Go ${GO_RELEASE} installer from the Go project's downloads at go.dev, and checks the download against the SHA-256 go.dev publishes for the installer. In PowerShell:`,
+  code: `Invoke-WebRequest "https://go.dev/dl/${goFile("windowsAmd64").filename}" -OutFile "${goFile("windowsAmd64").filename}"
+(Get-FileHash "${goFile("windowsAmd64").filename}" -Algorithm SHA256).Hash -eq "${goFile("windowsAmd64").sha256}"`,
+  after:
+    "The second line must print `True`. If it prints `False`, delete the file and download it again rather than running it.",
+};
+
+const windowsGoInstall = {
+  title: "If the check printed True, run the Go installer",
+  code: `.\\${goFile("windowsAmd64").filename}`,
+  after:
+    "Accept the installer's defaults, which put Go in `C:\\Program Files\\Go` and on `PATH`. When it finishes, open a new PowerShell window for the next step: a window opened before the installs does not find Git, the compiler or Go.",
+};
+
+const windowsCheck = {
+  title: "Check the tools",
+  before: "In the new PowerShell window:",
+  code: `git --version
+go version
+gcc --version`,
+  after: `Each line must print a version, and \`go version\` must print \`${go.version}\`. A line saying the term is not recognized names a tool the steps above did not install, or a window opened before they did.`,
+};
+
+const windowsBuild = `git clone --branch main --single-branch https://github.com/${REPO.slug}.git
+cd core-geth
+go run build/ci.go install ./cmd/geth
+.\\build\\bin\\geth.exe version`;
+
+// The build-from-source tabs under Install: one per platform, each from nothing installed to a built `main`.
+const SOURCE_PANELS: readonly PlatformPanel[] = [
+  {
+    id: "linux",
+    label: "Linux",
+    heading: "Build from source on Linux",
+    steps: [
+      linuxTools(),
+      linuxGo,
+      linuxCheck,
+      {
+        title: "Build the main branch",
+        code: buildMain,
+        after: `${mainBranch} An existing \`core-geth\` folder stops this block at the clone rather than building an old copy: to build \`main\` again, run \`git pull\` in that folder and build there, or remove the folder first.`,
+      },
+    ],
+    guide: { label: "Build from source", href: DOCS.buildFromSource.href },
+  },
+  {
+    id: "macos",
+    label: "macOS",
+    heading: "Build from source on macOS",
+    steps: [
+      macosTools(),
+      macosGo("darwinArm64"),
+      macosGo("darwinAmd64"),
+      macosCheck,
+      {
+        title: "Build the main branch",
+        code: buildMain,
+        after: `${mainBranch} An existing \`core-geth\` folder stops this block at the clone rather than building an old copy: to build \`main\` again, run \`git pull\` in that folder and build there, or remove the folder first.`,
+      },
+    ],
+    guide: { label: "Build from source", href: DOCS.buildFromSource.href },
+  },
+  {
+    id: "windows",
+    label: "Windows",
+    heading: "Build from source on Windows",
+    steps: [
+      windowsTools(),
+      windowsGoDownload,
+      windowsGoInstall,
+      windowsCheck,
+      {
+        title: "Build the main branch",
+        code: windowsBuild,
+        after: `${mainBranch} Run these in PowerShell, one line at a time. If \`git clone\` reports that \`core-geth\` already exists, run \`git pull\` in that folder before the build line.`,
+      },
+    ],
+    guide: { label: "Build from source", href: DOCS.buildFromSource.href },
+  },
+];
 
 // One panel per platform the project publishes for, plus source. Every command is the one
 // its linked guide gives, with that guide's version comment dropped, because this page
@@ -219,23 +408,8 @@ docker run -d --name core-geth-classic \\
   {
     id: "source",
     label: "Source",
-    steps: [
-      {
-        title: "Build the main branch",
-        code: buildMain,
-        after: `${mainBranch} An existing \`core-geth\` folder stops this block at the clone rather than building an old copy: to build \`main\` again, run \`git pull\` in that folder and build there, or remove the folder first.`,
-      },
-      {
-        title: "Build on Windows",
-        code: `git clone --branch main --single-branch https://github.com/${REPO.slug}.git
-cd core-geth
-go run build/ci.go install ./cmd/geth
-.\\build\\bin\\geth.exe version`,
-        after:
-          "Run these in PowerShell, one line at a time. If `git clone` reports that `core-geth` already exists, run `git pull` in that folder before the build line.",
-      },
-    ],
-    guide: { label: "Build from source", href: `${DOCS_URL}developers/build-from-source/` },
+    // Its steps are the build-from-source tabs, SOURCE_PANELS, passed through the panel's slot.
+    steps: [],
   },
 ];
 
@@ -602,55 +776,136 @@ docker exec core-geth geth attach --exec 'eth.blockNumber' /root/.ethereum/class
   {
     id: "source",
     label: "Source",
-    steps: [
-      trialNode,
-      {
-        title: "Build the main branch",
-        code: buildMain,
-        after: `The node can keep running for this step. Go on only if the first line \`geth version\` prints names version ${LINE_VERSION} or later; a build of \`main\` ends it with \`-unstable\`, and two builds a day apart can be different code. Keep the \`Git Commit\` line: "Confirm the move" checks the running node against it. If a \`core-geth\` folder is already there, run \`git pull\` in it and build there, or remove it first. The Source tab under [Install](#install) says why these steps build \`main\`, and [Build from source](${DOCS_URL}developers/build-from-source/) lists what a build needs. On Windows, run the commands one at a time, with \`go run build/ci.go install ./cmd/geth\` in place of \`make geth\`, then follow this section's Windows tab from "Record the node's block number and ID", copying \`build\\bin\\geth.exe\` into the node's folder in place of the \`Expand-Archive\` line in its "Install the release" step.`,
-      },
-      {
-        title: "Record the node's block number and ID",
-        code: `geth attach --exec 'eth.blockNumber' ~/.ethereum/classic/geth.ipc
-geth attach --exec 'admin.nodeInfo.enode' ~/.ethereum/classic/geth.ipc`,
-        after: `${keepId} The commands in this tab use the default data directory on Linux. On macOS, put \`~/Library/Ethereum\` where they say \`~/.ethereum\`. For Mordor, use \`mordor\` in place of \`classic\`; if you pass \`--datadir\`, use yours. This section's Linux tab has the forms for the unit in the Linux run guide.`,
-      },
-      {
-        title: "Stop the node cleanly",
-        after: `Press Ctrl-C once in the node's terminal and wait, or stop the service you run the node under. ${cleanStop}`,
-      },
-      {
-        title: "Install the build",
-        code: `ls build/bin/geth &&
+    // Its steps are the build-from-source tabs, MOVE_SOURCE_PANELS, passed through the panel's slot.
+    steps: [],
+  },
+];
+
+// The build-from-source tabs under moving a node: each platform's tools and build, then that platform's
+// move steps above, with the build installed in place of the release. Those steps are taken from the
+// platform's own tab by title, so the two cannot drift apart, and a title that is not there fails the build.
+const moveStep = (id: PlatformPanel["id"], title: string) => {
+  const step = MOVE_PANELS.find((panel) => panel.id === id)?.steps.find((s) => s.title === title);
+  if (!step) throw new Error(`no "${title}" step in this section's ${id} tab`);
+  return step;
+};
+
+const nodeKeepsRunning = "The node can keep running while you install the tools and build. ";
+
+const buildGoOn = `Go on only if the first line \`geth version\` prints names version ${LINE_VERSION} or later; a build of \`main\` ends it with \`-unstable\`, and two builds a day apart can be different code. Keep the \`Git Commit\` line: "Confirm the move" checks the running node against it.`;
+
+const unixMoveBuild = {
+  title: "Build the main branch",
+  code: buildMain,
+  after: `${buildGoOn} If a \`core-geth\` folder is already there, run \`git pull\` in it and build there, or remove it first. The Source tab under [Install](#install) says why these steps build \`main\`.`,
+};
+
+const unixInstallBuild = {
+  title: "Install the build",
+  code: `ls build/bin/geth &&
   { test -e /usr/local/bin/geth-${EXPOSED_LINE} || sudo mv /usr/local/bin/geth /usr/local/bin/geth-${EXPOSED_LINE}; } &&
   sudo install -m 0755 build/bin/geth /usr/local/bin/geth &&
   geth version`,
-        after: `Run this in the folder the build step left you in: the first line stops the block anywhere else. Go on only if \`geth version\` prints the same first line and \`Git Commit\` line it printed after the build. ${keepBinary} ${binaryPath}`,
-      },
-      {
-        title: "Rename the old P2P node key",
-        code: "mv -n ~/.ethereum/classic/geth/nodekey ~/.ethereum/classic/geth/nodekey.old-rotated-$(date +%F)",
-        after: rotationRequired,
-      },
-      staticPeersStep(),
+  after: `Run this in the folder the build step left you in: the first line stops the block anywhere else. Go on only if \`geth version\` prints the same first line and \`Git Commit\` line it printed after the build. ${keepBinary} ${binaryPath}`,
+};
+
+// The new PowerShell window the check runs in opens in the home folder, so the build clones there, and the
+// install copies the build from that clone into the node's folder.
+const windowsInstallBuild = {
+  title: "Install the build",
+  before: "In the same folder:",
+  code: `Rename-Item .\\geth.exe geth-${EXPOSED_LINE}.exe
+Copy-Item "$HOME\\core-geth\\build\\bin\\geth.exe" .\\geth.exe
+.\\geth.exe version`,
+  after: `Go on only if \`.\\geth.exe version\` prints the same first line and \`Git Commit\` line the build printed. \`geth-${EXPOSED_LINE}.exe\` is the old binary, kept so you can roll back. The second line copies the build from \`core-geth\` in your home folder, where a new PowerShell window clones it: if you cloned it somewhere else, use that path.`,
+};
+
+const confirmBuild = (id: "linux" | "macos" | "windows") => ({
+  ...moveStep(id, "Confirm the move"),
+  after: confirmNote(
+    "The first line must name the version the build printed, followed by the first eight characters of its `Git Commit`.",
+  ),
+});
+
+const staticPeersTitle = "If this node lists static peers, update the list";
+const otherNodesTitle = "If other nodes list this node, give them the new ID";
+
+const MOVE_SOURCE_PANELS: readonly PlatformPanel[] = [
+  {
+    id: "linux",
+    label: "Linux",
+    heading: "Build from source and move the node on Linux",
+    steps: [
+      trialNode,
+      linuxTools(nodeKeepsRunning),
+      linuxGo,
+      linuxCheck,
+      unixMoveBuild,
+      moveStep("linux", "Record the node's block number and ID"),
+      moveStep("linux", "Stop the node cleanly"),
+      unixInstallBuild,
+      moveStep("linux", "Rename the old P2P node key"),
+      moveStep("linux", staticPeersTitle),
       checkFlags,
-      {
-        title: "Start the node",
-        after: "Start the node the way you always do, with the flags you just checked.",
-      },
-      {
-        title: "Confirm the move",
-        code: `geth attach --exec 'admin.nodeInfo.name' ~/.ethereum/classic/geth.ipc
-geth attach --exec 'admin.nodeInfo.enode' ~/.ethereum/classic/geth.ipc
-geth attach --exec 'net.peerCount' ~/.ethereum/classic/geth.ipc
-geth attach --exec 'eth.blockNumber' ~/.ethereum/classic/geth.ipc`,
-        after: confirmNote(
-          "The first line must name the version the build printed, followed by the first eight characters of its `Git Commit`.",
-        ),
-      },
-      otherNodesStep("geth attach", "~/.ethereum/classic/geth.ipc"),
+      moveStep("linux", "Start the node"),
+      confirmBuild("linux"),
+      moveStep("linux", otherNodesTitle),
     ],
-    guide: { label: "Migration guide", href: DOCS.migration.href },
+    guide: { label: "Linux users guide", href: `${DOCS_URL}tutorials/migration/linux/` },
+  },
+  {
+    id: "macos",
+    label: "macOS",
+    heading: "Build from source and move the node on macOS",
+    steps: [
+      trialNode,
+      macosTools(nodeKeepsRunning),
+      macosGo("darwinArm64"),
+      macosGo("darwinAmd64"),
+      macosCheck,
+      unixMoveBuild,
+      moveStep("macos", "Record the node's block number and ID"),
+      moveStep("macos", "Stop the node cleanly"),
+      unixInstallBuild,
+      moveStep("macos", "Rename the old P2P node key"),
+      moveStep("macos", staticPeersTitle),
+      checkFlags,
+      moveStep("macos", "Start the node"),
+      confirmBuild("macos"),
+      moveStep("macos", otherNodesTitle),
+    ],
+    guide: { label: "macOS users guide", href: `${DOCS_URL}tutorials/migration/macos/` },
+  },
+  {
+    id: "windows",
+    label: "Windows",
+    heading: "Build from source and move the node on Windows",
+    steps: [
+      trialNode,
+      windowsTools(nodeKeepsRunning),
+      windowsGoDownload,
+      windowsGoInstall,
+      windowsCheck,
+      {
+        title: "Build the main branch",
+        code: windowsBuild,
+        after: `${buildGoOn} Run these one line at a time. If \`git clone\` reports that \`core-geth\` already exists, run \`git pull\` in that folder before the build line. The Source tab under [Install](#install) says why these steps build \`main\`.`,
+      },
+      {
+        ...moveStep("windows", "Record the node's block number and ID"),
+        before:
+          "In PowerShell, in the folder that holds the node's `geth.exe`, such as `C:\\core-geth`:",
+      },
+      moveStep("windows", "Stop the node cleanly"),
+      windowsInstallBuild,
+      moveStep("windows", "Rename the old P2P node key"),
+      moveStep("windows", staticPeersTitle),
+      checkFlags,
+      moveStep("windows", "Start the node"),
+      confirmBuild("windows"),
+      moveStep("windows", otherNodesTitle),
+    ],
+    guide: { label: "Windows users guide", href: `${DOCS_URL}tutorials/migration/windows/` },
   },
 ];
 
@@ -768,19 +1023,55 @@ gh attestation verify core-geth-docker-amd64-${releaseTag}.tar.gz --repo ${REPO.
   {
     id: "source",
     label: "Source",
+    // Its steps are the build-from-source tabs, VERIFY_SOURCE_PANELS, passed through the panel's slot.
+    steps: [],
+  },
+];
+
+// A build from source has no published file to check, so these tabs check the commit instead, with the
+// command the documentation's FAQ gives. Go stamps the commit into the binary while `git` is installed.
+const commitCheck = (code: string) => ({
+  title: "Check the commit you built",
+  code,
+  after:
+    "Run these in the clone: the first line is the commit you checked out and the second is the commit the binary was built from. Both lines must name the same commit.",
+});
+
+const verifyFaq = {
+  label: "How do I verify a download?",
+  href: `${DOCS_URL}about/faq/#how-do-i-verify-a-download`,
+};
+
+const VERIFY_SOURCE_PANELS: readonly PlatformPanel[] = [
+  {
+    id: "linux",
+    label: "Linux",
+    heading: "Check a build from source on Linux",
     steps: [
-      {
-        title: "Check the commit you built",
-        code: `git rev-parse HEAD
-go version -m ./build/bin/geth | grep vcs.revision`,
-        after:
-          "Run these in the clone: the first line is the commit you checked out and the second is the commit the binary was built from. Both lines must name the same commit. On Windows, run `go version -m .\\build\\bin\\geth.exe` and read its `vcs.revision` line.",
-      },
+      commitCheck(`git rev-parse HEAD
+go version -m ./build/bin/geth | grep vcs.revision`),
     ],
-    guide: {
-      label: "How do I verify a download?",
-      href: `${DOCS_URL}about/faq/#how-do-i-verify-a-download`,
-    },
+    guide: verifyFaq,
+  },
+  {
+    id: "macos",
+    label: "macOS",
+    heading: "Check a build from source on macOS",
+    steps: [
+      commitCheck(`git rev-parse HEAD
+go version -m ./build/bin/geth | grep vcs.revision`),
+    ],
+    guide: verifyFaq,
+  },
+  {
+    id: "windows",
+    label: "Windows",
+    heading: "Check a build from source on Windows",
+    steps: [
+      commitCheck(`git rev-parse HEAD
+go version -m .\\build\\bin\\geth.exe | Select-String vcs.revision`),
+    ],
+    guide: verifyFaq,
   },
 ];
 ---
@@ -845,15 +1136,20 @@ go version -m ./build/bin/geth | grep vcs.revision`,
           its platform.
         </p>
         <Fragment slot="before-source">
-          <p class="panel__note">
-            Building needs Go 1.26 or later and a C compiler. To build with the exact Go toolchain
-            the releases use, run <code>go run build/ci.go install -dlgo</code> in place of{" "}
-            <code>make geth</code>.
-          </p>
           <a class="source-repo" href={REPO.url}>
             github.com/{REPO.slug.split("/")[0]}/<wbr />
             {REPO.slug.split("/")[1]}
           </a>
+          <p class="panel__note">
+            Each tab starts from a machine with none of the build tools: it installs them, checks
+            each one's version, and builds the <code>main</code> branch.
+          </p>
+          <PlatformTabs
+            legend="Choose your platform for building from source"
+            panels={SOURCE_PANELS}
+            prefix="source-"
+            nested
+          />
         </Fragment>
         <ReleaseFiles slot="after-linux" group={groupFor("linux")} />
         <ReleaseFiles slot="after-macos" group={groupFor("macos")} />
@@ -886,7 +1182,20 @@ go version -m ./build/bin/geth | grep vcs.revision`,
         legend="Choose your platform for moving a node"
         panels={MOVE_PANELS}
         prefix="move-"
-      />
+      >
+        <Fragment slot="before-source">
+          <p class="panel__note">
+            Each tab starts from a machine with none of the build tools: it installs them, builds
+            the <code>main</code> branch, and moves the node on that platform.
+          </p>
+          <PlatformTabs
+            legend="Choose your platform for building from source and moving a node"
+            panels={MOVE_SOURCE_PANELS}
+            prefix="move-source-"
+            nested
+          />
+        </Fragment>
+      </PlatformTabs>
       <div class="downloads__group">
         <p>
           <InlineCode text={moveNote} />
@@ -923,7 +1232,15 @@ go version -m ./build/bin/geth | grep vcs.revision`,
         legend="Choose your platform for checking a download"
         panels={VERIFY_PANELS}
         prefix="verify-"
-      />
+      >
+        <PlatformTabs
+          slot="before-source"
+          legend="Choose your platform for checking a build from source"
+          panels={VERIFY_SOURCE_PANELS}
+          prefix="verify-source-"
+          nested
+        />
+      </PlatformTabs>
       <div class="downloads__group">
         <h3>What every release carries</h3>
         <ul class="plain" role="list">

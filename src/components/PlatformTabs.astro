@@ -11,6 +11,10 @@
  *
  * A panel that needs more than its steps takes it from a named slot: `before-<id>` above the
  * steps, `after-<id>` under the guide link.
+ *
+ * A set can sit inside another set's panel, as the build-from-source tabs sit inside each Source
+ * panel: `nested` drops its headings a level. Every rule below reaches only its own set's bar and
+ * panels, so a choice in the inner set never shows a panel of the outer one.
  */
 import ArrowText from "@/components/ArrowText.astro";
 import InlineCode from "@/components/InlineCode.astro";
@@ -19,21 +23,27 @@ export interface PlatformPanel {
   /** One of the five the styles below can show: a sixth needs its own rule there. */
   id: "linux" | "macos" | "windows" | "containers" | "source";
   label: string;
+  /** The panel's heading, when it needs more words than its tab's label. */
+  heading?: string;
   /** What a reader does in order: `before` for what a block needs them to read first, a block to run, `after` for what it leaves them to do. */
   steps: readonly { title: string; before?: string; code?: string; after?: string }[];
-  guide: { label: string; href: string };
+  /** Left out where a set inside the panel links each platform's guide itself. */
+  guide?: { label: string; href: string };
 }
 
 interface Props {
   legend: string;
   panels: readonly PlatformPanel[];
   prefix?: string;
+  nested?: boolean;
 }
 
-const { legend, panels, prefix = "" } = Astro.props;
+const { legend, panels, prefix = "", nested = false } = Astro.props;
+const Heading = nested ? "h4" : "h3";
+const Step = nested ? "h5" : "h4";
 ---
 
-<fieldset class="tabs">
+<fieldset class:list={["tabs", { "tabs--nested": nested }]}>
   <legend class="visually-hidden">{legend}</legend>
   <div class="tabs__bar">
     {panels.map((panel, index) => (
@@ -55,11 +65,11 @@ const { legend, panels, prefix = "" } = Astro.props;
 
   {panels.map((panel) => (
     <div class="panel" id={`${prefix}panel-${panel.id}`} data-platform={panel.id}>
-      <h3 class="panel__heading">{panel.label}</h3>
+      <Heading class="panel__heading">{panel.heading ?? panel.label}</Heading>
       <slot name={`before-${panel.id}`} />
       {panel.steps.map((step) => (
         <Fragment>
-          <h4 class="panel__step">{step.title}</h4>
+          <Step class="panel__step">{step.title}</Step>
           {step.before && (
             <p class="panel__note">
               <InlineCode text={step.before} />
@@ -77,9 +87,11 @@ const { legend, panels, prefix = "" } = Astro.props;
           )}
         </Fragment>
       ))}
-      <a class="more" href={panel.guide.href}>
-        <ArrowText text={panel.guide.label} />
-      </a>
+      {panel.guide && (
+        <a class="more" href={panel.guide.href}>
+          <ArrowText text={panel.guide.label} />
+        </a>
+      )}
       <slot name={`after-${panel.id}`} />
     </div>
   ))}
@@ -165,18 +177,35 @@ const { legend, panels, prefix = "" } = Astro.props;
     overflow-wrap: anywhere;
   }
 
+  /* A set inside a panel is the second choice a reader makes, so its strip is quieter. */
+  .tabs--nested .tabs__label {
+    padding: 0.6rem 1rem;
+    font-size: 0.9rem;
+  }
+
+  .tabs--nested .panel__heading {
+    font-size: clamp(1.15rem, 2.4vw, 1.4rem);
+  }
+
   /* With `:has()` the checked radio shows its panel. Without it, or with CSS off
-     entirely, every panel stays visible: the page loses the tabs, never the content. */
+     entirely, every panel stays visible: the page loses the tabs, never the content.
+     The child combinators keep each set to its own radios and panels, so a set inside
+     a panel neither shows nor hides anything in the set around it. */
   @supports selector(:has(*)) {
     .panel {
       display: none;
     }
 
-    .tabs:has(.tabs__input[data-platform="linux"]:checked) .panel[data-platform="linux"],
-    .tabs:has(.tabs__input[data-platform="macos"]:checked) .panel[data-platform="macos"],
-    .tabs:has(.tabs__input[data-platform="windows"]:checked) .panel[data-platform="windows"],
-    .tabs:has(.tabs__input[data-platform="containers"]:checked) .panel[data-platform="containers"],
-    .tabs:has(.tabs__input[data-platform="source"]:checked) .panel[data-platform="source"] {
+    .tabs:has(> .tabs__bar > .tabs__input[data-platform="linux"]:checked)
+      > .panel[data-platform="linux"],
+    .tabs:has(> .tabs__bar > .tabs__input[data-platform="macos"]:checked)
+      > .panel[data-platform="macos"],
+    .tabs:has(> .tabs__bar > .tabs__input[data-platform="windows"]:checked)
+      > .panel[data-platform="windows"],
+    .tabs:has(> .tabs__bar > .tabs__input[data-platform="containers"]:checked)
+      > .panel[data-platform="containers"],
+    .tabs:has(> .tabs__bar > .tabs__input[data-platform="source"]:checked)
+      > .panel[data-platform="source"] {
       display: grid;
     }
 
