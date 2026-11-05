@@ -57,21 +57,60 @@ const attestationMust = (workflow: string, action = "run the file") =>
 // saying what each line must print and where to get the tool (maintainer, 2026-11-05). A missing or old
 // tool then shows as one line's error, not as a build or a check that fails partway. Each check is a line of
 // its own, so one missing tool cannot hide another.
-//
+
+// Windows gives a changed PATH only to windows opened after the change. This line reads it back from Windows'
+// settings, machine entries first as a new window would get them, so the window in use finds what was just
+// installed.
+const windowsPathReload =
+  '$env:Path = [Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [Environment]::GetEnvironmentVariable("Path", "User")';
+
 // `gh attestation` arrived in the GitHub CLI's 2.49.0 release (its release notes, 2024-04-30), and the
-// installation guide says verifying needs the CLI signed in. `docker version` in this format prints the
-// engine's version, and an error when no engine answers.
+// installation guide says verifying needs the CLI signed in. Debian's and Ubuntu's own `gh` packages are
+// older than that (2.23.0 to 2.46.0 across Debian 12 and 13 and Ubuntu 24.04 and 26.04, read 2026-11-05),
+// so a reader there takes GitHub's own package. Every install line ends at the tool's current release
+// (maintainer, 2026-11-05): WinGet's and Homebrew's `install` also update an older copy. `docker version` in
+// this format prints the engine's version, and an error when no engine answers.
 const ghTools = `gh --version
 gh auth status`;
 
 const ghCheck =
-  "`gh --version` must print 2.49.0 or later, the release that added `gh attestation`: install or update the GitHub CLI from [cli.github.com](https://cli.github.com/). `gh auth status` must say you are logged in to github.com. If it does not, run `gh auth login`.";
+  "`gh --version` must print 2.49.0 or later, the release that added `gh attestation`. `gh auth status` must say you are logged in to github.com. If it does not, run `gh auth login`.";
 
-const ghStep = {
-  title: "Check the GitHub CLI",
-  before: "Checking where a file came from needs the GitHub CLI, signed in to GitHub:",
-  code: ghTools,
-  after: `${ghCheck} The checksum line in the next step does not need the GitHub CLI.`,
+const ghNeed = "Checking where a file came from needs the GitHub CLI, signed in to GitHub.";
+
+// Each verify tab installs or updates the GitHub CLI the way its platform does, then checks it.
+const ghSteps = (platform: "linux" | "macos" | "windows") => {
+  const check = {
+    title: "Check the GitHub CLI",
+    code: ghTools,
+    after: `${ghCheck} The checksum line in the next step does not need the GitHub CLI.`,
+  };
+  if (platform === "windows") {
+    return [
+      {
+        title: "Install or update the GitHub CLI",
+        before: `${ghNeed} In PowerShell, WinGet, which comes with Windows 11, installs it, or updates an older one:`,
+        code: "winget install --id GitHub.cli -e --source winget --accept-source-agreements --accept-package-agreements",
+        after: "Approve the prompt the installer shows.",
+      },
+      {
+        ...check,
+        before: "In the same window:",
+        code: `${windowsPathReload}
+${ghTools}`,
+        after: `The first line reloads \`PATH\` from Windows' settings, so this window finds \`gh\`. ${check.after}`,
+      },
+    ];
+  }
+  return [
+    {
+      ...check,
+      before:
+        platform === "linux"
+          ? `${ghNeed} Debian's and Ubuntu's own \`gh\` packages are older than 2.49.0, so install or update GitHub's own package, as [Installing gh on Linux](https://github.com/cli/cli/blob/trunk/docs/install_linux.md) shows for each distribution. Then confirm the release and the sign-in:`
+          : `${ghNeed} Install or update it with Homebrew, \`brew install gh\`, or with the macOS installer from [GitHub's releases](https://github.com/cli/cli/releases/latest). Then confirm the release and the sign-in:`,
+    },
+  ];
 };
 
 const containerTools = `docker version --format '{{.Server.Version}}'
@@ -81,7 +120,19 @@ const containerStep = (uses: string, kept = "") => ({
   title: "Check Docker and the GitHub CLI",
   before: `These steps need Docker to ${uses}, and the GitHub CLI to check where the image came from:`,
   code: containerTools,
-  after: `${kept}The first line must print the Docker engine's version. An error in its place means Docker is not installed or not running: [Get Docker](https://docs.docker.com/get-started/get-docker/) says how to install it. ${ghCheck}`,
+  after: `${kept}The first line must print the Docker engine's version. An error in its place means Docker is not installed or not running: [Get Docker](https://docs.docker.com/get-started/get-docker/) says how to install it. ${ghCheck} Install or update the GitHub CLI from [cli.github.com](https://cli.github.com/). On Debian and Ubuntu, take GitHub's own package: theirs are older than 2.49.0.`,
+});
+
+// The Linux archive steps download with `curl` and unpack with `unzip`, which a minimal server install can
+// lack. Each line ends at the distribution's current release: `apt-get install` also upgrades, DNF5's
+// `install` leaves an installed package as it is, so Fedora's line upgrades as well, and Arch takes the full
+// `-Syu` it requires.
+const linuxFetchTools = (lead = "") => ({
+  title: "Install curl and unzip",
+  before: `${lead}On Debian or Ubuntu:`,
+  code: "sudo apt-get update && sudo apt-get install -y curl unzip",
+  after:
+    "On Fedora or RHEL, run `sudo dnf install -y --refresh curl unzip && sudo dnf upgrade -y curl unzip` instead, and on Arch, `sudo pacman -Syu --needed curl unzip`. Each line also updates curl and unzip if they are already installed.",
 });
 
 const windowsCompare =
@@ -128,7 +179,7 @@ const linuxTools = (lead = "") => ({
   before: `${lead}On Debian or Ubuntu:`,
   code: "sudo apt-get update && sudo apt-get install -y build-essential git curl",
   after:
-    "On Fedora or RHEL, run `sudo dnf install -y gcc make git` instead, and on Arch, `sudo pacman -S --needed base-devel git`. `build-essential` and `base-devel` carry the C compiler and `make`, and the next step downloads with `curl`.",
+    "On Fedora or RHEL, run `sudo dnf install -y --refresh gcc make git && sudo dnf upgrade -y gcc make git` instead, and on Arch, `sudo pacman -Syu --needed base-devel git`, which brings the rest of the system current with them, as Arch requires. Each line also updates a tool that is already installed. `build-essential` and `base-devel` carry the C compiler and `make`, and the next step downloads with `curl`.",
 });
 
 const linuxGo = {
@@ -158,7 +209,7 @@ const macosTools = (lead = "") => ({
   ...(lead ? { before: lead.trim() } : {}),
   code: "xcode-select --install",
   after:
-    "A window asks whether to install the tools: choose Install, and wait until it says the software was installed. The tools carry Git, the C compiler and `make`. If they are already installed, the command says so: go on to the next step.",
+    "A window asks whether to install the tools: choose Install, and wait until it says the software was installed. The tools carry Git, the C compiler and `make`. If they are already installed, the command says so: install any update for them that Software Update lists in System Settings, then go on to the next step.",
 });
 
 const macosGo = (file: "darwinArm64" | "darwinAmd64") => ({
@@ -189,55 +240,80 @@ const macosCheck = {
 
 // Windows: the build guide's route, Chocolatey's `mingw` and `git`. `mingw` is MinGW-Builds, the MinGW-w64
 // distribution GitHub's Windows runners install, with the same thread, exception and runtime settings, so a
-// reader's compiler is the kind the release builds use. WinGet, which comes with Windows 11 and current
-// Windows 10, installs Chocolatey from its publisher, so no script is piped into PowerShell, and its
+// reader's compiler is the kind the release builds use. WinGet, which comes with Windows 11, installs
+// Chocolatey from its publisher, so no script is piped into PowerShell, and its
 // agreement flags keep it from stopping at a prompt that would take the next pasted line as its answer. Go is
 // go.dev's installer for the pinned release, checked by a line that prints `True` or `False` against the
 // SHA-256 go.dev publishes, since the pin lists archives only. A window open before an install does not see
 // the new `PATH`, so Chocolatey runs in a new window, and the check in another, which opens in the home
 // folder, where the build then clones `core-geth`.
-const windowsChocolatey = (lead = "") => ({
-  title: "Install Chocolatey",
-  before: `${lead}In PowerShell. WinGet, which comes with Windows 11 and current Windows 10, installs Chocolatey, the package manager the build guide uses on Windows:`,
-  code: "winget install --id Chocolatey.Chocolatey -e --source winget --accept-source-agreements --accept-package-agreements",
+//
+// Every tool ends at its current release, not at whatever is already installed (maintainer, 2026-11-05).
+// `choco install` and WinGet both leave an installed package as it is, and `choco upgrade` installs what is
+// missing and moves what is installed to its current release, Chocolatey included. Chocolatey's guide to
+// version 2 moves a version 1 to 1.4.0 first, a step that would downgrade a version 2, so the page asks which
+// one is there.
+const windowsChocolateyCheck = (lead = "") => ({
+  title: "Check for Chocolatey",
+  before: `${lead}In a PowerShell window opened with Run as administrator, which the Chocolatey steps need:`,
+  code: "choco --version",
   after:
-    "Approve the prompt the installer shows. The next step needs a new window: one opened before the install does not find Chocolatey.",
+    'If PowerShell says the term is not recognized, Chocolatey is not installed: take the next step. If the version starts with 1, skip the next step and take the one after it. If it starts with 2, go to "Update Chocolatey, then install Git and a C compiler".',
 });
 
-const windowsTools = {
-  title: "Install Git and a C compiler",
-  before: "In a new PowerShell window, opened with Run as administrator:",
-  code: "choco install mingw git -y",
+const windowsChocolateyInstall = {
+  title: "If Chocolatey is not installed, install it",
+  before: "WinGet, which comes with Windows 11, installs Chocolatey from its publisher:",
+  code: "winget install --id Chocolatey.Chocolatey -e --source winget --accept-source-agreements --accept-package-agreements",
   after:
-    "`mingw` is MinGW-w64, the C compiler cgo needs on Windows. The next two steps can run in this window.",
+    "Approve the prompt the installer shows. Then open a new PowerShell window with Run as administrator for the next steps: a window opened before the install does not find Chocolatey.",
+};
+
+const windowsChocolateyV1 = {
+  title: "If Chocolatey is version 1, move it to 1.4.0 first",
+  code: "choco upgrade chocolatey --version 1.4.0 --allow-downgrade -y",
+  after:
+    "Chocolatey's [guide to version 2](https://docs.chocolatey.org/en-us/guides/upgrading-to-chocolatey-v2-v6/) moves a version 1 to 1.4.0 before the upgrade to version 2, which the next step makes. Skip this step on version 2: it would downgrade Chocolatey.",
+};
+
+const windowsTools = {
+  title: "Update Chocolatey, then install Git and a C compiler",
+  code: `choco upgrade chocolatey -y
+choco upgrade mingw git -y
+choco --version`,
+  after:
+    "`choco upgrade` installs what is missing and moves what is installed to its current release, so an older Chocolatey, Git or MinGW-w64 is updated rather than kept. The last line must print a version starting with 2. If the first line asks for a restart to install .NET Framework 4.8, which Chocolatey 2 needs, restart and run this block again. `mingw` is MinGW-w64, the C compiler cgo needs on Windows. The next two steps can run in this window.",
 };
 
 const windowsGoDownload = {
   title: `Download Go ${GO_RELEASE} and check it`,
-  before: `${goPinned}. This downloads the Go ${GO_RELEASE} installer from the Go project's downloads at go.dev, and checks the download against the SHA-256 go.dev publishes for the installer. In PowerShell:`,
-  code: `Invoke-WebRequest "https://go.dev/dl/${goFile("windowsAmd64").filename}" -OutFile "${goFile("windowsAmd64").filename}"
+  before: `${goPinned}. This downloads the Go ${GO_RELEASE} installer from the Go project's downloads at go.dev, and checks the download against the SHA-256 go.dev publishes for the installer. An administrator window opens in \`C:\\Windows\\System32\`, so the first line moves to your home folder:`,
+  code: `cd $HOME
+Invoke-WebRequest "https://go.dev/dl/${goFile("windowsAmd64").filename}" -OutFile "${goFile("windowsAmd64").filename}"
 (Get-FileHash "${goFile("windowsAmd64").filename}" -Algorithm SHA256).Hash -eq "${goFile("windowsAmd64").sha256}"`,
   after:
-    "The second line must print `True`. If it prints `False`, delete the file and download it again rather than running it.",
+    "The last line must print `True`. If it prints `False`, delete the file and download it again rather than running it.",
 };
 
 const windowsGoInstall = {
   title: "If the check printed True, run the Go installer",
-  code: `.\\${goFile("windowsAmd64").filename}`,
+  code: `msiexec /i "$HOME\\${goFile("windowsAmd64").filename}" /passive | Out-Null`,
   after:
-    "Accept the installer's defaults, which put Go in `C:\\Program Files\\Go` and on `PATH`. When it finishes, open a new PowerShell window for the next step: a window opened before the installs does not find Git, the compiler or Go.",
+    "The installer shows a progress bar and takes its defaults, which put Go in `C:\\Program Files\\Go` and on `PATH`. The line returns once it has finished.",
 };
 
 const windowsCheck = {
   title: "Check the tools",
-  before: "In the new PowerShell window:",
-  code: `git --version
+  before: "In the same window:",
+  code: `${windowsPathReload}
+git --version
 go version
 gcc --version`,
-  after: `Each line must print a version, and \`go version\` must print \`${go.version}\`. A line saying the term is not recognized names a tool the steps above did not install, or a window opened before they did.`,
+  after: `The first line reloads \`PATH\` from Windows' settings, so this window finds what the steps above installed. Each line after it must print a version, and \`go version\` must print \`${go.version}\`. A line saying the term is not recognized names a tool the steps above did not install.`,
 };
 
-const windowsBuild = `git clone --branch main --single-branch https://github.com/${REPO.slug}.git
+const windowsBuild = `cd $HOME
+git clone --branch main --single-branch https://github.com/${REPO.slug}.git
 cd core-geth
 go run build/ci.go install ./cmd/geth
 .\\build\\bin\\geth.exe version`;
@@ -282,7 +358,9 @@ const SOURCE_PANELS: readonly PlatformPanel[] = [
     label: "Windows",
     heading: "Build from source on Windows",
     steps: [
-      windowsChocolatey(),
+      windowsChocolateyCheck(),
+      windowsChocolateyInstall,
+      windowsChocolateyV1,
       windowsTools,
       windowsGoDownload,
       windowsGoInstall,
@@ -320,6 +398,7 @@ const PANELS: readonly PlatformPanel[] = [
     id: "linux",
     label: "Linux",
     steps: [
+      linuxFetchTools(),
       {
         title: "Download the release, check it and install it",
         code: `curl -LO ${assetBase}/core-geth-linux-${releaseTag}.zip
@@ -349,6 +428,7 @@ sha256sum -c core-geth-linux-${releaseTag}.zip.sha256 &&
 curl -LO ${assetBase}/core-geth-osx-arm64-${releaseTag}.zip.sha256
 shasum -a 256 -c core-geth-osx-arm64-${releaseTag}.zip.sha256 &&
   unzip -o core-geth-osx-arm64-${releaseTag}.zip &&
+  sudo mkdir -p /usr/local/bin &&
   sudo install -m 0755 geth /usr/local/bin/geth &&
   geth version`,
         after: `\`shasum -a 256 -c\` must print \`OK\`: if it prints \`FAILED\`, delete the file and download it again rather than running it. On an Intel Mac, put \`osx\` where the file names say \`osx-arm64\`. A browser download carries the quarantine attribute, which macOS blocks: \`xattr -d com.apple.quarantine geth\` clears it.`,
@@ -524,6 +604,7 @@ const MOVE_PANELS: readonly PlatformPanel[] = [
     label: "Linux",
     steps: [
       trialNode,
+      linuxFetchTools("The node can keep running for this step. "),
       {
         title: "Download the release and check it",
         code: `curl -LO ${assetBase}/core-geth-linux-${releaseTag}.zip
@@ -828,7 +909,7 @@ const windowsInstallBuild = {
   code: `Rename-Item .\\geth.exe geth-${EXPOSED_LINE}.exe
 Copy-Item "$HOME\\core-geth\\build\\bin\\geth.exe" .\\geth.exe
 .\\geth.exe version`,
-  after: `Go on only if \`.\\geth.exe version\` prints the same first line and \`Git Commit\` line the build printed. \`geth-${EXPOSED_LINE}.exe\` is the old binary, kept so you can roll back. The second line copies the build from \`core-geth\` in your home folder, where a new PowerShell window clones it: if you cloned it somewhere else, use that path.`,
+  after: `Go on only if \`.\\geth.exe version\` prints the same first line and \`Git Commit\` line the build printed. \`geth-${EXPOSED_LINE}.exe\` is the old binary, kept so you can roll back. The second line copies the build from \`core-geth\` in your home folder, where the build step cloned it.`,
 };
 
 const confirmBuild = (id: "linux" | "macos" | "windows") => ({
@@ -893,7 +974,9 @@ const MOVE_SOURCE_PANELS: readonly PlatformPanel[] = [
     heading: "Build from source and move the node on Windows",
     steps: [
       trialNode,
-      windowsChocolatey(nodeKeepsRunning),
+      windowsChocolateyCheck(nodeKeepsRunning),
+      windowsChocolateyInstall,
+      windowsChocolateyV1,
       windowsTools,
       windowsGoDownload,
       windowsGoInstall,
@@ -960,7 +1043,7 @@ const VERIFY_PANELS: readonly PlatformPanel[] = [
     id: "linux",
     label: "Linux",
     steps: [
-      ghStep,
+      ...ghSteps("linux"),
       {
         title: "Check an archive",
         code: `# 1. Check that the archive arrived intact
@@ -979,7 +1062,7 @@ ${attestationOutput(`core-geth-linux-${releaseTag}.zip`, "release-packages.yml")
     id: "macos",
     label: "macOS",
     steps: [
-      ghStep,
+      ...ghSteps("macos"),
       {
         title: "Check an archive",
         code: `shasum -a 256 -c core-geth-osx-arm64-${releaseTag}.zip.sha256
@@ -993,7 +1076,7 @@ gh attestation verify core-geth-osx-arm64-${releaseTag}.zip --repo ${REPO.slug}`
     id: "windows",
     label: "Windows",
     steps: [
-      ghStep,
+      ...ghSteps("windows"),
       {
         title: "Check an archive",
         code: `# 1. Check that the archive arrived intact: compare these two lines, in PowerShell
