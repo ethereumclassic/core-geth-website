@@ -50,7 +50,38 @@ if (!releaseTag.startsWith(`${RECOMMENDED_LINE}.`)) {
 const assetBase = `https://github.com/${REPO.slug}/releases/download/${releaseTag}`;
 
 const attestationMust = (workflow: string, action = "run the file") =>
-  `\`gh attestation verify\` needs the GitHub CLI, signed in with \`gh auth login\`. It must print \`Verification succeeded\` and name \`.github/workflows/${workflow}\`. If it does not, do not ${action}.`;
+  `\`gh attestation verify\` must print \`Verification succeeded\` and name \`.github/workflows/${workflow}\`. If it does not, do not ${action}.`;
+
+// The tools a block needs get a step of their own before it: a block that checks each one, and a note
+// saying what each line must print and where to get the tool (maintainer, 2026-11-05). A missing or old
+// tool then shows as one line's error, not as a build or a check that fails partway. Each check is a line of
+// its own, so one missing tool cannot hide another.
+//
+// `gh attestation` arrived in the GitHub CLI's 2.49.0 release (its release notes, 2024-04-30), and the
+// installation guide says verifying needs the CLI signed in. `docker version` in this format prints the
+// engine's version, and an error when no engine answers.
+const ghTools = `gh --version
+gh auth status`;
+
+const ghCheck =
+  "`gh --version` must print 2.49.0 or later, the release that added `gh attestation`: install or update the GitHub CLI from [cli.github.com](https://cli.github.com/). `gh auth status` must say you are logged in to github.com. If it does not, run `gh auth login`.";
+
+const ghStep = {
+  title: "Check the GitHub CLI",
+  before: "Checking where a file came from needs the GitHub CLI, signed in to GitHub:",
+  code: ghTools,
+  after: `${ghCheck} The checksum line in the next step does not need the GitHub CLI.`,
+};
+
+const containerTools = `docker version --format '{{.Server.Version}}'
+${ghTools}`;
+
+const containerStep = (uses: string, kept = "") => ({
+  title: "Check Docker and the GitHub CLI",
+  before: `These steps need Docker to ${uses}, and the GitHub CLI to check where the image came from:`,
+  code: containerTools,
+  after: `${kept}The first line must print the Docker engine's version. An error in its place means Docker is not installed or not running: [Get Docker](https://docs.docker.com/get-started/get-docker/) says how to install it. ${ghCheck}`,
+});
 
 const windowsCompare =
   "Compare those two lines yourself: the letters must match and the case need not, since `Get-FileHash` prints uppercase and the `.sha256` file holds lowercase followed by the file name.";
@@ -164,6 +195,7 @@ C:\\core-geth\\geth.exe version`,
     id: "containers",
     label: "Containers",
     steps: [
+      containerStep("pull and run the image"),
       {
         title: "Pull the published image and check where it came from",
         code: `docker pull ghcr.io/${REPO.slug}:latest
@@ -474,6 +506,7 @@ Rename-Item $key "nodekey.old-rotated-$(Get-Date -Format yyyy-MM-dd)"`,
     label: "Containers",
     steps: [
       trialNode,
+      containerStep("pull and run the image", "The node can keep running for this step. "),
       {
         title: "Pull the release",
         code: `docker pull ghcr.io/${REPO.slug}:latest
@@ -660,6 +693,7 @@ const VERIFY_PANELS: readonly PlatformPanel[] = [
     id: "linux",
     label: "Linux",
     steps: [
+      ghStep,
       {
         title: "Check an archive",
         code: `# 1. Check that the archive arrived intact
@@ -678,6 +712,7 @@ ${attestationOutput(`core-geth-linux-${releaseTag}.zip`, "release-packages.yml")
     id: "macos",
     label: "macOS",
     steps: [
+      ghStep,
       {
         title: "Check an archive",
         code: `shasum -a 256 -c core-geth-osx-arm64-${releaseTag}.zip.sha256
@@ -691,6 +726,7 @@ gh attestation verify core-geth-osx-arm64-${releaseTag}.zip --repo ${REPO.slug}`
     id: "windows",
     label: "Windows",
     steps: [
+      ghStep,
       {
         title: "Check an archive",
         code: `# 1. Check that the archive arrived intact: compare these two lines, in PowerShell
@@ -709,6 +745,7 @@ ${attestationOutput(`core-geth-win64-${releaseTag}.zip`, "release-packages.yml")
     id: "containers",
     label: "Containers",
     steps: [
+      containerStep("load the image"),
       {
         title: "Check an image file",
         code: `curl -LO ${assetBase}/core-geth-docker-amd64-${releaseTag}.tar.gz
