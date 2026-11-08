@@ -79,8 +79,14 @@ it node by node and keep MESS set the same across it.
 ships it enabled**, with no deactivation block, on Ethereum Classic and Mordor. A node upgraded from one of those
 releases applies MESS to reorganizations again once it is synced and well peered.
 
-This is the client maintainers' position for the `v1.13.x` line, set out in the
-[README](https://github.com/ethereumclassic/core-geth#etc-consensus-history). MESS changes which of two competing
+`v1.13.0` ships with MESS on because every `v1.12` release still carried at least one known vulnerability when it was
+released. MESS defends a node against deep chain reorganizations, and the maintainers turned it on for the period while
+nodes on that line remain exposed. `v1.13.1` turns it off by default again, once the move to the `v1.13` line is expected
+to be under way, or at least the `v1.12` vulnerabilities are widely known. That is a decision for this migration, not a
+judgment on ECBP-1100 or ECBP-1110.
+
+A release ships MESS on or off by default, and
+[which one is a per-release decision](https://docs.coregeth.com/operate/mess/). MESS changes which of two competing
 chains the node prefers, never whether a block is valid. To keep the `v1.12.x` behavior, start the node with
 `--mess=false`. The [MESS page](https://docs.coregeth.com/operate/mess/) covers the setting, and the
 [MESS confirmation calculator](https://docs.coregeth.com/guides/mess-calculator/) shows how much hashrate a reorganization of a given
