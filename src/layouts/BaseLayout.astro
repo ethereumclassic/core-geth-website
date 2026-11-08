@@ -10,10 +10,10 @@ import SiteHeader from "@/components/SiteHeader.astro";
 import {
   ABOUT,
   CLIENT_LICENSE,
-  DOCS,
   DOCS_SITE_NAME,
   DOCS_URL,
   HOME_TITLE,
+  INSTALL_ANCHOR,
   PLATFORMS,
   REPO,
   SITE_DESCRIPTION,
@@ -117,7 +117,7 @@ const jsonLd = {
       applicationCategory: "DeveloperApplication",
       operatingSystem: PLATFORMS.join(", "),
       downloadUrl: REPO.latestUrl,
-      installUrl: DOCS.installation.href,
+      installUrl: `${SITE_URL}/downloads/#${INSTALL_ANCHOR}`,
       softwareHelp: { "@type": "WebSite", name: DOCS_SITE_NAME, url: DOCS_URL },
       // The client costs nothing. Google's software app result requires offers.price,
       // 0 for a free app, and also a rating or review, which this page does not have
