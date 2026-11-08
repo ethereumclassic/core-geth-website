@@ -244,9 +244,11 @@ const macosCheck = {
 // Chocolatey from its publisher, so no script is piped into PowerShell, and its
 // agreement flags keep it from stopping at a prompt that would take the next pasted line as its answer. Go is
 // go.dev's installer for the pinned release, checked by a line that prints `True` or `False` against the
-// SHA-256 go.dev publishes, since the pin lists archives only. A window open before an install does not see
-// the new `PATH`, so Chocolatey runs in a new window, and the check in another, which opens in the home
-// folder, where the build then clones `core-geth`.
+// SHA-256 go.dev publishes, since the pin lists archives only. The steps run in one administrator window
+// (maintainer, 2026-11-05), except that a new one follows WinGet's install of Chocolatey. An administrator
+// window opens in `C:\Windows\System32`, so the Go download and the clone start with `cd $HOME`. A window
+// keeps the `PATH` it opened with, so the check after the installs starts with the reload line, and
+// `msiexec` is piped to `Out-Null` so the window waits for the Go installer to finish.
 //
 // Every tool ends at its current release, not at whatever is already installed (maintainer, 2026-11-05).
 // `choco install` and WinGet both leave an installed package as it is, and `choco upgrade` installs what is
@@ -942,8 +944,8 @@ const unixInstallBuild = {
   after: `Run this in the folder the build step left you in: the first line stops the block anywhere else. Go on only if \`geth version\` prints the same first line and \`Git Commit\` line it printed after the build. ${keepBinary} ${binaryPath}`,
 };
 
-// The new PowerShell window the check runs in opens in the home folder, so the build clones there, and the
-// install copies the build from that clone into the node's folder.
+// The build step moves to the home folder before it clones, so the install copies the build from
+// `$HOME\core-geth` into the node's folder.
 const windowsInstallBuild = {
   title: "Install the build",
   before: "In the same folder:",
