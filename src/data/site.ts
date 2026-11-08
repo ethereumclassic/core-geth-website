@@ -215,15 +215,19 @@ export const DOCS = {
   },
 } as const satisfies Record<string, DocPage>;
 
+/** The `/downloads/` section that installs a node, from nothing to a running node, on each platform. */
+export const INSTALL_ANCHOR = "install";
+
 /**
  * Where to start for each kind of node, from the "Choose your role" table on the
- * documentation's guides page: its own words for each role, and its "Start with" page.
+ * documentation's guides page: its own words for each role, and its "Start with" page,
+ * except that installing starts at the install steps on `/downloads/`.
  */
 export const GUIDES: readonly { role: string; title: string; href: string }[] = [
   {
     role: "Running a node for yourself or a wallet",
     title: "Installation",
-    href: DOCS.installation.href,
+    href: `/downloads/#${INSTALL_ANCHOR}`,
   },
   {
     role: "An exchange or custodian",
@@ -274,7 +278,7 @@ export const DISCOVERY_FLAG_ANCHOR = "discovery-flag";
  * so a link in them is absolute.
  */
 export const MOVE_RECOMMENDATION = `Every node still on a \`${EXPOSED_LINE}\` release should move to the \`${RECOMMENDED_LINE}\` line.`;
-const MOVE_WHERE = `[Downloads](${SITE_URL}/downloads/#${UPGRADE_ANCHOR}) has the commands and checksums, and the [migration guide](${DOCS.migration.href}) has the steps, including the required P2P node key rotation.`;
+const MOVE_WHERE = `[Downloads](${SITE_URL}/downloads/#${UPGRADE_ANCHOR}) has the steps for each platform, including the required P2P node key rotation.`;
 
 /** What the upgrade costs: the time to set aside for the steps, and the far shorter time the
  *  node is down. */
@@ -298,7 +302,7 @@ export const DISCOVERY_FLAG_STEP = `A \`${EXPOSED_LINE}\` node that cannot move 
  */
 export const TRANSITION = {
   lede: "The ETC Cooperative is winding down, and the services it maintained are moving to the `ethereumclassic` GitHub organization: the peer discovery lists, the bootnodes and public JSON-RPC.",
-  advice: `Move a \`${EXPOSED_LINE}\` node to the \`${RECOMMENDED_LINE}\` line with the commands and checksums on [Downloads](${SITE_URL}/downloads/#${UPGRADE_ANCHOR}) and the steps in the [migration guide](${DOCS.migration.href}), including the required P2P node key rotation. ${DISCOVERY_FLAG_STEP} Before you move a node, a pool or an application to a new source of software or data, confirm which organization publishes it.`,
+  advice: `Move a \`${EXPOSED_LINE}\` node to the \`${RECOMMENDED_LINE}\` line with the steps on [Downloads](${SITE_URL}/downloads/#${UPGRADE_ANCHOR}), including the required P2P node key rotation. ${DISCOVERY_FLAG_STEP} Before you move a node, a pool or an application to a new source of software or data, confirm which organization publishes it.`,
 } as const;
 
 export interface Network {
@@ -336,9 +340,9 @@ export const NETWORKS: readonly Network[] = [
 
 /**
  * The four actions the operators page opens with. Each row links the page that carries its
- * next step: the upgrade and rotation rows the migration guide, the MESS row its setting,
- * and a row with no `href` the operators page, which `Operators.astro` falls back to. Each
- * carries one line of its own (maintainer, 2026-10-08): an action a reader cannot weigh
+ * next step: the upgrade and rotation rows the steps for moving a node on `/downloads/`, the
+ * MESS row its setting, and a row with no `href` the operators page, which `Operators.astro`
+ * falls back to. Each carries one line of its own (maintainer, 2026-10-08): an action a reader cannot weigh
  * without opening another page is not an action. Every line is the operators page's or the
  * migration guide's, shortened, never reasoned out here. `code` is set in monospace
  * after `text`; `detail` is a line beneath it, with backticks marking code.
@@ -351,13 +355,13 @@ export const OPERATOR_ACTIONS: readonly {
 }[] = [
   {
     text: `Upgrade to the ${RECOMMENDED_LINE} line`,
-    detail: `${UPGRADE_COST} The migration guide has a path for each platform.`,
-    href: DOCS.migration.href,
+    detail: `${UPGRADE_COST} Downloads has the steps for each platform.`,
+    href: `/downloads/#${UPGRADE_ANCHOR}`,
   },
   {
     text: "Rotate the P2P node key",
     detail: `Required if your node ran the \`${EXPOSED_LINE}\` line: one of the flaws in that line leaks bits of that key across repeated handshakes, and no fix can take back what already leaked. A key that has only ever run \`${RECOMMENDED_LINE}\` was never exposed, so a fresh install skips this step.`,
-    href: `${DOCS.migration.href}#rotate-the-p2p-node-key`,
+    href: `/downloads/#${UPGRADE_ANCHOR}`,
   },
   {
     text: "Track releases at ",
@@ -618,7 +622,7 @@ if (!recommended.running.replaceAll("`", "").startsWith(`${RECOMMENDED_LINE}.`))
 export const NETWORK_RUNNING = {
   measured: { iso: "2026-09-17", text: "September 17, 2026" },
   source: { label: "etcnodes.org", href: "https://etcnodes.org" },
-  evidence: `${DOCS_URL}release-reports/v1.13.0-record/#what-the-network-is-running`,
+  evidence: "/security/2026-09-core-geth-v1.13.0-release-record/#what-the-network-is-running",
   /** Where the Go advisory counts in the rows come from, which is a different audit. */
   goAdvisories: {
     label: "Where the Go figures come from",
@@ -657,7 +661,7 @@ export const ABOUT = {
 /**
  * What the client does, in the row a reader scans before deciding to run it: the pattern
  * every other execution client's page uses. Each line is one claim and routes to the
- * documentation page that carries it, so nothing here has to be maintained twice.
+ * page that carries it, so nothing here has to be maintained twice.
  */
 export const CAPABILITIES: readonly {
   heading: string;
@@ -688,7 +692,7 @@ export const CAPABILITIES: readonly {
     heading: "Platforms",
     body: "Linux, macOS and Windows, on x86-64 and Arm, plus a container image for a host that already runs one.",
     evidence: "9 platforms per release, each with a checksum and an attestation",
-    link: { label: "Installation", href: `${DOCS_URL}getting-started/installation/` },
+    link: { label: "Installation", href: `/downloads/#${INSTALL_ANCHOR}` },
   },
   {
     heading: "Monitoring",
@@ -1326,7 +1330,7 @@ export const FOOTER_GROUPS: readonly {
     heading: "Read",
     links: [
       { label: "Documentation", href: DOCS.home.href },
-      { label: "Install a node", href: DOCS.installation.href },
+      { label: "Install a node", href: `/downloads/#${INSTALL_ANCHOR}` },
       { label: "For node operators", href: DOCS.operators.href },
       { label: "Questions and answers", href: DOCS.faq.href },
     ],

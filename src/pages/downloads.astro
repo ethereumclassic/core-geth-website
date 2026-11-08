@@ -15,6 +15,7 @@ import {
   DISCOVERY_FLAG_ANCHOR,
   DOCS_URL,
   EXPOSED_LINE,
+  INSTALL_ANCHOR,
   MOVE_RECOMMENDATION,
   RECOMMENDED_LINE,
   REPO,
@@ -604,7 +605,7 @@ const checkFlags = {
 // a copy carries the key, and that key is the exposed one, which the move section's lede explains.
 const trialNode = {
   title: `Optional: if you have not run ${RECOMMENDED_LINE} yet, sync one new node first`,
-  after: `Best practice before you move a \`${EXPOSED_LINE}\` node: set up one new node on the \`${RECOMMENDED_LINE}\` line, on a machine of its own beside the nodes you run, with the [install steps](#install) at the top of this page, and point no RPC clients or miners at it. It can sync from the network, or start from a copy of a stopped \`${EXPOSED_LINE}\` node's data directory without its \`geth/nodekey\`. Once \`eth.syncing\` returns \`false\` and \`net.peerCount\` is above zero ([How to tell it is done](${DOCS_URL}getting-started/run-classic-node/#how-to-tell-it-is-done)), move each \`${EXPOSED_LINE}\` node with the steps below.`,
+  after: `Best practice before you move a \`${EXPOSED_LINE}\` node: set up one new node on the \`${RECOMMENDED_LINE}\` line, on a machine of its own beside the nodes you run, with the [install steps](#${INSTALL_ANCHOR}) at the top of this page, and point no RPC clients or miners at it. It can sync from the network, or start from a copy of a stopped \`${EXPOSED_LINE}\` node's data directory without its \`geth/nodekey\`. Once \`eth.syncing\` returns \`false\` and \`net.peerCount\` is above zero ([How to tell it is done](${DOCS_URL}getting-started/run-classic-node/#how-to-tell-it-is-done)), move each \`${EXPOSED_LINE}\` node with the steps below.`,
 };
 
 // Every move tab ends with a running node (maintainer, 2026-11-05: "when i finish the instruction i am running
@@ -932,7 +933,7 @@ const buildGoOn = `Go on only if the first line \`geth version\` prints names ve
 const unixMoveBuild = {
   title: "Build the main branch",
   code: buildMain,
-  after: `${buildGoOn} If a \`core-geth\` folder is already there, run \`git pull\` in it and build there, or remove it first. The Source tab under [Install](#install) says why these steps build \`main\`.`,
+  after: `${buildGoOn} If a \`core-geth\` folder is already there, run \`git pull\` in it and build there, or remove it first. The Source tab under [Install](#${INSTALL_ANCHOR}) says why these steps build \`main\`.`,
 };
 
 const unixInstallBuild = {
@@ -1027,7 +1028,7 @@ const MOVE_SOURCE_PANELS: readonly PlatformPanel[] = [
       {
         title: "Build the main branch",
         code: windowsBuild,
-        after: `${buildGoOn} Run these one line at a time. If \`git clone\` reports that \`core-geth\` already exists, run \`git pull\` in that folder before the build line. The Source tab under [Install](#install) says why these steps build \`main\`.`,
+        after: `${buildGoOn} Run these one line at a time. If \`git clone\` reports that \`core-geth\` already exists, run \`git pull\` in that folder before the build line. The Source tab under [Install](#${INSTALL_ANCHOR}) says why these steps build \`main\`.`,
       },
       {
         ...moveStep("windows", "Record the node's block number and ID"),
@@ -1244,7 +1245,7 @@ go version -m .\\build\\bin\\geth.exe | Select-String vcs.revision`),
     )}
   </PageHero>
 
-  <section class="band band--surface" id="install" aria-labelledby="install-title">
+  <section class="band band--surface" id={INSTALL_ANCHOR} aria-labelledby="install-title">
     <div class="container downloads__install">
       <SectionHead
         id="install-title"
@@ -1402,7 +1403,7 @@ go version -m .\\build\\bin\\geth.exe | Select-String vcs.revision`),
           binary until it is allowed. The <a href={DOCS.installation.href}>installation guide</a>{" "}
           says how to check an archive and proceed.
         </p>
-        <a class="more" href={`${DOCS_URL}audits/2026-09-release-pipeline/`}>
+        <a class="more" href="/security/2026-09-core-geth-v1.12-release-pipeline/">
           <ArrowText text="How the release artifacts are built and checked" />
         </a>
       </div>

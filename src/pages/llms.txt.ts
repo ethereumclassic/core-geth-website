@@ -111,14 +111,14 @@ export const GET: APIRoute = () => {
       ),
     ]),
     `- [What the network is running](${SITE_URL}/security/): this table, the audits behind it, and how to report a security issue.`,
-    `- [The evidence for each row](${NETWORK_RUNNING.evidence})`,
+    `- [The evidence for each row](${absolute(NETWORK_RUNNING.evidence)})`,
     `- [${NETWORK_RUNNING.upgrade.label}](${absolute(NETWORK_RUNNING.upgrade.href)})`,
     "",
     "## For node operators",
     "",
     ...OPERATOR_ACTIONS.map((action) => {
       const name = action.href
-        ? `[${action.text}](${action.href})`
+        ? `[${action.text}](${absolute(action.href)})`
         : `${action.text}${action.code ? `\`${action.code}\`` : ""}`;
       return action.detail ? `- ${name}: ${action.detail}` : `- ${name}`;
     }),
@@ -130,7 +130,7 @@ export const GET: APIRoute = () => {
     "",
     "## Find your guide",
     "",
-    ...GUIDES.map((guide) => `- ${guide.role}: [${guide.title}](${guide.href})`),
+    ...GUIDES.map((guide) => `- ${guide.role}: [${guide.title}](${absolute(guide.href)})`),
     entry(DOCS.guides),
     "",
     "## Security and provenance",

@@ -2,7 +2,7 @@
 import ArrowText from "@/components/ArrowText.astro";
 import InlineCode from "@/components/InlineCode.astro";
 import SectionHead from "@/components/SectionHead.astro";
-import { ABOUT, CAPABILITIES, DOCS, NETWORKS } from "@/data/site";
+import { ABOUT, CAPABILITIES, NETWORKS } from "@/data/site";
 ---
 
 <section class="band band--surface about" aria-labelledby="about-title">
@@ -18,7 +18,7 @@ import { ABOUT, CAPABILITIES, DOCS, NETWORKS } from "@/data/site";
         <p>
           <InlineCode text={ABOUT.oneNode} />
         </p>
-        <a class="more" href={DOCS.history.href}>
+        <a class="more" href="/about/">
           <ArrowText text="Read the project history" />
         </a>
       </div>
