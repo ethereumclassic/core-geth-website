@@ -17,9 +17,10 @@ import {
   UPGRADE_ANCHOR,
 } from "@/data/site";
 
-// The layout for the mirrored audits and release reports under /security/<slug>/, the canonical,
-// designed version of what the documentation publishes. A markdown page sets `layout` to this file
-// and carries title, description, label, em, crumb, date, iso, kind and sourceDoc in front matter.
+// The layout for the mirrored audits and release reports under /security/<slug>/: this site's
+// designed copy of what the documentation publishes. Each site names its own page as canonical. A
+// markdown page sets `layout` to this file and carries title, description, label, em, crumb, date,
+// iso, kind and sourceDoc in front matter.
 //
 // The report's words are the documentation's. This layout adds what the site writes about it, from
 // `src/data/reports.ts`: the summary a reader, a search engine or a language model meets first, the
