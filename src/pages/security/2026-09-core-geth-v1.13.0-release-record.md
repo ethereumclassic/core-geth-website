@@ -354,8 +354,8 @@ The crawl published on September 14, 2026 lists
 further peers through the discovery protocol itself. `--bootnodes` and `--discovery.dns` accept any other list,
 including the previous trees, which still resolve. Those trees are published from
 [<code class="namespace--previous">etclabscore/discv4-dns-lists</code>](https://github.com/etclabscore/discv4-dns-lists), in the ETC Cooperative's
-<code class="namespace--previous">etclabscore</code> organization. As communicated by the ETC Cooperative board, the Cooperative is scheduled to
-dissolve by the end of 2026, and these trees to stop being updated as it does. `v1.13.0` dropped them because this
+<code class="namespace--previous">etclabscore</code> organization. As communicated by the ETC Cooperative board, the Cooperative is due to
+dissolve, and these trees to stop being updated as it does. `v1.13.0` dropped them because this
 project does not hold their signing key
 ([`c0b58570d`](https://github.com/ethereumclassic/core-geth/commit/c0b58570d1439f94cb723d93b4a838ffd45a75c3)).
 [Bootnodes and peer discovery](https://docs.coregeth.com/guides/bootnodes-and-discovery/) explains how the lists are built and how to
