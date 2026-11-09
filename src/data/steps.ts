@@ -420,7 +420,7 @@ export const SOURCE_PANELS: readonly PlatformPanel[] = [
 ];
 
 // One panel per platform the project publishes for, plus source. Every command is the one
-// its linked guide gives, with that guide's version comment dropped, because this page
+// its linked guide gives, with that guide's version comment dropped, because the site
 // names no version of its own. There is no iOS or Android tab: no release publishes a
 // mobile artifact to put in one.
 //
@@ -597,10 +597,10 @@ const checkFlags = {
 
 // For an operator who has not run the recommended line yet: one new node first, beside the nodes they
 // run, then the move (maintainer, 2026-11-03). It is optional and best practice, and done when it has
-// caught up and holds peers (maintainer, 2026-11-04). The install steps at the top of this page suit it,
+// caught up and holds peers (maintainer, 2026-11-04). The install steps suit it,
 // because it has no old key, and it gets a machine of its own, because those steps install over the
 // `geth` on `PATH` and start on the default data directory. It peers and syncs, but no RPC clients or
-// miners point at it, as the census lede on `/security/` says, because the migration guide asks for one
+// miners point at it, as the census lede on `/security/` says, because the documentation's migration guide asks for one
 // MESS setting per fleet and a release's MESS default need not match the fleet's. It may start from a
 // copy of a stopped `v1.12` node's data directory without its `geth/nodekey` (maintainer, 2026-11-04):
 // a copy carries the key, and that key is the exposed one, which the move section's lede explains.
@@ -619,7 +619,7 @@ const startFlags =
 // Rolling back is for a short while (maintainer, 2026-11-08): it puts the old binary or container back so
 // the node runs while the cause is found, then the move runs again, and every move tab ends by deleting
 // the old binary once the node is stable, because every `v1.12` release carries the flaws the audits
-// found. The rollback commands are each platform's migration guide's. A second rename on the same day
+// found. The rollback commands are each platform's migration guide's in the documentation. A second rename on the same day
 // meets the first one's target: GNU `mv -n` refuses it with `not replacing`, and the note names the fix.
 const rollbackTitle = "If you need to roll back";
 const removeOldTitle = `Once the node is stable, delete the ${EXPOSED_LINE} binary`;
@@ -659,10 +659,9 @@ const removeOldWindows = {
   after: oldCopy,
 };
 
-// Moving a node off the exposed line. Another page links this section rather than carrying a
-// block of its own, because only this page's script gives a code block its copy button.
+// Moving a node off the exposed line, on `/downloads/` and the migration guide.
 //
-// One panel per platform, in the migration guide's order, except that the download comes first, so
+// One panel per platform, in the order of the documentation's migration guides, except that the download comes first, so
 // the node keeps running until the new release is in hand and checked. The blocks are separate on
 // purpose: a pasted block carries on past a failed line, so the rename that rotates the key stands
 // alone and the start has a block of its own, which a failed rename cannot reach. `&&` holds the
@@ -670,7 +669,7 @@ const removeOldWindows = {
 // waiting in a paste. No block carries a comment, except in PowerShell, because stock zsh, the macOS
 // default, treats `#` in a paste as a command or an argument.
 //
-// Every command is the one that platform's migration guide gives, apart from what keeps a paste safe
+// Every command is the one that platform's migration guide in the documentation gives, apart from what keeps a paste safe
 // and the rollback intact. `mv -n` keeps a second paste from overwriting the old key, and the install
 // saves the old binary only once, so the block can run again after a mistake. The source panel clones
 // `main` with the install tab's block, which stops at an old clone rather than rebuilding it. The
@@ -1113,7 +1112,7 @@ export const MOVE_SOURCE_PANELS: readonly PlatformPanel[] = [
 
 export const moveLede = `${MOVE_RECOMMENDATION} ${UPGRADE_COST} ${BELOW_FLOOR_POINTER} Follow the steps for your platform below rather than the install steps at the top of this page, which start a node before its P2P node key changes. These steps keep your old binary or container so you can roll back while you find what went wrong, rotate the key before the node starts again, and end by deleting the old binary once the node is stable. The rotation is required: one of the flaws in the \`${EXPOSED_LINE}\` line leaks bits of the P2P node key across repeated handshakes, and no fix can take back what already leaked.`;
 
-export const moveNote = `The [migration guide](${DOCS.migration.href}) also says what else names this node.`;
+export const moveNote = `The documentation's [migration guide](${DOCS.migration.href}) also says what else names this node.`;
 
 // A `v1.12` node that cannot move yet takes the peer discovery the recommended line ships, its lists and
 // its bootnodes both, and a config file loses the `v1.12` values (maintainer, 2026-11-08). Both come from
@@ -1315,7 +1314,7 @@ docker inspect core-geth --format '{{.HostConfig.RestartPolicy.Name}}'`,
         title: replaceTitle,
         before: `A container cannot take a new flag, so this block replaces it with one from the same image, on the same data. Before you run it, put the old container's flags in its last lines, after \`--classic\`, and its \`GETH_\` variables in as \`-e\` options: \`docker inspect core-geth --format '{{json .Args}} {{json .Config.Env}}'\` prints both. Keep its port mappings, and put the restart policy you recorded in place of \`unless-stopped\`. If the old container ran with \`--network host\`, run this one that way too, without the \`-p\` options and with \`--http.addr 127.0.0.1\`. If you copied the data out, put \`-v $HOME/core-geth-data:/root\` in place of \`--volumes-from core-geth-old\`.`,
         code: containerReplace("classic"),
-        after: `${alreadyHas("the old container's flags")} ${listsInPlace}`,
+        after: `${alreadyHas("the old container's command")} ${listsInPlace}`,
       },
       mordorStep("On Mordor, run this block instead", containerReplace("mordor"), replaceTitle),
       confirmPeers(

@@ -29,7 +29,7 @@ const cards = [
     href: GUIDE_PAGES.migrate.href,
     title: GUIDE_PAGES.migrate.title,
     for: `For a node that runs \`${MOVE_FLOOR}\` or a later \`${EXPOSED_LINE}\` release`,
-    body: `Moves the node to the \`${RECOMMENDED_LINE}\` line with its chain data, and gives it the new P2P node key the move requires. ${UPGRADE_COST}`,
+    body: `Moves the node to the \`${RECOMMENDED_LINE}\` line and gives it the new P2P node key the move requires. ${UPGRADE_COST}`,
     covers:
       "Checking what the node runs, what to decide before you stop it, each step with recordings of the clean stop and the start, rolling back for a while and deleting the old binary, what the move changes, and what to do if a step goes wrong.",
   },
@@ -103,8 +103,8 @@ const cards = [
       >
         <p class="lede">
           Running a node for an exchange, a mining pool, an RPC endpoint or an explorer starts in
-          the documentation, which has a page for each role. Downloads has every file the latest
-          release published, with its checksum.
+          the documentation, which has a page for each role. <a href="/downloads/">Downloads</a> has
+          every file the latest release published, with its checksum.
         </p>
       </SectionHead>
       <LinkRow

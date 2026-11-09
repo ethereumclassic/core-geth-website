@@ -13,6 +13,7 @@ import {
   DISCOVERY_FLAG_ANCHOR,
   DISCOVERY_ROUTE,
   EXPOSED_LINE,
+  GUIDE_PAGES,
   INSTALL_ANCHOR,
   RECOMMENDED_LINE,
   REPO,
@@ -51,8 +52,8 @@ import {
       <a class="button button--primary" href={REPO.latestUrl}>
         The latest release
       </a>
-      <a class="button" href={DOCS.installation.href}>
-        Installation guide
+      <a class="button" href={GUIDE_PAGES.install.href}>
+        Install a node
       </a>
     </div>
     {downloads && (
@@ -209,8 +210,9 @@ import {
         </ul>
         <p>
           On a first run Windows names the publisher as unknown, and macOS blocks a downloaded
-          binary until it is allowed. The <a href={DOCS.installation.href}>installation guide</a>{" "}
-          says how to check an archive and proceed.
+          binary until it is allowed. The documentation's{" "}
+          <a href={DOCS.installation.href}>installation guide</a> says how to check an archive and
+          proceed.
         </p>
         <a class="more" href="/security/2026-09-core-geth-v1.12-release-pipeline/">
           <ArrowText text="How the release artifacts are built and checked" />

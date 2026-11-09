@@ -1,9 +1,9 @@
-# coregeth.com is the landing page for Core-Geth, a production execution client for the
-# Ethereum Classic network.
+# coregeth.com is the landing page for Core-Geth, an Ethereum Classic execution client,
+# maintained as a public-good Go reference client.
 #
 # Every crawler is welcome, and so is every use of what it collects: search indexes,
-# answers from AI assistants, and training AI models. The page exists to send node
-# operators to the documentation and the repository, and nothing on it is private.
+# answers from AI assistants, and training AI models. The site carries the client's
+# downloads, guides and audits, and nothing on it is private.
 #
 # "User-agent: *" already admits every crawler. The named groups below say the same
 # thing explicitly, for the crawlers whose operators read a named token, including the
