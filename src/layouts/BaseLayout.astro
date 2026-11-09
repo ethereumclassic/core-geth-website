@@ -12,8 +12,8 @@ import {
   CLIENT_LICENSE,
   DOCS_SITE_NAME,
   DOCS_URL,
+  GUIDE_PAGES,
   HOME_TITLE,
-  INSTALL_ANCHOR,
   PLATFORMS,
   REPO,
   SITE_DESCRIPTION,
@@ -35,6 +35,8 @@ interface Props {
    * home page and on anything that should not carry one.
    */
   crumb?: string;
+  /** The step between the home page and this one, for a page inside a section such as Guides. */
+  crumbParent?: { name: string; path: string };
   description?: string;
   /**
    * Robots rules. The default lets search and answer engines index the page and show
@@ -49,6 +51,7 @@ interface Props {
 const {
   title,
   crumb,
+  crumbParent,
   description = SITE_DESCRIPTION,
   robots = "index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1",
   path = Astro.url.pathname,
@@ -98,7 +101,17 @@ const jsonLd = {
             "@id": `${canonical}#breadcrumb`,
             itemListElement: [
               { "@type": "ListItem", position: 1, name: SITE_NAME, item: `${SITE_URL}/` },
-              { "@type": "ListItem", position: 2, name: crumb, item: canonical },
+              ...(crumbParent
+                ? [
+                    {
+                      "@type": "ListItem",
+                      position: 2,
+                      name: crumbParent.name,
+                      item: new URL(crumbParent.path, SITE_URL).href,
+                    },
+                  ]
+                : []),
+              { "@type": "ListItem", position: crumbParent ? 3 : 2, name: crumb, item: canonical },
             ],
           },
         ]
@@ -117,7 +130,7 @@ const jsonLd = {
       applicationCategory: "DeveloperApplication",
       operatingSystem: PLATFORMS.join(", "),
       downloadUrl: REPO.latestUrl,
-      installUrl: `${SITE_URL}/downloads/#${INSTALL_ANCHOR}`,
+      installUrl: `${SITE_URL}${GUIDE_PAGES.install.href}`,
       softwareHelp: { "@type": "WebSite", name: DOCS_SITE_NAME, url: DOCS_URL },
       // The client costs nothing. Google's software app result requires offers.price,
       // 0 for a free app, and also a rating or review, which this page does not have

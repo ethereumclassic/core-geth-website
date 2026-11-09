@@ -1,8 +1,8 @@
 ---
 import Icon from "@/components/Icon.astro";
-import { BRAND_MENU, DOCS, REPO, SITE_NAME } from "@/data/site";
+import { BRAND_MENU, DOCS, GUIDE_PAGES, REPO, SITE_NAME } from "@/data/site";
 
-// The same bar the documentation's header is: the mark and the name on the left, the two
+// The same bar the documentation's header is: the mark and the name on the left, the three
 // routes a reader needs and the repository on the right, by name alone. A count or a tag read
 // at build time is stale the moment it changes (maintainer, 2026-11-01).
 ---
@@ -28,6 +28,9 @@ import { BRAND_MENU, DOCS, REPO, SITE_NAME } from "@/data/site";
     <nav class="bar__nav" aria-label="Site">
       <a class="bar__link" href="/downloads/">
         Downloads
+      </a>
+      <a class="bar__link" href={GUIDE_PAGES.index.href}>
+        {GUIDE_PAGES.index.title}
       </a>
       <a class="bar__link" href={DOCS.home.href}>
         Documentation
@@ -135,7 +138,7 @@ import { BRAND_MENU, DOCS, REPO, SITE_NAME } from "@/data/site";
 
   /* The name, the link and the mark need about 300px; a 320px phone has 288
      inside the gutters, so the gaps give way there. */
-  /* Under 30rem the bar cannot hold the wordmark and both routes at once, and the name
+  /* Under 30rem the bar cannot hold the wordmark and its three routes at once, and the name
      set nowrap would run under them. The mark stays, the hero carries the wordmark a
      moment later, and the link still reads as the home page to assistive technology. */
   @media (max-width: 30rem) {
@@ -154,6 +157,14 @@ import { BRAND_MENU, DOCS, REPO, SITE_NAME } from "@/data/site";
       overflow: hidden;
       clip-path: inset(50%);
       white-space: nowrap;
+    }
+  }
+
+  /* At 22.5rem and under, the mark, three routes and the repository's icon need more than a
+     320px screen leaves inside its gutters, so the gaps between the routes close further. */
+  @media (max-width: 22.5rem) {
+    .bar__nav {
+      gap: 0.55rem;
     }
   }
 

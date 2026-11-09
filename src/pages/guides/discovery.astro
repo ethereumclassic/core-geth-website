@@ -1,0 +1,224 @@
+---
+import CopyButtons from "@/components/CopyButtons.astro";
+import InlineCode from "@/components/InlineCode.astro";
+import PageHero from "@/components/PageHero.astro";
+import PlatformTabs from "@/components/PlatformTabs.astro";
+import SectionHead from "@/components/SectionHead.astro";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import {
+  RECORDED_DARK_PANELS,
+  RECORDED_DISCOVERY,
+  RECORDED_DISCOVERY_PANELS,
+} from "@/data/recordings";
+import {
+  EXPOSED_LINE,
+  GUIDE_PAGES,
+  LISTS_REPO,
+  MOVE_RECOMMENDATION,
+  RECOMMENDED_LINE,
+} from "@/data/site";
+
+// The guide for a `v1.12` node that cannot move yet: until it moves, it reads the peer discovery lists
+// and bootnodes the recommended line ships (maintainer, 2026-11-08), and a node on either line can start
+// once from the node records `ethereumclassic/discv4-dns-lists` commits if the lists and bootnodes go
+// dark. What the page says about the lists is that repository's. Backticks mark code and
+// `[label](href)` a link in the points below.
+const MIGRATE = `[${GUIDE_PAGES.migrate.title}](${GUIDE_PAGES.migrate.href})`;
+
+const heroLede = `${MOVE_RECOMMENDATION} ${MIGRATE} has the steps. Until a node can move, this guide points it at the peer discovery lists and bootnodes the \`${RECOMMENDED_LINE}\` line ships, so it keeps finding peers after the lists a \`${EXPOSED_LINE}\` release reads stop being updated. The node stays vulnerable: this closes none of the flaws the audits found in the \`${EXPOSED_LINE}\` line.`;
+
+const heroNext = `It also shows how to start a node on either line from the node records committed in \`${LISTS_REPO.slug}\`, if the lists and bootnodes ever go dark.`;
+
+const glance = [
+  {
+    lead: "The lists change.",
+    text: `The node reads the three DNS discovery lists [\`${LISTS_REPO.slug}\`](${LISTS_REPO.url}) publishes for its network, the ones the \`${RECOMMENDED_LINE}\` line reads by default, in place of the one its release reads.`,
+  },
+  {
+    lead: "The bootnodes change.",
+    text: `It starts from the bootnodes the \`${RECOMMENDED_LINE}\` line ships, which the Core-Geth maintainers run across hosting providers and countries, in place of the ones compiled into its release.`,
+  },
+  {
+    lead: "The release stays.",
+    text: `The node goes on running its \`${EXPOSED_LINE}\` release, with every flaw the audits found in it. ${MIGRATE} moves it to the \`${RECOMMENDED_LINE}\` line, which reads these lists and bootnodes with no flags at all.`,
+  },
+  {
+    lead: "The chain data and the key stay.",
+    text: "Nothing resyncs, and the P2P node key does not change. The node is down only while you stop it, change how it starts and start it again; copying a container's data out takes longer.",
+  },
+];
+
+const checkLede = `Find how the node starts: the command you run in a terminal, the \`ExecStart\` line of a systemd unit, the \`ProgramArguments\` of a launchd agent, the command file in the Windows Startup folder, or a container's flags, which \`docker inspect <container> --format '{{json .Args}}'\` prints. The steps add two flags there.`;
+
+const check = [
+  {
+    lead: "Its release.",
+    text: `Ask the running node for its name with \`geth attach --exec 'admin.nodeInfo.name'\` and the node's IPC path. These steps are for \`${EXPOSED_LINE}.17\` and later: a release before \`${EXPOSED_LINE}.17\` does not schedule the Spiral upgrade, so a node on one has left Ethereum Classic, and the lists carry only nodes on the network's current fork.`,
+  },
+  {
+    lead: "A config file.",
+    text: "If the node starts with `--config`, the file can name the lists and bootnodes the node reads, and the steps change it too.",
+  },
+  {
+    lead: "A build from source.",
+    text: "A node built from source starts the same way as a download, so use the tab for its platform.",
+  },
+];
+
+const stepsLede = `Run one block at a time, in order, and read the note under each before the next. In the Linux tab, the clean stop and the start on the new lists carry recordings, made on \`${RECORDED_DISCOVERY.release}\`. [Using the trees](${LISTS_REPO.trees}#core-geth-v112-line) in \`${LISTS_REPO.slug}\` gives the same flags and file.`;
+
+const darkLede = `Each list is committed in \`${LISTS_REPO.slug}\` exactly as it was published, so its node records stay available from that repository whether DNS answers or not. A node that is already running keeps its peers and goes on finding more through the discovery network, and the bootnodes the \`${RECOMMENDED_LINE}\` line ships, which this guide's steps give a \`${EXPOSED_LINE}\` node too, do not use DNS at all. A node on either line that still cannot find peers can start once from the committed records, then start the usual way again. [DNS hosting and outages](${LISTS_REPO.outage}) explains how the lists are served.`;
+
+const darkStatus = `\`${LISTS_REPO.slug}\` reports each night, on its [\`pipeline-status\` issue](${LISTS_REPO.status}), whether every bootnode Core-Geth ships answered the crawl. Subscribe to that issue to be told when a bootnode stops answering. In the Linux tab, the start from the records carries a recording, made on \`${RECORDED_DISCOVERY.release}\`.`;
+
+const moving = `When the node moves, take out both flags, \`--discovery.dns\` and \`--bootnodes\`, and if you changed a config file, delete the \`EthDiscoveryURLs\` and \`SnapDiscoveryURLs\` lines you put there. The \`${RECOMMENDED_LINE}\` line reads these lists and its own bootnodes by default: \`--bootnodes\` would hold it to the bootnodes it names, and \`--discovery.dns\` would leave it no lists for snap peers. ${MIGRATE} has the steps, and its flags step says the same.`;
+
+const why = `A \`${EXPOSED_LINE}\` release starts from one DNS discovery list per network, published from \`etclabscore/discv4-dns-lists\`, and from the bootnodes compiled into it. From \`${EXPOSED_LINE}.20\` to \`${EXPOSED_LINE}.23\`, those are four bootnodes with one hosting provider, three for Ethereum Classic and one for Mordor, and an attack in March 2026 repeatedly crashed two of the three Ethereum Classic ones. The ETC Cooperative's board has communicated that those lists will stop being updated as the Cooperative dissolves: they then serve an aging list of nodes until their domains lapse and they stop resolving. A \`${EXPOSED_LINE}\` node with no saved peers it can still reach, such as a new node or one stopped long enough that its peers have moved on, then has nothing compiled in to start from.`;
+
+const whyMore = `\`${LISTS_REPO.slug}\` tells [the history of the lists](${LISTS_REPO.history}), says [which nodes they carry](${LISTS_REPO.selection}), and shows how to [check what DNS serves](${LISTS_REPO.verifying}) against what the repository recorded.`;
+---
+
+<BaseLayout
+  title={`Keep a Core-Geth ${EXPOSED_LINE} Node Finding Peers`}
+  crumb={GUIDE_PAGES.discovery.title}
+  crumbParent={{ name: GUIDE_PAGES.index.title, path: GUIDE_PAGES.index.href }}
+  description={`Point a Core-Geth ${EXPOSED_LINE} node that cannot move yet at the ${RECOMMENDED_LINE} line's peer discovery lists and bootnodes, or start any node from committed records.`}
+  path={GUIDE_PAGES.discovery.href}
+>
+  <PageHero
+    label={`Core-Geth ${EXPOSED_LINE} peer discovery`}
+    title={`Keep a ${EXPOSED_LINE} node finding peers until it moves`}
+    em="until it moves"
+  >
+    <p class="lede">
+      <InlineCode text={heroLede} />
+    </p>
+    <p class="lede">
+      <InlineCode text={heroNext} />
+    </p>
+  </PageHero>
+
+  <section class="band band--surface" id="glance" aria-labelledby="glance-title">
+    <div class="container guide__band">
+      <SectionHead
+        id="glance-title"
+        label={`Core-Geth ${EXPOSED_LINE} peer discovery at a glance`}
+        title="What this changes, and what it does not"
+        em="what it does not"
+        size="medium"
+      />
+      <ul class="guide__points" role="list">
+        {glance.map((point) => (
+          <li>
+            <strong>{point.lead}</strong> <InlineCode text={point.text} />
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <section class="band" id="check" aria-labelledby="check-title">
+    <div class="container guide__band">
+      <SectionHead
+        id="check-title"
+        label={`Before changing a Core-Geth ${EXPOSED_LINE} node`}
+        title="Check how the node starts"
+        em="how the node starts"
+        size="medium"
+      >
+        <p class="lede">
+          <InlineCode text={checkLede} />
+        </p>
+      </SectionHead>
+      <ul class="guide__points" role="list">
+        {check.map((point) => (
+          <li>
+            <strong>{point.lead}</strong> <InlineCode text={point.text} />
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <section class="band band--surface" id="steps" aria-labelledby="steps-title">
+    <div class="container guide__band">
+      <SectionHead
+        id="steps-title"
+        label={`Changing a Core-Geth ${EXPOSED_LINE} node's peer discovery`}
+        title={`Point the node at the ${RECOMMENDED_LINE} line's lists and bootnodes`}
+        em="lists and bootnodes"
+        size="medium"
+      >
+        <p class="lede">
+          <InlineCode text={stepsLede} />
+        </p>
+      </SectionHead>
+      <PlatformTabs
+        legend="Choose your platform for changing a node's peer discovery"
+        panels={RECORDED_DISCOVERY_PANELS}
+        prefix="discovery-"
+      />
+    </div>
+  </section>
+
+  <section class="band" id="dark" aria-labelledby="dark-title">
+    <div class="container guide__band">
+      <SectionHead
+        id="dark-title"
+        label="Starting a Core-Geth node without the lists"
+        title="If the lists and bootnodes go dark"
+        em="go dark"
+        size="medium"
+      >
+        <p class="lede">
+          <InlineCode text={darkLede} />
+        </p>
+        <p>
+          <InlineCode text={darkStatus} />
+        </p>
+      </SectionHead>
+      <PlatformTabs
+        legend="Choose your platform for starting a node from the committed records"
+        panels={RECORDED_DARK_PANELS}
+        prefix="dark-"
+      />
+    </div>
+  </section>
+
+  <section class="band band--surface" id="moving" aria-labelledby="moving-title">
+    <div class="container guide__band">
+      <SectionHead
+        id="moving-title"
+        label={`Moving to the ${RECOMMENDED_LINE} line`}
+        title="When the node moves, take both flags out"
+        em="take both flags out"
+        size="medium"
+      >
+        <p class="lede">
+          <InlineCode text={moving} />
+        </p>
+      </SectionHead>
+    </div>
+  </section>
+
+  <section class="band" id="why" aria-labelledby="why-title">
+    <div class="container guide__band">
+      <SectionHead
+        id="why-title"
+        label={`The Core-Geth ${EXPOSED_LINE} discovery endpoints`}
+        title={`Why the ${EXPOSED_LINE} lists stop working`}
+        em="stop working"
+        size="medium"
+      >
+        <p class="lede">
+          <InlineCode text={why} />
+        </p>
+        <p>
+          <InlineCode text={whyMore} />
+        </p>
+      </SectionHead>
+    </div>
+  </section>
+</BaseLayout>
+
+<CopyButtons />

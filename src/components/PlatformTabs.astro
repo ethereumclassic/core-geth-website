@@ -18,6 +18,7 @@
  */
 import ArrowText from "@/components/ArrowText.astro";
 import InlineCode from "@/components/InlineCode.astro";
+import Recording from "@/components/Recording.astro";
 
 export interface PlatformPanel {
   /** One of the five the styles below can show: a sixth needs its own rule there. */
@@ -25,10 +26,33 @@ export interface PlatformPanel {
   label: string;
   /** The panel's heading, when it needs more words than its tab's label. */
   heading?: string;
-  /** What a reader does in order: `before` for what a block needs them to read first, a block to run, `after` for what it leaves them to do. */
-  steps: readonly { title: string; before?: string; code?: string; after?: string }[];
+  /** What a reader does in order: `before` for what a block needs them to read first, a block to run, `after` for what it leaves them to do, and a recording of the step being run. */
+  steps: readonly {
+    title: string;
+    before?: string;
+    code?: string;
+    after?: string;
+    recording?: StepRecording;
+  }[];
   /** Left out where a set inside the panel links each platform's guide itself. */
   guide?: { label: string; href: string };
+}
+
+/**
+ * A recording of a step being run, shown under it with the browser's own controls: it plays
+ * only when a reader starts it, and plays with JavaScript off. The step's block carries every
+ * command the recording shows, as text.
+ */
+export interface StepRecording {
+  webm: string;
+  mp4: string;
+  poster: string;
+  width: number;
+  height: number;
+  /** What was recorded, set above the caption. Backticks mark code. */
+  label: string;
+  /** What the recording shows. Backticks mark code. */
+  caption: string;
 }
 
 interface Props {
@@ -85,6 +109,7 @@ const Step = nested ? "h5" : "h4";
               <InlineCode text={step.after} />
             </p>
           )}
+          {step.recording && <Recording recording={step.recording} />}
         </Fragment>
       ))}
       {panel.guide && (

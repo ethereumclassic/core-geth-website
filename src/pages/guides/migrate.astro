@@ -1,0 +1,301 @@
+---
+import CopyButtons from "@/components/CopyButtons.astro";
+import InlineCode from "@/components/InlineCode.astro";
+import PageHero from "@/components/PageHero.astro";
+import PlatformTabs from "@/components/PlatformTabs.astro";
+import SectionHead from "@/components/SectionHead.astro";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { RECORDED_MOVE, RECORDED_MOVE_PANELS } from "@/data/recordings";
+import {
+  DISCOVERY_ROUTE,
+  DOCS,
+  DOCS_URL,
+  EXPOSED_LINE,
+  GUIDE_PAGES,
+  LISTS_REPO,
+  MOVE_RECOMMENDATION,
+  RECOMMENDED_LINE,
+  UPGRADE_COST,
+} from "@/data/site";
+import { MOVE_SOURCE_PANELS, moveSourceIntro } from "@/data/steps";
+
+// The migration guide: the move tabs /downloads/ shows, from the same step module, with recordings
+// under the Linux clean stop and start, and what to check, decide and expect around them. Backticks
+// mark code and `[label](href)` a link in the points below.
+const REPORT = DOCS.releaseReport.href;
+
+const checkName = `Ask the running node for its name with \`geth attach --exec 'admin.nodeInfo.name'\` and the node's IPC path, the command the move's last step uses. A name that starts \`CoreGeth/${EXPOSED_LINE}\` is a \`${EXPOSED_LINE}\` release, and this guide is for that node.`;
+
+// The case for moving is the security page's, so this guide links it rather than restating it.
+const whyMove = `[Security](/security/) makes the case: what the audits found in every \`${EXPOSED_LINE}\` release, what the \`${RECOMMENDED_LINE}\` line fixes, and which releases the network still runs.`;
+
+const checkBinary =
+  "`geth version` reports the binary on your `PATH`, which need not be the one running. [What the network is running](/security/#network-title) counts the nodes on each release.";
+
+const glance = [
+  {
+    lead: "The chain data stays.",
+    text: "The node starts again near the block it stopped at, with no resync.",
+  },
+  {
+    lead: "The old binary stays for a while.",
+    text: `Each tab keeps the \`${EXPOSED_LINE}\` binary or container, so you can roll back while you find what went wrong, and ends by deleting it once the node is stable on the \`${RECOMMENDED_LINE}\` line: every \`${EXPOSED_LINE}\` release carries the flaws the audits found.`,
+  },
+  {
+    lead: "The P2P node key changes, which the move requires.",
+    text: `One of the flaws in the \`${EXPOSED_LINE}\` line leaks bits of that key across repeated handshakes, and no fix can take back what already leaked. The new key gives the node a new enode ID.`,
+  },
+  {
+    lead: "You set MESS.",
+    text: "An upgrade can change whether a node runs MESS, so the steps have you set it: `--mess` turns it on and `--mess=false` turns it off.",
+  },
+];
+
+const decide = [
+  {
+    lead: "Whether to sync a trial node first.",
+    text: `Best practice before you move a \`${EXPOSED_LINE}\` node is one new \`${RECOMMENDED_LINE}\` node on a machine of its own, with no RPC clients or miners pointed at it, until it has caught up and holds peers. The tabs below open with it, as an optional step.`,
+  },
+  {
+    lead: "The node's MESS setting.",
+    text: `Give every node you run the same one. [Which setting fits which operator](${DOCS.messSetting.href}) sets out the choice.`,
+  },
+  {
+    lead: "Who lists this node.",
+    text: "Nodes that list it as a static or trusted peer, and any monitoring entry or allowlist that names it, need the new enode ID after the move. The last step gives the new ID to the nodes that list it; monitoring and allowlists are yours to update.",
+  },
+];
+
+const changes = [
+  {
+    lead: "Where it finds peers.",
+    text: `The \`${RECOMMENDED_LINE}\` line reads peer discovery lists published from the \`ethereumclassic\` organization and ships bootnodes run by the Core-Geth maintainers. Take out any \`--discovery.dns\` or \`--bootnodes\` flag added on \`${EXPOSED_LINE}\`: the flags step says how.`,
+  },
+  {
+    lead: "Its place in the discovery lists.",
+    text: `The nightly crawl that builds the lists stops publishing the old enode ID once it stops answering, and lists the new one once it finds it, if the node is on its network's current fork and makes the list's cap. A node that answers at the same IP address and UDP port takes over its old key's standing ([How nodes are chosen](${LISTS_REPO.selection}#a-key-rotation-keeps-a-nodes-standing)).`,
+  },
+  {
+    lead: "What runs with no network flag.",
+    text: `[No network flag runs Ethereum Classic](${REPORT}#no-network-flag-runs-ethereum-classic) says what that changes for a node started without one.`,
+  },
+  {
+    lead: "The MESS default.",
+    text: `A release ships MESS on or off by default, and which one is a per-release decision, which is why the steps have you set it. The release report's [MESS section](${REPORT}#mess-is-on-by-default) explains \`${RECORDED_MOVE.to}\`'s default.`,
+  },
+  {
+    lead: "A chain run from its own genesis.",
+    text: `For a node started from its own genesis or chainspec file, see [Custom genesis and chainspec files](${REPORT}#custom-genesis-and-chainspec-files).`,
+  },
+  {
+    lead: "Everything else.",
+    text: `The [\`${RECORDED_MOVE.to}\` release report](${REPORT}) has every change the release makes.`,
+  },
+];
+
+const trouble = [
+  {
+    lead: "The enode ID did not change.",
+    text: "The node started on its old key. Stop it, redo the rename step, and start it again. A `--nodekey` or `--nodekeyhex` flag, or `GETH_NODEKEY` or `GETH_NODEKEYHEX` in its environment, overrides the key file, so take that out too.",
+  },
+  {
+    lead: "No peers after five minutes.",
+    text: `[Why does the node have no peers?](${DOCS_URL}operate/troubleshooting/#why-does-the-node-have-no-peers) lists the causes. A new key on its own does not keep a node at zero peers.`,
+  },
+  {
+    lead: "The block number went back.",
+    text: `A node that was killed rather than stopped moves its head back at its next start and imports those blocks again, with no resync. [After an unclean stop](${DOCS_URL}operate/maintenance/#after-an-unclean-stop) has the details.`,
+  },
+  {
+    lead: "Rolling back.",
+    text: `Each tab's rollback step puts the \`${EXPOSED_LINE}\` binary or container back, for as long as it takes to find what went wrong: every \`${EXPOSED_LINE}\` release carries the flaws the audits found. Then move again, renaming the key again, and delete the old binary once the node is stable. A \`${EXPOSED_LINE}\` binary refuses the \`--mess\` flag, so take it out of the start command before you roll back. The documentation's [migration guide](${DOCS.migration.href}) also says what else names the node.`,
+  },
+];
+---
+
+<BaseLayout
+  title={`Migrate a Core-Geth Node from ${EXPOSED_LINE} to ${RECOMMENDED_LINE}`}
+  crumb={GUIDE_PAGES.migrate.title}
+  crumbParent={{ name: GUIDE_PAGES.index.title, path: GUIDE_PAGES.index.href }}
+  description={`Move a Core-Geth ${EXPOSED_LINE} node to the ${RECOMMENDED_LINE} line: stop it cleanly, install the release, rotate its P2P node key, confirm the move and delete the old binary.`}
+  path={GUIDE_PAGES.migrate.href}
+>
+  <PageHero
+    label="Migrate Core-Geth"
+    title={`Move a Core-Geth node from ${EXPOSED_LINE} to ${RECOMMENDED_LINE}`}
+    em={`${EXPOSED_LINE} to ${RECOMMENDED_LINE}`}
+  >
+    <p class="lede">
+      <InlineCode text={`${MOVE_RECOMMENDATION} ${UPGRADE_COST}`} />
+    </p>
+    <p class="lede">
+      This guide walks through the move on each platform: what to check first, every step in order
+      from the download to deleting the old binary, with recordings of the clean stop and the start
+      on Linux, and what to do if a step goes wrong.
+    </p>
+  </PageHero>
+
+  <section class="band band--surface" id="glance" aria-labelledby="glance-title">
+    <div class="container guide__band">
+      <SectionHead
+        id="glance-title"
+        label="The Core-Geth move at a glance"
+        title="What the move keeps, and what it changes"
+        em="what it changes"
+        size="medium"
+      />
+      <ul class="guide__points" role="list">
+        {glance.map((point) => (
+          <li>
+            <strong>{point.lead}</strong> <InlineCode text={point.text} />
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <section class="band" id="check" aria-labelledby="check-title">
+    <div class="container guide__band">
+      <SectionHead
+        id="check-title"
+        label="Checking a Core-Geth node"
+        title="Check what your node runs"
+        em="what your node runs"
+        size="medium"
+      >
+        <p class="lede">
+          <InlineCode text={checkName} />
+        </p>
+        <p>
+          <InlineCode text={checkBinary} />
+        </p>
+      </SectionHead>
+    </div>
+  </section>
+
+  <section class="band band--surface" id="before" aria-labelledby="before-title">
+    <div class="container guide__band">
+      <SectionHead
+        id="before-title"
+        label="Before moving a Core-Geth node"
+        title="Decide before you stop it"
+        em="before you stop it"
+        size="medium"
+      />
+      <ul class="guide__points" role="list">
+        {decide.map((point) => (
+          <li>
+            <strong>{point.lead}</strong> <InlineCode text={point.text} />
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <section class="band" id="steps" aria-labelledby="steps-title">
+    <div class="container guide__band">
+      <SectionHead
+        id="steps-title"
+        label="Moving a Core-Geth node"
+        title="The move, step by step"
+        em="step by step"
+        size="medium"
+      >
+        <p class="lede">
+          <InlineCode
+            text={`Run one block at a time, in order, and read the note under each before the next. In the Linux tab, the clean stop and the first start on the new key carry recordings, made moving \`${RECORDED_MOVE.from}\` to \`${RECORDED_MOVE.to}\`.`}
+          />
+        </p>
+      </SectionHead>
+      <PlatformTabs
+        legend="Choose your platform for moving a node"
+        panels={RECORDED_MOVE_PANELS}
+        prefix="move-"
+      >
+        <Fragment slot="before-source">
+          <p class="panel__note">
+            <InlineCode text={moveSourceIntro} />
+          </p>
+          <PlatformTabs
+            legend="Choose your platform for building from source and moving a node"
+            panels={MOVE_SOURCE_PANELS}
+            prefix="move-source-"
+            nested
+          />
+        </Fragment>
+      </PlatformTabs>
+    </div>
+  </section>
+
+  <section class="band band--surface" id="changes" aria-labelledby="changes-title">
+    <div class="container guide__band">
+      <SectionHead
+        id="changes-title"
+        label={`What the ${RECOMMENDED_LINE} line changes`}
+        title="What the move changes for the node"
+        em="for the node"
+        size="medium"
+      />
+      <ul class="guide__points" role="list">
+        {changes.map((point) => (
+          <li>
+            <strong>{point.lead}</strong> <InlineCode text={point.text} />
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <section class="band" id="trouble" aria-labelledby="trouble-title">
+    <div class="container guide__band">
+      <SectionHead
+        id="trouble-title"
+        label="Troubleshooting a Core-Geth move"
+        title="If a step goes wrong"
+        em="goes wrong"
+        size="medium"
+      />
+      <ul class="guide__points" role="list">
+        {trouble.map((point) => (
+          <li>
+            <strong>{point.lead}</strong> <InlineCode text={point.text} />
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <section class="band band--surface" id="cannot-move" aria-labelledby="cannot-move-title">
+    <div class="container guide__band">
+      <SectionHead
+        id="cannot-move-title"
+        label={`A Core-Geth ${EXPOSED_LINE} node that has to wait`}
+        title={`If a ${EXPOSED_LINE} node cannot move yet`}
+        em="cannot move yet"
+        size="medium"
+      >
+        <p class="lede">
+          <InlineCode text={DISCOVERY_ROUTE} />
+        </p>
+      </SectionHead>
+    </div>
+  </section>
+
+  <section class="band" id="why" aria-labelledby="why-title">
+    <div class="container guide__band">
+      <SectionHead
+        id="why-title"
+        label={`Why move to the ${RECOMMENDED_LINE} line`}
+        title={`Why every ${EXPOSED_LINE} node should move`}
+        em="should move"
+        size="medium"
+      >
+        <p class="lede">
+          <InlineCode text={whyMove} />
+        </p>
+      </SectionHead>
+    </div>
+  </section>
+</BaseLayout>
+
+<CopyButtons />

@@ -1,5 +1,5 @@
 ---
-import { INSTALL_ANCHOR, SITE_NAME } from "@/data/site";
+import { GUIDE_PAGES, SITE_NAME } from "@/data/site";
 ---
 
 <section class="hero" aria-labelledby="hero-title">
@@ -19,7 +19,7 @@ import { INSTALL_ANCHOR, SITE_NAME } from "@/data/site";
         <a class="button button--primary" href="/downloads/">
           Download
         </a>
-        <a class="button" href={`/downloads/#${INSTALL_ANCHOR}`}>
+        <a class="button" href={GUIDE_PAGES.install.href}>
           Install a node
         </a>
       </div>

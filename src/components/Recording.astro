@@ -1,0 +1,65 @@
+---
+import InlineCode from "@/components/InlineCode.astro";
+import type { StepRecording } from "@/components/PlatformTabs.astro";
+
+// A recording of a step being run, with the browser's own controls: it plays only when a reader
+// starts it, and plays with JavaScript off. The step's block, or the text around it, names every
+// command the recording shows. Framed like a code block, since it shows the same terminal.
+interface Props {
+  recording: StepRecording;
+}
+const { recording } = Astro.props;
+---
+
+<figure class="recording">
+  <video
+    controls
+    playsinline
+    preload="none"
+    poster={recording.poster}
+    width={recording.width}
+    height={recording.height}
+  >
+    <source src={recording.webm} type="video/webm" />
+    <source src={recording.mp4} type="video/mp4" />
+  </video>
+  <figcaption>
+    <span class="recording__label">
+      <InlineCode text={recording.label} />
+    </span>
+    <InlineCode text={recording.caption} />
+  </figcaption>
+</figure>
+
+<style>
+  .recording {
+    display: grid;
+    gap: 0.6rem;
+    min-width: 0;
+    margin: 0;
+  }
+
+  .recording video {
+    display: block;
+    width: 100%;
+    height: auto;
+    border-radius: var(--radius);
+    background: var(--bar);
+  }
+
+  .recording figcaption {
+    color: var(--muted);
+    font-size: 0.95rem;
+    line-height: 1.6;
+  }
+
+  .recording figcaption :global(code) {
+    overflow-wrap: anywhere;
+  }
+
+  .recording__label {
+    display: block;
+    color: var(--ink);
+    font-weight: 650;
+  }
+</style>

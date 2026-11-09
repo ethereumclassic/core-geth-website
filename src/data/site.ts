@@ -219,15 +219,61 @@ export const DOCS = {
 export const INSTALL_ANCHOR = "install";
 
 /**
+ * The guides on this site: two walk through the steps on `/downloads/` in order, and the third
+ * keeps a node that cannot move yet finding peers. `/guides/` lists them, and the header, the
+ * footer and /llms.txt name them.
+ */
+export const GUIDE_PAGES = {
+  index: { href: "/guides/", title: "Guides" },
+  install: {
+    href: "/guides/install/",
+    title: "Install Core-Geth",
+    summary:
+      "from a machine with nothing installed to a node that has caught up with the Ethereum Classic network, on Linux, macOS, Windows, in a container or built from source.",
+  },
+  migrate: {
+    href: "/guides/migrate/",
+    title: "Migrate Core-Geth",
+    summary: `moves a node that runs a \`${EXPOSED_LINE}\` release to the \`${RECOMMENDED_LINE}\` line, with its chain data, gives it the new P2P node key the move requires, and ends by deleting the \`${EXPOSED_LINE}\` binary once the node is stable.`,
+  },
+  discovery: {
+    href: "/guides/discovery/",
+    title: `Keep a ${EXPOSED_LINE} node finding peers`,
+    summary: `points a node that cannot leave the \`${EXPOSED_LINE}\` line yet at the peer discovery lists and bootnodes the \`${RECOMMENDED_LINE}\` line ships, until it moves, and starts a node on either line from the node records committed in \`ethereumclassic/discv4-dns-lists\` if the lists and bootnodes go dark.`,
+  },
+} as const;
+
+/** The discovery guide's band for a node that finds no lists and no bootnodes, which every guide's
+ *  no-peers note links. */
+export const DARK_LISTS = `${GUIDE_PAGES.discovery.href}#dark`;
+
+/** `ethereumclassic/discv4-dns-lists`, which publishes the discovery lists and owns what is said
+ *  about them, and the pages of it the discovery guide cites. */
+const LISTS_DOCS = "https://github.com/ethereumclassic/discv4-dns-lists/blob/main/docs";
+export const LISTS_REPO = {
+  slug: "ethereumclassic/discv4-dns-lists",
+  url: "https://github.com/ethereumclassic/discv4-dns-lists",
+  trees: `${LISTS_DOCS}/using-the-trees.md`,
+  outage: `${LISTS_DOCS}/dns-outage.md`,
+  history: `${LISTS_DOCS}/history.md`,
+  selection: `${LISTS_DOCS}/node-selection.md`,
+  verifying: `${LISTS_DOCS}/verifying-a-tree.md`,
+  status: "https://github.com/ethereumclassic/discv4-dns-lists/issues?q=label%3Apipeline-status",
+  /** The Ethereum Classic list's node records, committed as published. */
+  classicNodes:
+    "https://raw.githubusercontent.com/ethereumclassic/discv4-dns-lists/main/all.classic.ethereumclassic.net/nodes.json",
+} as const;
+
+/**
  * Where to start for each kind of node, from the "Choose your role" table on the
  * documentation's guides page: its own words for each role, and its "Start with" page,
- * except that installing starts at the install steps on `/downloads/`.
+ * except that installing starts at this site's install guide.
  */
 export const GUIDES: readonly { role: string; title: string; href: string }[] = [
   {
     role: "Running a node for yourself or a wallet",
-    title: "Installation",
-    href: `/downloads/#${INSTALL_ANCHOR}`,
+    title: GUIDE_PAGES.install.title,
+    href: GUIDE_PAGES.install.href,
   },
   {
     role: "An exchange or custodian",
@@ -269,7 +315,8 @@ export const GUIDES: readonly { role: string; title: string; href: string }[] = 
  */
 export const UPGRADE_ANCHOR = "upgrade";
 
-/** The discovery flag's heading in that section, below its tabs, so a link can land on it. */
+/** The heading in that section, below its tabs, that routes a `v1.12` node that cannot move yet to
+ *  the discovery guide. Other sites link it, so it stays. */
 export const DISCOVERY_FLAG_ANCHOR = "discovery-flag";
 
 /**
@@ -289,16 +336,19 @@ export const UPGRADE_COST =
  * The step for a node that cannot move yet, in the notice below and on `/security/`. /llms.txt
  * reads the notice, so the link is absolute.
  */
-export const DISCOVERY_FLAG_STEP = `A \`${EXPOSED_LINE}\` node that cannot move yet can [add the \`--discovery.dns\` flag](${SITE_URL}/downloads/#${DISCOVERY_FLAG_ANCHOR}) to read the \`ethereumclassic\` GitHub organization's peer discovery lists, a small step that closes none of the flaws the audits found in the \`${EXPOSED_LINE}\` line.`;
+export const DISCOVERY_FLAG_STEP = `A \`${EXPOSED_LINE}\` node that cannot move yet can [read the peer discovery lists and bootnodes the \`${RECOMMENDED_LINE}\` line ships](${SITE_URL}${GUIDE_PAGES.discovery.href}), a small step that closes none of the flaws the audits found in the \`${EXPOSED_LINE}\` line.`;
+
+/** Where `/downloads/` and the migration guide send that node: one paragraph, so neither page
+ *  holds the steps for staying on the exposed line (maintainer, 2026-11-08). */
+export const DISCOVERY_ROUTE = `A \`${EXPOSED_LINE}\` node that has to wait before it moves can keep finding peers. [${GUIDE_PAGES.discovery.title}](${GUIDE_PAGES.discovery.href}) points it at the peer discovery lists and bootnodes the \`${RECOMMENDED_LINE}\` line ships, with the steps for each platform and a config file, and shows how to start a node from the records in \`ethereumclassic/discv4-dns-lists\` if the lists and bootnodes ever go dark. It closes none of the flaws the audits found in the \`${EXPOSED_LINE}\` line, so move the node as soon as you can.`;
 
 /**
  * The lede is the transition page's opening, then the services it names, less the client,
  * because the heading directly above this notice names where releases are published. The advice
  * is this site's own, in the order an operator still on the exposed line needs it (maintainer,
- * 2026-11-01): move, where to, then what the discovery flag does and does not do. Only its last
- * sentence is the transition page's. It stays short (maintainer, 2026-11-01): `/downloads/` says
- * what the discovery lists are, in the words of `ethereumclassic/discv4-dns-lists`' "Using the
- * trees" page.
+ * 2026-11-01): move, where to, then what the discovery step does and does not do. Only its last
+ * sentence is the transition page's. It stays short (maintainer, 2026-11-01): the discovery guide
+ * says what the lists and bootnodes are, in the words of `ethereumclassic/discv4-dns-lists`.
  */
 export const TRANSITION = {
   lede: "The ETC Cooperative is winding down, and the services it maintained are moving to the `ethereumclassic` GitHub organization: the peer discovery lists, the bootnodes and public JSON-RPC.",
@@ -340,9 +390,8 @@ export const NETWORKS: readonly Network[] = [
 
 /**
  * The four actions the operators page opens with. Each row links the page that carries its
- * next step: the upgrade and rotation rows the steps for moving a node on `/downloads/`, the
- * MESS row its setting, and a row with no `href` the operators page, which `Operators.astro`
- * falls back to. Each carries one line of its own (maintainer, 2026-10-08): an action a reader cannot weigh
+ * next step: the upgrade and rotation rows the migration guide, the MESS row its setting, and a
+ * row with no `href` the operators page, which `Operators.astro` falls back to. Each carries one line of its own (maintainer, 2026-10-08): an action a reader cannot weigh
  * without opening another page is not an action. Every line is the operators page's or the
  * migration guide's, shortened, never reasoned out here. `code` is set in monospace
  * after `text`; `detail` is a line beneath it, with backticks marking code.
@@ -355,13 +404,13 @@ export const OPERATOR_ACTIONS: readonly {
 }[] = [
   {
     text: `Upgrade to the ${RECOMMENDED_LINE} line`,
-    detail: `${UPGRADE_COST} Downloads has the steps for each platform.`,
-    href: `/downloads/#${UPGRADE_ANCHOR}`,
+    detail: `${UPGRADE_COST} The migration guide walks through the steps for each platform.`,
+    href: GUIDE_PAGES.migrate.href,
   },
   {
     text: "Rotate the P2P node key",
     detail: `Required if your node ran the \`${EXPOSED_LINE}\` line: one of the flaws in that line leaks bits of that key across repeated handshakes, and no fix can take back what already leaked. A key that has only ever run \`${RECOMMENDED_LINE}\` was never exposed, so a fresh install skips this step.`,
-    href: `/downloads/#${UPGRADE_ANCHOR}`,
+    href: `${GUIDE_PAGES.migrate.href}#steps`,
   },
   {
     text: "Track releases at ",
@@ -866,7 +915,7 @@ export const SPONSOR = {
     lede: "The client is maintained in the `ethereumclassic` GitHub organization by Ethereum Classic's core developers and open community contributions, who do the work, together with the Ethereum Classic DAO, the standing legal entity that maintains and funds the client as the funder of last resort and the floor under the work when nobody else is paying.",
     /**
      * The maintainer and the place the software lives, each given its own panel and its
-     * own route. The DAO is the entity a sponsor is dealing with, so it gets a button
+     * own route. The Ethereum Classic DAO is the entity a sponsor is dealing with, so it gets a button
      * rather than a word underlined in the middle of a paragraph.
      */
     entities: [
@@ -886,7 +935,7 @@ export const SPONSOR = {
         label: "The legal wrapper",
         icon: "law" as const,
         name: "Ethereum Classic DAO",
-        body: "A Wyoming DAO LLC, and what gives the network a legal counterpart when the world asks for one. Funding has to be received and reported in a tax jurisdiction, and an organization sponsoring the work has to contract with someone; neither is possible when the software belongs to no one in particular. The DAO carries those obligations and keeps the public goods from being captured by any individual or employer along the way. It does not control or lead Ethereum Classic, and it is not the only organization that can fund this work: it is the builder, maintainer and funder of last resort, the floor under the work rather than the hands doing it.",
+        body: "A Wyoming DAO LLC, and what gives the network a legal counterpart when the world asks for one. Funding has to be received and reported in a tax jurisdiction, and an organization sponsoring the work has to contract with someone; neither is possible when the software belongs to no one in particular. The Ethereum Classic DAO carries those obligations and keeps the public goods from being captured by any individual or employer along the way. It does not control or lead Ethereum Classic, and it is not the only organization that can fund this work: it is the builder, maintainer and funder of last resort, the floor under the work rather than the hands doing it.",
         cta: { label: "ethereumclassicdao.org", href: "https://ethereumclassicdao.org" },
       },
     ],
@@ -1311,6 +1360,7 @@ export const REPORT_DOCS = AUDITS.filter((doc) => isReleaseDoc(doc.href));
 export const BRAND_MENU: readonly { label: string; href: string }[] = [
   { label: "Home", href: "/" },
   { label: "Downloads", href: "/downloads/" },
+  { label: GUIDE_PAGES.index.title, href: GUIDE_PAGES.index.href },
   { label: "Security", href: "/security/" },
   { label: "About", href: "/about/" },
   { label: "Sponsor", href: "/sponsor/" },
@@ -1330,7 +1380,7 @@ export const FOOTER_GROUPS: readonly {
     heading: "Read",
     links: [
       { label: "Documentation", href: DOCS.home.href },
-      { label: "Install a node", href: `/downloads/#${INSTALL_ANCHOR}` },
+      { label: "Install a node", href: GUIDE_PAGES.install.href },
       { label: "For node operators", href: DOCS.operators.href },
       { label: "Questions and answers", href: DOCS.faq.href },
     ],
@@ -1339,6 +1389,7 @@ export const FOOTER_GROUPS: readonly {
     heading: "The project",
     links: [
       { label: "Downloads", href: "/downloads/" },
+      { label: GUIDE_PAGES.index.title, href: GUIDE_PAGES.index.href },
       { label: "Security", href: "/security/" },
       { label: "About", href: "/about/" },
       { label: REPO.slug, href: REPO.url },

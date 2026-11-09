@@ -1,0 +1,170 @@
+---
+import ArrowText from "@/components/ArrowText.astro";
+import InlineCode from "@/components/InlineCode.astro";
+import LinkRow from "@/components/LinkRow.astro";
+import PageHero from "@/components/PageHero.astro";
+import SectionHead from "@/components/SectionHead.astro";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { DOCS, EXPOSED_LINE, GUIDE_PAGES, RECOMMENDED_LINE, UPGRADE_COST } from "@/data/site";
+
+// The guides on this site, each a walkthrough of steps a node operator runs. Running a node for
+// others, by role, is the documentation's, and the second band sends a reader there.
+const cards = [
+  {
+    href: GUIDE_PAGES.install.href,
+    title: GUIDE_PAGES.install.title,
+    for: "For a machine with no node on it yet",
+    body: "From the download to a node that has caught up with the Ethereum Classic network and holds peers, on Linux, macOS, Windows, in a container or built from the `main` branch.",
+    covers:
+      "Choosing a route, the install steps for your platform with a recording of the first start, checking the download, the first sync, keeping the node running, and where to ask.",
+  },
+  {
+    href: GUIDE_PAGES.migrate.href,
+    title: GUIDE_PAGES.migrate.title,
+    for: `For a node that runs a \`${EXPOSED_LINE}\` release`,
+    body: `Moves the node to the \`${RECOMMENDED_LINE}\` line with its chain data, and gives it the new P2P node key the move requires. ${UPGRADE_COST}`,
+    covers:
+      "Checking what the node runs, what to decide before you stop it, each step with recordings of the clean stop and the start, rolling back for a while and deleting the old binary, what the move changes, and what to do if a step goes wrong.",
+  },
+  {
+    href: GUIDE_PAGES.discovery.href,
+    title: GUIDE_PAGES.discovery.title,
+    for: `For a \`${EXPOSED_LINE}\` node that cannot move yet`,
+    body: `Points the node at the peer discovery lists and bootnodes the \`${RECOMMENDED_LINE}\` line ships, so it keeps finding peers until it moves. It closes none of the flaws the audits found.`,
+    covers:
+      "Checking how the node starts, the steps for your platform with recordings of the clean stop and the starts, a config file, starting any node from the committed node records if the lists and bootnodes go dark, and what to take out when the node moves.",
+  },
+];
+---
+
+<BaseLayout
+  title="Core-Geth Guides for Running an Ethereum Classic Node"
+  crumb={GUIDE_PAGES.index.title}
+  description={`Step-by-step Core-Geth guides: install an Ethereum Classic node, move a ${EXPOSED_LINE} node to the ${RECOMMENDED_LINE} line, or keep one finding peers until it can move.`}
+  path={GUIDE_PAGES.index.href}
+>
+  <PageHero
+    label="Core-Geth guides"
+    title="Guides to running a Core-Geth node"
+    em="running a Core-Geth node"
+  >
+    <p class="lede">
+      <InlineCode
+        text={`Install a node, move one off the \`${EXPOSED_LINE}\` line, or keep one finding peers until it can move, one step at a time. Each guide runs its commands in order, and says what to decide and what to expect between them.`}
+      />
+    </p>
+  </PageHero>
+
+  <section class="band band--surface" aria-labelledby="choose-title">
+    <div class="container guide__band">
+      <SectionHead
+        id="choose-title"
+        label="The Core-Geth guides"
+        title="Start with the guide for your node"
+        em="your node"
+        size="medium"
+      />
+      <ul class="guide-cards" role="list">
+        {cards.map((card) => (
+          <li>
+            <a class="guide-card" href={card.href}>
+              <span class="guide-card__for">
+                <InlineCode text={card.for} />
+              </span>
+              <span class="guide-card__title">
+                <ArrowText text={card.title} />
+              </span>
+              <span class="guide-card__body">
+                <InlineCode text={card.body} />
+              </span>
+              <span class="guide-card__covers">{card.covers}</span>
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <section class="band" aria-labelledby="roles-title">
+    <div class="container guide__band">
+      <SectionHead
+        id="roles-title"
+        label="More guides in the Core-Geth documentation"
+        title="A guide for every role"
+        em="every role"
+        size="medium"
+      >
+        <p class="lede">
+          Running a node for an exchange, a mining pool, an RPC endpoint or an explorer starts in
+          the documentation, which has a page for each role. Downloads has every file the latest
+          release published, with its checksum.
+        </p>
+      </SectionHead>
+      <LinkRow
+        label="Where else to read"
+        links={[
+          { label: DOCS.guides.title, href: DOCS.guides.href, icon: "book" },
+          { label: "Downloads", href: "/downloads/", icon: "download" },
+        ]}
+      />
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  .guide-cards {
+    display: grid;
+    gap: 1.25rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  @media (min-width: 48rem) {
+    .guide-cards {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  /* Each guide as a card: who it is for, its name, then what it does. */
+  .guide-card {
+    display: grid;
+    gap: 0.6rem;
+    height: 100%;
+    padding: clamp(1.25rem, 3vw, 1.75rem);
+    border: 1px solid var(--hairline);
+    border-radius: var(--radius);
+    background: var(--surface);
+    color: var(--text);
+    text-decoration: none;
+  }
+
+  .guide-card:hover,
+  .guide-card:focus-visible {
+    border-color: var(--accent);
+  }
+
+  .guide-card__for {
+    color: var(--muted);
+    font-size: 0.9rem;
+  }
+
+  .guide-card__title {
+    color: var(--accent);
+    font-size: clamp(1.25rem, 2.6vw, 1.5rem);
+    font-weight: 800;
+    letter-spacing: -0.02em;
+  }
+
+  .guide-card__body {
+    line-height: 1.6;
+  }
+
+  .guide-card__covers {
+    padding-top: 0.6rem;
+    border-top: 1px solid var(--hairline);
+    color: var(--muted);
+    font-size: 0.9rem;
+    line-height: 1.55;
+  }
+</style>

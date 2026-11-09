@@ -1,0 +1,256 @@
+---
+import CopyButtons from "@/components/CopyButtons.astro";
+import InlineCode from "@/components/InlineCode.astro";
+import LinkRow from "@/components/LinkRow.astro";
+import PageHero from "@/components/PageHero.astro";
+import PlatformTabs from "@/components/PlatformTabs.astro";
+import SectionHead from "@/components/SectionHead.astro";
+import BaseLayout from "@/layouts/BaseLayout.astro";
+import { RECORDED_INSTALL, RECORDED_INSTALL_PANELS } from "@/data/recordings";
+import {
+  DARK_LISTS,
+  DISCORD_URL,
+  DOCS,
+  DOCS_URL,
+  EXPOSED_LINE,
+  GUIDE_PAGES,
+  ISSUES_URL,
+  LISTS_REPO,
+  RECOMMENDED_LINE,
+  REPO,
+  SECURITY_POLICY_URL,
+} from "@/data/site";
+import {
+  linuxArchiveNote,
+  SOURCE_PANELS,
+  sourceIntro,
+  VERIFY_PANELS,
+  VERIFY_SOURCE_PANELS,
+} from "@/data/steps";
+
+// The install guide: the install and verify tabs /downloads/ shows, from the same step module, with
+// what to settle before them and what comes after the first start. Backticks mark code and
+// `[label](href)` a link in the points below.
+const routes = [
+  {
+    lead: "A release archive,",
+    text: "for Linux, macOS or Windows. The checksum and build attestation published with it let you check the file before it runs.",
+  },
+  {
+    lead: "A container image,",
+    text: "for a host that already runs containers.",
+  },
+  {
+    lead: "A build from source",
+    text: "of the `main` branch, on a machine with none of the build tools: the steps install them first.",
+  },
+];
+
+const afterStart = [
+  {
+    lead: "Check that it has caught up.",
+    text: `Attach to the node: \`eth.syncing\` returns \`false\` once it has caught up with the network, and \`net.peerCount\` above zero means it holds peers. [How to tell it is done](${DOCS_URL}getting-started/run-classic-node/#how-to-tell-it-is-done) has the commands.`,
+  },
+  {
+    lead: "No peers after five minutes?",
+    text: `[Why does the node have no peers?](${DOCS_URL}operate/troubleshooting/#why-does-the-node-have-no-peers) lists the causes. If the discovery lists and bootnodes have gone dark, [start it once from the node records](${DARK_LISTS}) committed in \`${LISTS_REPO.slug}\`.`,
+  },
+  {
+    lead: "Keep it running.",
+    text: `The documentation's run guides set up a node that starts on its own: a systemd unit on [Linux](${DOCS_URL}getting-started/run/linux/), a launchd agent on [macOS](${DOCS_URL}getting-started/run/macos/#6-keep-it-running-a-launchd-agent), and a start at sign-in on [Windows](${DOCS_URL}getting-started/run/windows/#6-keep-it-running-start-it-when-you-sign-in). [Docker](${DOCS_URL}getting-started/run/docker/) has a guide of its own.`,
+  },
+  {
+    lead: "Decide MESS.",
+    text: `MESS makes a node resist deep chain reorganizations. \`--mess\` turns it on and \`--mess=false\` turns it off, and without either the node uses the setting its release ships with. [Which setting fits which operator](${DOCS.messSetting.href}) sets out the choice. Give every node you run the same setting.`,
+  },
+  {
+    lead: "Open RPC only for what needs it.",
+    text: `The node answers JSON-RPC over IPC by default, and \`--http\` and \`--ws\` open HTTP and WebSocket endpoints. Before anything outside the machine uses them, start with the documentation's guide for your role: [${DOCS.guides.title}](${DOCS.guides.href}).`,
+  },
+  {
+    lead: "Stay on the latest release.",
+    text: `Releases are published from \`${REPO.slug}\`. When a new one ships, [Downloads](/downloads/) has its files and the same steps, and a node that has only ever run \`${RECOMMENDED_LINE}\` keeps its P2P node key.`,
+  },
+];
+---
+
+<BaseLayout
+  title="Install Core-Geth: Run an Ethereum Classic Node"
+  crumb={GUIDE_PAGES.install.title}
+  crumbParent={{ name: GUIDE_PAGES.index.title, path: GUIDE_PAGES.index.href }}
+  description="Install Core-Geth on Linux, macOS, Windows or in a container, or build it from source, check what you downloaded, and run an Ethereum Classic node."
+  path={GUIDE_PAGES.install.href}
+>
+  <PageHero
+    label="Install Core-Geth"
+    title="Install Core-Geth and run an Ethereum Classic node"
+    em="run an Ethereum Classic node"
+  >
+    <p class="lede">
+      <InlineCode
+        text={`This guide takes a machine with nothing installed to a node that has caught up with the Ethereum Classic network and holds peers, on the latest \`${RECOMMENDED_LINE}\` release or a build of the \`main\` branch.`}
+      />
+    </p>
+    <p class="lede">
+      <InlineCode
+        text={`Replacing a node that runs a \`${EXPOSED_LINE}\` release? Follow [${GUIDE_PAGES.migrate.title}](${GUIDE_PAGES.migrate.href}) instead: a node that ran \`${EXPOSED_LINE}\` needs a new P2P node key before it starts again, and the steps here start a node on the key it has.`}
+      />
+    </p>
+  </PageHero>
+
+  <section class="band band--surface" id="before" aria-labelledby="before-title">
+    <div class="container guide__band">
+      <SectionHead
+        id="before-title"
+        label="Before you install Core-Geth"
+        title="Check the machine, then choose a route"
+        em="choose a route"
+        size="medium"
+      >
+        <p class="lede">
+          <InlineCode
+            text={`A full node needs room for the chain, memory and time to sync: the documentation's [hardware requirements](${DOCS_URL}getting-started/hardware-requirements/) page has the figures, measured on each network.`}
+          />
+        </p>
+      </SectionHead>
+      <ul class="guide__points" role="list">
+        {routes.map((route) => (
+          <li>
+            <strong>{route.lead}</strong> <InlineCode text={route.text} />
+          </li>
+        ))}
+      </ul>
+      <p class="guide__note">
+        <InlineCode
+          text={`The start steps run a node on Ethereum Classic; for the Mordor test network, use \`--mordor\` in place of \`--classic\`. On a first run, Windows names the publisher as unknown and macOS blocks a downloaded binary until it is allowed: the documentation's [installation guide](${DOCS.installation.href}) says how to proceed on each.`}
+        />
+      </p>
+    </div>
+  </section>
+
+  <section class="band" id="install" aria-labelledby="install-title">
+    <div class="container guide__band">
+      <SectionHead
+        id="install-title"
+        label="Installing Core-Geth"
+        title="Install Core-Geth on your platform"
+        em="on your platform"
+        size="medium"
+      >
+        <p class="lede">
+          Run each block in order, and read the note under it before the next. Every tab ends with
+          the start step: before you run it, check what you downloaded with{" "}
+          <a href="#verify">the commands below</a>.
+        </p>
+        <p>
+          <InlineCode
+            text={`The start step in the Linux tab carries a recording of the node's first start, made installing \`${RECORDED_INSTALL.release}\`.`}
+          />
+        </p>
+      </SectionHead>
+      <PlatformTabs legend="Choose your platform" panels={RECORDED_INSTALL_PANELS}>
+        <p class="panel__note" slot="before-linux">
+          <InlineCode text={linuxArchiveNote} />
+        </p>
+        <Fragment slot="before-source">
+          <p class="panel__note">
+            <InlineCode text={sourceIntro} />
+          </p>
+          <PlatformTabs
+            legend="Choose your platform for building from source"
+            panels={SOURCE_PANELS}
+            prefix="source-"
+            nested
+          />
+        </Fragment>
+      </PlatformTabs>
+      <p class="guide__note">
+        Every file the latest release published, with its checksum, is listed on{" "}
+        <a href="/downloads/#install">Downloads</a>.
+      </p>
+    </div>
+  </section>
+
+  <section class="band band--surface" id="verify" aria-labelledby="verify-title">
+    <div class="container guide__band">
+      <SectionHead
+        id="verify-title"
+        label="Verifying a Core-Geth download"
+        title="Check what you downloaded"
+        em="what you downloaded"
+        size="medium"
+      >
+        <p class="lede">
+          Run these after the download and before the node's first start. The checksum confirms the
+          file arrived intact, and the build attestation names the workflow run that built it and
+          the commit it built from.
+        </p>
+      </SectionHead>
+      <PlatformTabs
+        legend="Choose your platform for checking a download"
+        panels={VERIFY_PANELS}
+        prefix="verify-"
+      >
+        <PlatformTabs
+          slot="before-source"
+          legend="Choose your platform for checking a build from source"
+          panels={VERIFY_SOURCE_PANELS}
+          prefix="verify-source-"
+          nested
+        />
+      </PlatformTabs>
+    </div>
+  </section>
+
+  <section class="band" id="running" aria-labelledby="running-title">
+    <div class="container guide__band">
+      <SectionHead
+        id="running-title"
+        label="Running a Core-Geth node"
+        title="Once the node is running"
+        em="running"
+        size="medium"
+      >
+        <p class="lede">
+          On its first start, the node finds peers through the discovery lists and bootnodes built
+          into the release, and syncs the chain from them.
+        </p>
+      </SectionHead>
+      <ul class="guide__points" role="list">
+        {afterStart.map((point) => (
+          <li>
+            <strong>{point.lead}</strong> <InlineCode text={point.text} />
+          </li>
+        ))}
+      </ul>
+    </div>
+  </section>
+
+  <section class="band band--surface" id="help" aria-labelledby="help-title">
+    <div class="container guide__band">
+      <SectionHead
+        id="help-title"
+        label="Help with Core-Geth"
+        title="Where to ask"
+        em="ask"
+        size="medium"
+      >
+        <p class="lede">
+          <InlineCode
+            text={`The documentation's [${DOCS.faq.title}](${DOCS.faq.href}) covers ${DOCS.faq.summary.replace(/\.$/, "")}. The core developers answer questions on Discord, defects go in the repository's issues, and a security issue is reported privately.`}
+          />
+        </p>
+      </SectionHead>
+      <LinkRow
+        label="Where to ask about Core-Geth"
+        links={[
+          { label: "Discord", href: DISCORD_URL },
+          { label: "Issues", href: ISSUES_URL, icon: "github" },
+          { label: "Security policy", href: SECURITY_POLICY_URL, icon: "shield-lock" },
+        ]}
+      />
+    </div>
+  </section>
+</BaseLayout>
+
+<CopyButtons />

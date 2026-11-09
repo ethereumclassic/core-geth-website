@@ -10,8 +10,8 @@ import { designReport } from "@/lib/report-html";
 import {
   AUDIT_DOCS,
   DISCOVERY_FLAG_STEP,
-  DOCS,
   EXPOSED_LINE,
+  GUIDE_PAGES,
   REPORT_DOCS,
   SITE_URL,
   UPGRADE_ANCHOR,
@@ -131,7 +131,7 @@ const techArticleText = JSON.stringify(techArticle).replaceAll("<", "\\u003c");
               <a class="button button--primary" href={`/downloads/#${UPGRADE_ANCHOR}`}>
                 {`Move a ${EXPOSED_LINE} node`}
               </a>
-              <a class="button" href={DOCS.migration.href}>
+              <a class="button" href={GUIDE_PAGES.migrate.href}>
                 The migration guide
               </a>
             </div>
