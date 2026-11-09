@@ -28,7 +28,7 @@ lockfile is authoritative.
 - **`pnpm-workspace.yaml`** carries a release-age gate (`minimumReleaseAge: 10080`, strict), so
   it applies in every clone and on every CI runner.
 - **No client-side JavaScript framework.** The only scripts are the JSON-LD in the head and one
-  inline copy-button script on `/downloads/`.
+  inline copy-button script on each page with a code block.
 
 ### Astro 7 behaves differently from older Astro
 
@@ -65,8 +65,9 @@ fails CI and the deploy.
 src/pages/        one file per route, plus llms.txt.ts and sitemap.xml.ts
 src/components/   shared pieces; sections/ holds the home page's bands
 src/layouts/      BaseLayout.astro: head metadata, JSON-LD, header and footer
-src/data/         site.ts is the copy and facts; repository.ts and release-assets.ts
-                  read GitHub at build time
+src/data/         site.ts is the copy and facts; steps.ts is every install, move, verify and
+                  discovery step; repository.ts, release-assets.ts and discovery.ts read
+                  GitHub at build time
 src/styles/       global.css: the design tokens and the shared classes
 public/           served at the domain root, so everything in it is public
 ```
@@ -74,12 +75,24 @@ public/           served at the domain root, so everything in it is public
 - **`src/data/site.ts` is the single source for any fact used more than once.**
   `src/pages/llms.txt.ts` generates `/llms.txt` from it and the JSON-LD is derived from it, so
   none of the three can disagree with the page.
-- **The site is six routes and one redirect**: `/`, `/downloads/`, `/security/`, `/about/`,
-  `/sponsor/`, a 404, and `/discord` which forwards to the community's Discord page. The pages
-  under `src/pages/security/` are copies of the audits and reports on docs.coregeth.com.
-- **`/downloads/` and the repository card read GitHub at build time**, never from a visitor's
-  browser. When the API is unreachable they fall back to `src/data/repository-snapshot.json`
-  and log a warning.
+- **The site's pages** are `/`, `/downloads/`, the guides at `/guides/`, `/guides/install/`,
+  `/guides/migrate/` and `/guides/discovery/`, `/security/` with the audits and reports under it,
+  `/about/`, `/sponsor/`
+  and a 404, with one redirect, `/discord`, which forwards to the community's Discord page. The
+  pages under `src/pages/security/` are copies of the audits and reports on docs.coregeth.com.
+- **`src/data/steps.ts` is the only place a command is written.** `/downloads/` and the guides
+  render the same steps from it, so a command cannot differ between them.
+- **`public/recordings/` holds recordings of the Linux steps that watching makes clearer**: a first
+  start, a clean stop, and the start from the committed node records. `src/data/recordings.ts` places
+  each under its step on `/guides/install/`, `/guides/migrate/` and `/guides/discovery/`. A step that
+  prints a line or two, or nothing, carries none.
+  The build fails when a recording names a step its Linux tab no longer has, so renaming a step
+  means renaming it there too.
+- **`/downloads/`, the guides and the repository card read GitHub at build time**, never from a
+  visitor's browser. When the API is unreachable they fall back to `src/data/repository-snapshot.json`
+  and log a warning. `src/data/discovery.ts` reads the bootnodes and discovery lists the `v1.13`
+  line ships from `params/` on `main` in `ethereumclassic/core-geth` the same way, for
+  `/guides/discovery/`, and falls back to `src/data/discovery-snapshot.json`.
 - **Never edit or commit `dist/`, `.astro/` or `node_modules/`.** They are build output.
 - **`public/logo.svg`, `public/favicon.png` and `public/social-card.png` are byte-for-byte
   copies** of `docs/img/` in `ethereumclassic/core-geth`. Re-copy them; never redraw them.

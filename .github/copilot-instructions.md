@@ -18,7 +18,8 @@ The source for **coregeth.com**, the landing page for Core-Geth, an Ethereum Cla
 client. The client lives at `ethereumclassic/core-geth`, and none of its code is here.
 
 The page sends node operators to docs.coregeth.com and to the repository; apart from the commands
-`/downloads/` carries for installing, moving a node and verifying a file, it holds no documentation
+`/downloads/` carries for installing, moving a node and verifying a file, and the guides that walk
+through those commands or keep a node that cannot move yet finding peers, it holds no documentation
 of its own. Every other section answers "what is this, and should I run it" in a few lines, or links
 the documentation page that answers it. Content that would grow past a short paragraph and a link
 belongs in the documentation.
@@ -40,7 +41,7 @@ Read versions from `package.json` and `pnpm-lock.yaml`; the series are:
 - **`pnpm-workspace.yaml`** carries the release-age gate, `minimumReleaseAge: 10080`, strict.
 - **Node.js 24**, set by `node-version` in both workflows.
 - **No client-side JavaScript framework.** The only scripts are the JSON-LD in the head and one
-  inline copy-button script on `/downloads/`.
+  inline copy-button script on each page with a code block.
 
 Astro 7 differs from older versions: the Rust compiler rejects unclosed tags; `compressHTML`
 defaults to `'jsx'`, so a line break next to a tag drops its space, and `prettier-plugin-astro`
@@ -69,7 +70,10 @@ tests pass. `pnpm lint`, `pnpm format:check` and `pnpm build` are the whole gate
 
 - `src/pages/index.astro` is the landing page; `src/pages/downloads.astro` lists what the latest
   release published, read from the GitHub API at build time, with the commands to install, move and
-  verify on each platform; `src/pages/security.astro` carries the audits and what the network runs;
+  verify on each platform; `src/pages/guides/` holds `/guides/` and its three guides: Install
+  Core-Geth and Migrate Core-Geth, which walk through those steps in order, and Keep a v1.12 node
+  finding peers, for a node that cannot move yet; `src/pages/security.astro` carries
+  the audits and what the network runs;
   `src/pages/about.astro` carries the project's lineage; `src/pages/sponsor.astro` says who maintains
   and funds the client; `src/pages/404.astro` is served for any missing path;
   `src/pages/llms.txt.ts` generates `/llms.txt` at build time. The pages under
@@ -82,12 +86,26 @@ tests pass. `pnpm lint`, `pnpm format:check` and `pnpm build` are the whole gate
   Twitter, theme color and JSON-LD.
 - `src/data/site.ts` holds every URL, name and sentence that more than one of the page, the head, the
   JSON-LD and `/llms.txt` use. Never add a static `llms.txt` to `public/`.
+- `src/data/steps.ts` is the only place a command is written. `/downloads/` and the guides render
+  the same steps from it, so a command cannot differ between them.
+- `public/recordings/` holds recordings of the Linux steps that watching makes clearer: a first start,
+  a clean stop, and the start from the committed node records. `src/data/recordings.ts` places each
+  under its step on `/guides/install/`, `/guides/migrate/` and `/guides/discovery/`. A step that prints
+  a line or two, or nothing, carries none.
+  The build fails when a recording names a step its Linux tab no longer has, so renaming a step
+  means renaming it there too.
 - `src/data/repository.ts` reads the repository card's description and the latest release's tag
   from the GitHub API during the build, never in the browser, and falls back to
   `src/data/repository-snapshot.json` when the API cannot be read. Never add a client-side GitHub
   call or a third-party badge.
+- `src/data/discovery.ts` reads the bootnodes and discovery lists the `v1.13` line ships from
+  `params/` on `main` in `ethereumclassic/core-geth` during the build, for `/guides/discovery/`, and
+  falls back to `src/data/discovery-snapshot.json` when it cannot read them.
 - A reader told to upgrade lands on `/downloads/`, and a link to the release itself uses GitHub's
-  latest-release address, `REPO.latestUrl`, never a tag (maintainer decision, 2026-11-01).
+  latest-release address, `REPO.latestUrl`, never a tag (maintainer decision, 2026-11-01). Where the
+  reader is moving a node, the link goes to the migration guide, `/guides/migrate/`, which walks
+  through the same steps (maintainer decision, 2026-11-07). Where a `v1.12` node has to wait, it goes
+  to `/guides/discovery/` (maintainer decision, 2026-11-08).
   `/downloads/` reads the release at build time and nothing schedules a build, so a new release
   needs a redeploy before that page shows it. The docs links naming `v1.13.0` (the release report
   and the record) stay pinned, because each cites that release's own record.
