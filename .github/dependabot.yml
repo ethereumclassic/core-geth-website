@@ -12,8 +12,7 @@
 # WHAT THE TWO ENTRIES NAME
 #   npm             The site's package.json and pnpm-lock.yaml at the repository
 #                   root. pnpm has no ecosystem key of its own and resolves under
-#                   "npm". This file was written before the site, so until that
-#                   manifest lands this entry has nothing to read.
+#                   "npm".
 #   github-actions  The workflows under .github/workflows. For this ecosystem the
 #                   directory is "/", and Dependabot searches .github/workflows
 #                   from there.

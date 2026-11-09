@@ -66,8 +66,8 @@ src/pages/        one file per route, plus llms.txt.ts and sitemap.xml.ts
 src/components/   shared pieces; sections/ holds the home page's bands
 src/layouts/      BaseLayout.astro: head metadata, JSON-LD, header and footer
 src/data/         site.ts is the copy and facts; steps.ts is every install, move, verify and
-                  discovery step; repository.ts, release-assets.ts and discovery.ts read
-                  GitHub at build time
+                  discovery step; repository.ts, release-assets.ts, toolchain.ts and
+                  discovery.ts read GitHub at build time
 src/styles/       global.css: the design tokens and the shared classes
 public/           served at the domain root, so everything in it is public
 ```
@@ -89,10 +89,13 @@ public/           served at the domain root, so everything in it is public
   The build fails when a recording names a step its Linux tab no longer has, so renaming a step
   means renaming it there too.
 - **`/downloads/`, the guides and the repository card read GitHub at build time**, never from a
-  visitor's browser. When the API is unreachable they fall back to `src/data/repository-snapshot.json`
-  and log a warning. `src/data/discovery.ts` reads the bootnodes and discovery lists the `v1.13`
-  line ships from `params/` on `main` in `ethereumclassic/core-geth` the same way, for
-  `/guides/discovery/`, and falls back to `src/data/discovery-snapshot.json`.
+  visitor's browser, and the build logs a warning when a read fails. `repository.ts` then falls
+  back to `src/data/repository-snapshot.json`, and the file lists from `release-assets.ts` give way
+  to a link to the release. `src/data/toolchain.ts` reads the Go release that `main` in
+  `ethereumclassic/core-geth` pins in `build/checksums.txt`, with go.dev's release feed for the
+  Windows installer, and falls back to `src/data/toolchain-snapshot.json`. `src/data/discovery.ts`
+  reads the bootnodes and discovery lists the `v1.13` line ships from `params/` on `main` the same
+  way, for `/guides/discovery/`, and falls back to `src/data/discovery-snapshot.json`.
 - **Never edit or commit `dist/`, `.astro/` or `node_modules/`.** They are build output.
 - **`public/logo.svg`, `public/favicon.png` and `public/social-card.png` are byte-for-byte
   copies** of `docs/img/` in `ethereumclassic/core-geth`. Re-copy them; never redraw them.

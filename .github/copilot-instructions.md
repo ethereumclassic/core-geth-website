@@ -101,11 +101,16 @@ tests pass. `pnpm lint`, `pnpm format:check` and `pnpm build` are the whole gate
 - `src/data/discovery.ts` reads the bootnodes and discovery lists the `v1.13` line ships from
   `params/` on `main` in `ethereumclassic/core-geth` during the build, for `/guides/discovery/`, and
   falls back to `src/data/discovery-snapshot.json` when it cannot read them.
+- `src/data/release-assets.ts` reads the latest release's file list during the build; when it
+  cannot, each panel links the release in place of the list. `src/data/toolchain.ts` reads the Go
+  release that `main` pins in `build/checksums.txt`, with go.dev's release feed for the Windows
+  installer, and falls back to `src/data/toolchain-snapshot.json`.
 - A reader told to upgrade lands on `/downloads/`, and a link to the release itself uses GitHub's
   latest-release address, `REPO.latestUrl`, never a tag (maintainer decision, 2026-11-01). Where the
   reader is moving a node, the link goes to the migration guide, `/guides/migrate/`, which walks
-  through the same steps (maintainer decision, 2026-11-07). Where a `v1.12` node has to wait, it goes
-  to `/guides/discovery/` (maintainer decision, 2026-11-08).
+  through the same steps (maintainer decision, 2026-11-07); each audit and report page carries both,
+  its first button on `/downloads/#upgrade` and its second on the migration guide. Where a `v1.12`
+  node has to wait, it goes to `/guides/discovery/` (maintainer decision, 2026-11-08).
   `/downloads/` reads the release at build time and nothing schedules a build, so a new release
   needs a redeploy before that page shows it. The docs links naming `v1.13.0` (the release report
   and the record) stay pinned, because each cites that release's own record.

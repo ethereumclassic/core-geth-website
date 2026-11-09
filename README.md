@@ -8,7 +8,7 @@ go-ethereum downstream that keeps chain configuration as data rather than hard-c
 serves Ethereum Classic, Mordor, MintMe and private chains.
 
 **[coregeth.com](https://coregeth.com) · [Download](https://coregeth.com/downloads/) ·
-[Documentation](https://docs.coregeth.com/) ·
+[Guides](https://coregeth.com/guides/) · [Documentation](https://docs.coregeth.com/) ·
 [The client](https://github.com/ethereumclassic/core-geth)**
 
 Running `geth` is running a
@@ -26,10 +26,13 @@ docker run -d --name core-geth-classic \
 ```
 
 [Downloads](https://coregeth.com/downloads/) has the archive for every platform with its checksum
-beside it, and the commands to install, start and verify on Linux, macOS, Windows, in a container or
-from source. [Moving a `v1.12` node](https://coregeth.com/downloads/#upgrade) has its own steps there,
-including the required P2P node key rotation. The file names carry the release tag, which is why
-they are generated there rather than written down here.
+beside it. [Install Core-Geth](https://coregeth.com/guides/install/) walks through installing,
+starting and checking a node on Linux, macOS, Windows, in a container or from source, and
+[Migrate Core-Geth](https://coregeth.com/guides/migrate/) moves a node on `v1.12.17` or a later
+`v1.12` release to the `v1.13` line, including the required P2P node key rotation. A `v1.12` node
+that cannot move yet can [keep finding peers](https://coregeth.com/guides/discovery/) until it does,
+which closes none of the flaws the audits found. The file names carry the release tag, so
+coregeth.com generates them from the release rather than this README listing them.
 
 ## Why it is maintained here
 
