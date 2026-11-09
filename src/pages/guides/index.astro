@@ -5,7 +5,14 @@ import LinkRow from "@/components/LinkRow.astro";
 import PageHero from "@/components/PageHero.astro";
 import SectionHead from "@/components/SectionHead.astro";
 import BaseLayout from "@/layouts/BaseLayout.astro";
-import { DOCS, EXPOSED_LINE, GUIDE_PAGES, RECOMMENDED_LINE, UPGRADE_COST } from "@/data/site";
+import {
+  DOCS,
+  EXPOSED_LINE,
+  GUIDE_PAGES,
+  MOVE_FLOOR,
+  RECOMMENDED_LINE,
+  UPGRADE_COST,
+} from "@/data/site";
 
 // The guides on this site, each a walkthrough of steps a node operator runs. Running a node for
 // others, by role, is the documentation's, and the second band sends a reader there.
@@ -21,7 +28,7 @@ const cards = [
   {
     href: GUIDE_PAGES.migrate.href,
     title: GUIDE_PAGES.migrate.title,
-    for: `For a node that runs a \`${EXPOSED_LINE}\` release`,
+    for: `For a node that runs \`${MOVE_FLOOR}\` or a later \`${EXPOSED_LINE}\` release`,
     body: `Moves the node to the \`${RECOMMENDED_LINE}\` line with its chain data, and gives it the new P2P node key the move requires. ${UPGRADE_COST}`,
     covers:
       "Checking what the node runs, what to decide before you stop it, each step with recordings of the clean stop and the start, rolling back for a while and deleting the old binary, what the move changes, and what to do if a step goes wrong.",

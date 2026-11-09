@@ -7,12 +7,14 @@ import SectionHead from "@/components/SectionHead.astro";
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import { RECORDED_MOVE, RECORDED_MOVE_PANELS } from "@/data/recordings";
 import {
+  BELOW_FLOOR,
   DISCOVERY_ROUTE,
   DOCS,
   DOCS_URL,
   EXPOSED_LINE,
   GUIDE_PAGES,
   LISTS_REPO,
+  MOVE_FLOOR,
   MOVE_RECOMMENDATION,
   RECOMMENDED_LINE,
   UPGRADE_COST,
@@ -24,7 +26,7 @@ import { MOVE_SOURCE_PANELS, moveSourceIntro } from "@/data/steps";
 // mark code and `[label](href)` a link in the points below.
 const REPORT = DOCS.releaseReport.href;
 
-const checkName = `Ask the running node for its name with \`geth attach --exec 'admin.nodeInfo.name'\` and the node's IPC path, the command the move's last step uses. A name that starts \`CoreGeth/${EXPOSED_LINE}\` is a \`${EXPOSED_LINE}\` release, and this guide is for that node.`;
+const checkName = `Ask the running node for its name with \`geth attach --exec 'admin.nodeInfo.name'\` and the node's IPC path, the command the move's last step uses. A name that starts \`CoreGeth/${EXPOSED_LINE}\` is a \`${EXPOSED_LINE}\` release, and this guide is for that node from \`${MOVE_FLOOR}\` on.`;
 
 // The case for moving is the security page's, so this guide links it rather than restating it.
 const whyMove = `[Security](/security/) makes the case: what the audits found in every \`${EXPOSED_LINE}\` release, what the \`${RECOMMENDED_LINE}\` line fixes, and which releases the network still runs.`;
@@ -35,7 +37,7 @@ const checkBinary =
 const glance = [
   {
     lead: "The chain data stays.",
-    text: "The node starts again near the block it stopped at, with no resync.",
+    text: `From \`${MOVE_FLOOR}\` on, the node starts again near the block it stopped at, with no resync. A node on an older release resyncs instead, as [Check what your node runs](#check) explains.`,
   },
   {
     lead: "The old binary stays for a while.",
@@ -165,6 +167,9 @@ const trouble = [
       >
         <p class="lede">
           <InlineCode text={checkName} />
+        </p>
+        <p>
+          <InlineCode text={BELOW_FLOOR} />
         </p>
         <p>
           <InlineCode text={checkBinary} />

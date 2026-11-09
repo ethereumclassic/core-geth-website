@@ -14,6 +14,7 @@ import {
   EXPOSED_LINE,
   GUIDE_PAGES,
   LISTS_REPO,
+  MOVE_FLOOR,
   MOVE_RECOMMENDATION,
   RECOMMENDED_LINE,
 } from "@/data/site";
@@ -53,7 +54,7 @@ const checkLede = `Find how the node starts: the command you run in a terminal, 
 const check = [
   {
     lead: "Its release.",
-    text: `Ask the running node for its name with \`geth attach --exec 'admin.nodeInfo.name'\` and the node's IPC path. These steps are for \`${EXPOSED_LINE}.17\` and later: a release before \`${EXPOSED_LINE}.17\` does not schedule the Spiral upgrade, so a node on one has left Ethereum Classic, and the lists carry only nodes on the network's current fork.`,
+    text: `Ask the running node for its name with \`geth attach --exec 'admin.nodeInfo.name'\` and the node's IPC path. These steps are for \`${MOVE_FLOOR}\` and later: a release before \`${MOVE_FLOOR}\` does not schedule the Spiral upgrade, so a node on one has left Ethereum Classic, and the lists carry only nodes on the network's current fork. [${GUIDE_PAGES.migrate.title}](${GUIDE_PAGES.migrate.href}#check) says how such a node resyncs.`,
   },
   {
     lead: "A config file.",

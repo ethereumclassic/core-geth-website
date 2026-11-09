@@ -83,6 +83,10 @@ export const RECOMMENDED_LINE = "v1.13";
  */
 export const EXPOSED_LINE = "v1.12";
 
+/** The oldest release the move starts from. A release before it does not schedule the Spiral upgrade,
+ *  so its node resyncs rather than moving in place (maintainer, 2026-11-08). */
+export const MOVE_FLOOR = `${EXPOSED_LINE}.17`;
+
 /**
  * Default meta description, and the Open Graph and Twitter one. Under 160 characters,
  * so a search result shows it whole. It names what the page covers, in its order, and
@@ -234,7 +238,7 @@ export const GUIDE_PAGES = {
   migrate: {
     href: "/guides/migrate/",
     title: "Migrate Core-Geth",
-    summary: `moves a node that runs a \`${EXPOSED_LINE}\` release to the \`${RECOMMENDED_LINE}\` line, with its chain data, gives it the new P2P node key the move requires, and ends by deleting the \`${EXPOSED_LINE}\` binary once the node is stable.`,
+    summary: `moves a node that runs \`${MOVE_FLOOR}\` or a later \`${EXPOSED_LINE}\` release to the \`${RECOMMENDED_LINE}\` line, with its chain data, gives it the new P2P node key the move requires, and ends by deleting the \`${EXPOSED_LINE}\` binary once the node is stable.`,
   },
   discovery: {
     href: "/guides/discovery/",
@@ -329,8 +333,14 @@ const MOVE_WHERE = `[Downloads](${SITE_URL}/downloads/#${UPGRADE_ANCHOR}) has th
 
 /** What the upgrade costs: the time to set aside for the steps, and the far shorter time the
  *  node is down. */
-export const UPGRADE_COST =
-  "Your chain data carries over. Budget about twenty minutes for the steps; the node is down only between its stop and its start, and each of those takes seconds.";
+export const UPGRADE_COST = `From \`${MOVE_FLOOR}\` on, your chain data carries over. Budget about twenty minutes for the steps; the node is down only between its stop and its start, and each of those takes seconds.`;
+
+/** What a node on a release older than the floor does instead of moving, on the migration guide. The
+ *  resync keeps the node's P2P node key, so the rename still applies before its first start. */
+export const BELOW_FLOOR = `A release before \`${MOVE_FLOOR}\` does not schedule the Spiral upgrade, so a node on one has followed an obsolete chain since Spiral activated and cannot move in place. Remove its chain database as the documentation's [Resync from scratch](${DOCS_URL}operate/maintenance/#resync-from-scratch) shows, which keeps the node's P2P node key, rename that key as [the move steps](${GUIDE_PAGES.migrate.href}#steps) do, and then install and start the \`${RECOMMENDED_LINE}\` release with [${GUIDE_PAGES.install.title}](${GUIDE_PAGES.install.href}), which syncs the chain again.`;
+
+/** Where a statement that the move keeps the chain points a node on an older release. */
+export const BELOW_FLOOR_POINTER = `A node on a release before \`${MOVE_FLOOR}\` resyncs instead, as [${GUIDE_PAGES.migrate.title}](${GUIDE_PAGES.migrate.href}#check) explains.`;
 
 /**
  * The step for a node that cannot move yet, in the notice below and on `/security/`. /llms.txt

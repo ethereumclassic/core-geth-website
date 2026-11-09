@@ -9,6 +9,7 @@ import { getDownloads } from "@/data/release-assets";
 import { getRepository } from "@/data/repository";
 import { getGoToolchain, type GoFile } from "@/data/toolchain";
 import {
+  BELOW_FLOOR_POINTER,
   DARK_LISTS,
   DOCS,
   DOCS_URL,
@@ -1110,7 +1111,7 @@ export const MOVE_SOURCE_PANELS: readonly PlatformPanel[] = [
   },
 ];
 
-export const moveLede = `${MOVE_RECOMMENDATION} ${UPGRADE_COST} Follow the steps for your platform below rather than the install steps at the top of this page, which start a node before its P2P node key changes. These steps keep your old binary or container so you can roll back while you find what went wrong, rotate the key before the node starts again, and end by deleting the old binary once the node is stable. The rotation is required: one of the flaws in the \`${EXPOSED_LINE}\` line leaks bits of the P2P node key across repeated handshakes, and no fix can take back what already leaked.`;
+export const moveLede = `${MOVE_RECOMMENDATION} ${UPGRADE_COST} ${BELOW_FLOOR_POINTER} Follow the steps for your platform below rather than the install steps at the top of this page, which start a node before its P2P node key changes. These steps keep your old binary or container so you can roll back while you find what went wrong, rotate the key before the node starts again, and end by deleting the old binary once the node is stable. The rotation is required: one of the flaws in the \`${EXPOSED_LINE}\` line leaks bits of the P2P node key across repeated handshakes, and no fix can take back what already leaked.`;
 
 export const moveNote = `The [migration guide](${DOCS.migration.href}) also says what else names this node.`;
 
