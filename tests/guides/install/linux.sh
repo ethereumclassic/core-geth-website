@@ -48,7 +48,7 @@ paste "$V/install-or-update-the-github-cli/$gh/0.txt"
 if [ -n "${GH_TOKEN:-}" ] || [ -n "$DRY" ]; then
   expect "$V/check-the-github-cli/0.txt" 'Logged in to github\.com'
   skip "$V/check-the-github-cli/1.txt" "signs in through a browser; the job's own token signs the GitHub CLI in"
-  expect "$V/check-an-archive/x86-64/0.txt" 'Verification succeeded'
+  expect "$V/check-an-archive/x86-64/0.txt" ': OK'
 else
   skip "$V/check-an-archive/x86-64/0.txt" "needs a signed-in GitHub CLI, and no GH_TOKEN was given"
 fi

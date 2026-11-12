@@ -214,8 +214,15 @@ log_mark() {
   if [ -f "$1" ]; then wc -l < "$1" | tr -d ' '; else echo 0; fi
 }
 
+# A node closes its IPC endpoint first and logs `Blockchain stopped` last, and a service manager can return
+# before it is done, so these wait up to 300 seconds for the line.
 clean_since() {
   [ -n "$DRY" ] && return 0
+  _i=0
+  until tail -n "+$(($2 + 1))" "$1" 2> /dev/null | grep -q 'Blockchain stopped' || [ "$_i" -ge 300 ]; do
+    sleep 1
+    _i=$((_i + 1))
+  done
   tail -n "+$(($2 + 1))" "$1" > "$WORK/since.log"
   clean_in "$WORK/since.log"
 }
@@ -223,6 +230,11 @@ clean_since() {
 # The systemd service's journal since a time from `date +%s`, checked for a clean stop.
 journal_since() {
   [ -n "$DRY" ] && return 0
+  _i=0
+  until sudo journalctl -u core-geth --no-pager --since "@$1" | grep -q 'Blockchain stopped' || [ "$_i" -ge 300 ]; do
+    sleep 1
+    _i=$((_i + 1))
+  done
   sudo journalctl -u core-geth --no-pager --since "@$1" > "$WORK/journal.log"
   clean_in "$WORK/journal.log"
 }

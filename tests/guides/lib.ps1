@@ -33,7 +33,7 @@ foreach ($__k in $__state.Vars.Keys) { Set-Variable -Name $__k -Value $__state.V
 # stderr, which Windows PowerShell records as an error whenever that output is redirected.
 $LineStart = '$global:LASTEXITCODE = 0; $Error.Clear()'
 $LineCheck = @'
-if ($LASTEXITCODE) { Write-Host "FAILED: {where} exited with code $LASTEXITCODE"; exit 1 }
+if ($LASTEXITCODE -and (@({allow}) -notcontains $LASTEXITCODE)) { Write-Host "FAILED: {where} exited with code $LASTEXITCODE"; exit 1 }
 $__errors = @($Error | Where-Object { $_.FullyQualifiedErrorId -notlike 'NativeCommandError*' })
 if ($__errors.Count) { Write-Host "FAILED: {where}: $($__errors[-1])"; exit 1 }
 '@
@@ -155,21 +155,24 @@ function Test-Whole([string[]]$Lines) {
   return $false
 }
 
-function New-Script([string]$File) {
+# A block's script: the prelude, each line with its check, and the epilogue. An exit code in $AllowExit is one
+# the scenario names as a success, such as WinGet's for a package that is already current.
+function New-Script([string]$File, [int[]]$AllowExit = @()) {
   $lines = @(Get-Content -LiteralPath $File -Encoding UTF8)
+  $check = $LineCheck.Replace('{allow}', ($AllowExit -join ', '))
   $out = New-Object System.Collections.Generic.List[string]
   $out.Add($Prelude.Replace('{state}', $StateFile))
   if (Test-Whole $lines) {
     $out.Add($LineStart)
     foreach ($line in $lines) { $out.Add($line) }
-    $out.Add($LineCheck.Replace('{where}', 'the block'))
+    $out.Add($check.Replace('{where}', 'the block'))
   } else {
     for ($n = 1; $n -le $lines.Count; $n++) {
       $line = $lines[$n - 1]
       if ($line.Trim() -eq '' -or $line.TrimStart().StartsWith('#')) { $out.Add($line); continue }
       $out.Add($LineStart)
       $out.Add($line)
-      $out.Add($LineCheck.Replace('{where}', "line $n"))
+      $out.Add($check.Replace('{where}', "line $n"))
     }
   }
   $out.Add($Epilogue.Replace('{state}', $StateFile))
@@ -179,10 +182,10 @@ function New-Script([string]$File) {
 }
 
 # Run a block, print what it printed, and return that text.
-function Invoke-Block([string]$Path) {
+function Invoke-Block([string]$Path, [int[]]$AllowExit = @()) {
   $file = Show-Block $Path
   if ($Dry) { return '' }
-  $script = New-Script $file
+  $script = New-Script $file $AllowExit
   $o = Join-Path $Work 'out.txt'
   $e = Join-Path $Work 'err.txt'
   $p = Start-Process -FilePath powershell.exe -NoNewWindow -PassThru -RedirectStandardOutput $o -RedirectStandardError $e `

@@ -2,7 +2,8 @@
 # Run a guide scenario in a fresh container of a Linux distribution, as a user with passwordless sudo, the
 # way a reader's server account runs the guide. The user and its sudo are CI's setup, not a guide step: the
 # guide's own first step checks sudo, and the step that sets it up asks for a root password CI cannot type.
-# Empty lines on standard input answer the prompts a reader answers with Enter, such as pacman's.
+# The scenario gets the PATH a login gives the account, which sudo would replace with its secure_path, and
+# empty lines on standard input answer the prompts a reader answers with Enter, such as pacman's.
 # Usage: tests/guides/in-container.sh <image> <scenario under tests/guides> [arguments]
 set -euo pipefail
 image=$1
@@ -24,5 +25,6 @@ docker run --rm -e GH_TOKEN -v "$tests:/tests:ro" -v "$BUNDLE:/bundle:ro" "$imag
   chmod 0440 /etc/sudoers.d/reader
   scenario=$1
   shift
-  yes "" | sudo -u reader -H env BUNDLE=/bundle GH_TOKEN="${GH_TOKEN:-}" bash "/tests/guides/$scenario" "$@"
+  yes "" | sudo -u reader -H env PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
+    BUNDLE=/bundle GH_TOKEN="${GH_TOKEN:-}" bash "/tests/guides/$scenario" "$@"
 ' bash "$@"

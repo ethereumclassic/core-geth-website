@@ -41,6 +41,7 @@ configured() {
     -e '$ s|$| --config /config.toml --mess=false|'
 }
 
+# Docker Hub's v1.12.20 tag holds an Arm64 image only, so the workflow runs this on an Arm64 runner.
 say "Scaffolding: a $OLD_IMAGE container, run the way the v1.12 line's guide ran one"
 paste "$(scaffold "docker run -d --name core-geth --restart unless-stopped --stop-timeout 300 $data \
   -p 30303:30303 -p 30303:30303/udp -p 127.0.0.1:8545:8545 \
@@ -73,7 +74,7 @@ fi
 say "Move: check the tools, pull, record, stop, rename the key, list static peers, replace, confirm"
 expect "$M/check-docker-and-the-github-cli/0.txt" 'Logged in to github\.com'
 skip "$M/check-docker-and-the-github-cli/1.txt" "signs in through a browser; the job's own token signs the GitHub CLI in"
-expect "$M/pull-the-release/0.txt" 'Verification succeeded'
+expect "$M/pull-the-release/0.txt" 'Digest: sha256:'
 capture record "$M/record-the-nodes-block-number-id-restart-policy-and-flags/0.txt"
 old=$(enode_id "$record")
 holds "the restart policy" "$record" 'unless-stopped'

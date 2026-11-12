@@ -32,20 +32,20 @@ expect "$C/check-docker-and-the-github-cli/0.txt" 'Logged in to github\.com'
 skip "$C/check-docker-and-the-github-cli/1.txt" "signs in through a browser; the job's own token signs the GitHub CLI in"
 
 say "Pull the image, check where it came from, and start a node"
-expect "$PULL" 'Verification succeeded'
+expect "$PULL" 'Digest: sha256:'
 paste "$START"
 start_node "$LOGS" docker exec core-geth-classic test -S "$IPC"
 expect "$C/check-that-it-syncs/1.txt" 'false|currentBlock'
 
 say "Update: stop and remove the container, pull again, start a new one"
 stop_node paste "$C/when-a-new-release-ships-update-the-node/0.txt"
-expect "$PULL" 'Verification succeeded'
+expect "$PULL" 'Digest: sha256:'
 paste "$START"
 start_node "$LOGS" docker exec core-geth-classic test -S "$IPC"
 
 say "Verify: check an image file and load it"
 expect "$V/check-docker-and-the-github-cli/0.txt" 'Logged in to github\.com'
-expect "$V/check-an-image-file/$host/0.txt" 'Verification succeeded'
+expect "$V/check-an-image-file/$host/0.txt" ': OK'
 expect "$V/load-the-image/$1/0.txt" 'Loaded image'
 
 say "Dark band: stop the node, start once from the committed records in a container of its own"

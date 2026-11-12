@@ -22,7 +22,14 @@ old_release() {
     sudo mkdir -p /usr/local/bin
     sudo install -m 0755 geth /usr/local/bin/geth
   )
-  if ! geth version | grep -q 'Core-Geth 1\.12\.20'; then
+  # The macOS build is Intel only, so an Apple Silicon Mac that runs it has Rosetta.
+  if [ "$1" = osx ] && [ "$(uname -m)" = arm64 ] && ! arch -x86_64 /usr/bin/true 2> /dev/null; then
+    echo "  installing Rosetta, which an Apple Silicon Mac running $OLD_RELEASE has"
+    sudo softwareupdate --install-rosetta --agree-to-license
+  fi
+  _v=$(geth version 2>&1) || true
+  if ! printf '%s\n' "$_v" | grep -q '1\.12\.20'; then
+    printf '%s\n' "$_v"
     echo "FAILED: $OLD_RELEASE is not the geth on PATH"
     exit 1
   fi

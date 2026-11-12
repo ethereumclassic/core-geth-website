@@ -48,15 +48,15 @@ Stop-Node
 
 Say 'Verify: the GitHub CLI and the archive'
 if ($Dry -or (Get-Command winget -ErrorAction SilentlyContinue)) {
-  $null = Invoke-Block "$V/install-or-update-the-github-cli/0.txt"
+  # WinGet exits with this code, APPINSTALLER_CLI_ERROR_UPDATE_NOT_APPLICABLE, when the CLI is already current.
+  $null = Invoke-Block "$V/install-or-update-the-github-cli/0.txt" -AllowExit @(-1978335189)
 } else {
   Skip-Block "$V/install-or-update-the-github-cli/0.txt" 'WinGet is not on this runner image, which ships the GitHub CLI'
 }
 $null = Expect-Block "$V/check-the-github-cli/0.txt" 'Logged in to github\.com'
 Skip-Block "$V/check-the-github-cli/1.txt" "signs in through a browser; the job's own token signs the GitHub CLI in"
 New-Window
-$text = Expect-Block "$V/check-an-archive/0.txt" 'Verification succeeded'
-Assert-SameHash $text
+Assert-SameHash (Invoke-Block "$V/check-an-archive/0.txt")
 
 Say 'Dark band: in the folder that holds geth.exe, read the committed records and start once from them'
 New-Window

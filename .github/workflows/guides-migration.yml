@@ -81,13 +81,13 @@ jobs:
             runner: ubuntu-24.04
             run: "bash tests/guides/migrate/linux.sh systemd"
           - name: "Containers, data in a volume"
-            runner: ubuntu-24.04
+            runner: ubuntu-24.04-arm
             run: "bash tests/guides/migrate/containers.sh mounted"
           - name: "Containers, data inside the container"
-            runner: ubuntu-24.04
+            runner: ubuntu-24.04-arm
             run: "bash tests/guides/migrate/containers.sh inside"
           - name: "Containers, discovery with the data copied out"
-            runner: ubuntu-24.04
+            runner: ubuntu-24.04-arm
             run: "bash tests/guides/migrate/containers.sh discovery-inside"
           - name: "macOS, Intel, in a terminal"
             runner: macos-15-intel

@@ -24,7 +24,9 @@ Both run only by hand, when a guide changes: from the repository's Actions tab, 
    as `x`. A step renamed or removed on the page stops the run with `MISSING BLOCK`.
 3. Blocks run in the shell a reader uses: bash on Linux, zsh on macOS and Windows PowerShell 5.1 on
    Windows. Each block runs as one paste into the same session, so a folder or a variable one block
-   sets reaches the next, and it stops at its first failing line, which is stricter than a paste.
+   sets reaches the next, and it stops at its first failing line, which is stricter than a paste. A
+   command that prints its result only to a terminal, such as `gh attestation verify`, passes on its
+   exit status.
 4. A node start runs in the background, or on Windows in a window of its own. The run waits for the
    node's IPC endpoint, runs the guide's checks against it, stops it the way the guide does, Ctrl-C or
    the service's stop command, and requires `Blockchain stopped` in what the node printed.

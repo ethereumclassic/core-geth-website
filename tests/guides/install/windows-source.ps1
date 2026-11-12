@@ -6,6 +6,17 @@
 $I = 'install/source-panel-windows'
 $V = 'install/verify-source-panel-windows'
 
+if (-not $Dry) {
+  # The runner image puts a Go of its own on the machine PATH; a machine the tab is written for has none.
+  foreach ($scope in 'Machine', 'User') {
+    $entries = [Environment]::GetEnvironmentVariable('Path', $scope) -split ';'
+    $kept = ($entries | Where-Object { $_ -and $_ -notmatch '\\go\\\d+\.\d+' }) -join ';'
+    [Environment]::SetEnvironmentVariable('Path', $kept, $scope)
+  }
+  Write-Host "  ci: the runner image's Go taken off PATH"
+}
+$pinned = [regex]::Match([IO.File]::ReadAllText((Get-BlockFile "$I/download-go-x-and-check-it/0.txt")), 'go\d+\.\d+\.\d+').Value
+
 New-Window
 Say 'Chocolatey'
 $version = Expect-Block "$I/check-for-chocolatey/0.txt" '(?m)^\d+\.\d+'
@@ -20,7 +31,7 @@ $null = Expect-Block "$I/update-chocolatey-then-install-git-and-a-c-compiler/0.t
 Say 'Go, then the tools'
 $null = Expect-Block "$I/download-go-x-and-check-it/0.txt" '(?m)^True\s*$'
 $null = Invoke-Block "$I/if-the-check-printed-true-run-the-go-installer/0.txt"
-$null = Expect-Block "$I/check-the-tools/0.txt" 'go version go1\.'
+$null = Expect-Block "$I/check-the-tools/0.txt" "go version $pinned "
 
 Say 'Build the main branch and install the build'
 $null = Expect-Block "$I/build-the-main-branch/first-build/0.txt" 'Core-Geth 1\.'

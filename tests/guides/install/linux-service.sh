@@ -45,7 +45,7 @@ say "Verify the archive"
 skip "$V/install-or-update-the-github-cli/debian-or-ubuntu/0.txt" "the runner image ships the GitHub CLI; the distribution jobs run this line on fresh systems"
 if [ -n "${GH_TOKEN:-}" ] || [ -n "$DRY" ]; then
   expect "$V/check-the-github-cli/0.txt" 'Logged in to github\.com'
-  expect "$V/check-an-archive/$cpu/0.txt" 'Verification succeeded'
+  expect "$V/check-an-archive/$cpu/0.txt" ': OK'
 fi
 
 say "Dark band: stop the service, start once from the committed records, then start the service again"

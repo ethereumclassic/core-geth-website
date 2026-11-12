@@ -20,8 +20,11 @@ function Install-OldRelease {
     exit 1
   }
   Expand-Archive -LiteralPath "$Work\$zip" -DestinationPath 'C:\core-geth' -Force
-  $version = & 'C:\core-geth\geth.exe' version
-  if (-not ($version -match 'Core-Geth 1\.12\.20')) {
+  # Windows PowerShell makes a native command's stderr an error record once it is redirected.
+  $ErrorActionPreference = 'Continue'
+  $version = (& 'C:\core-geth\geth.exe' version 2>&1 | Out-String)
+  if ($version -notmatch '1\.12\.20') {
+    Write-Host $version
     Write-Host "FAILED: C:\core-geth\geth.exe is not $OldRelease"
     exit 1
   }
