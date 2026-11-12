@@ -36,10 +36,10 @@ Read versions from `package.json` and `pnpm-lock.yaml`; the series are:
   `prettier-plugin-astro` 1.
 - **Fonts** self-hosted from Fontsource: Noto Sans and Roboto Mono, both variable.
 - **pnpm 10.34.5, pinned in two places that must agree:** `packageManager` in `package.json` and
-  `version` in both workflows (maintainer decision, 2026-09-17). `pnpm/action-setup` fails the job
+  `version` in every workflow (maintainer decision, 2026-09-17). `pnpm/action-setup` fails the job
   when they differ, so change them together.
 - **`pnpm-workspace.yaml`** carries the release-age gate, `minimumReleaseAge: 10080`, strict.
-- **Node.js 24**, set by `node-version` in both workflows.
+- **Node.js 24**, set by `node-version` in every workflow.
 - **No client-side JavaScript framework.** The only scripts are the JSON-LD in the head and one
   inline copy-button script on each page with a code block.
 
@@ -53,7 +53,7 @@ build output, so never read a secret through them. Read https://docs.astro.build
 From `package.json` `scripts`, and nothing else is defined:
 
 ```bash
-pnpm install --frozen-lockfile   # what both workflows run
+pnpm install --frozen-lockfile   # what every workflow runs
 pnpm dev                         # astro dev, port 4321
 pnpm build                       # astro check && astro build, into dist/
 pnpm preview                     # serves dist/
@@ -65,6 +65,10 @@ pnpm format:check                # prettier --check ., what CI runs
 
 There is no test script and no test framework. Do not suggest `pnpm test`, and never report that
 tests pass. `pnpm lint`, `pnpm format:check` and `pnpm build` are the whole gate, as in CI.
+
+The guide workflows, `guides-install.yml` and `guides-migration.yml`, build the site and run each
+command the guide pages show on the systems their tabs name. They run only by hand, when a guide
+changes, and are not part of the gate; `tests/guides/README.md` says what each job runs and skips.
 
 ## Structure
 
@@ -145,6 +149,8 @@ workflow deploy ignores any `CNAME` file, so `public/CNAME` only records it.
 - `.github/workflows/deploy-pages.yml` runs on push to `main` and on manual dispatch. It installs,
   lints, format-checks and builds, then uploads `dist/` and deploys.
 - `.github/workflows/ci.yml` runs the same checks on pull requests into `main`, without deploying.
+- `.github/workflows/guides-install.yml` and `guides-migration.yml` run only by hand and deploy
+  nothing.
 
 The repository's Pages source is **GitHub Actions** (set 2026-09-18), and no file can change it. If
 it is ever set back to a branch, Pages publishes the branch itself: a push to `main` republishes the
@@ -205,7 +211,7 @@ Do not modify these without an explicit request.
 - `package.json` and `pnpm-lock.yaml`. Adding, removing or bumping **any** dependency is reviewed on
   its own: nothing published within the last seven days, nothing deprecated, and a license
   compatible with this repository's.
-- The pnpm release: `packageManager` and both workflows, always together.
+- The pnpm release: `packageManager` and every workflow, always together.
 - `.github/workflows/`. These run in the organization's CI.
 - The custom domain: the Pages setting, and `public/CNAME` with it.
 - `public/logo.svg`, `public/favicon.png` and `public/social-card.png`, which are re-copied, never

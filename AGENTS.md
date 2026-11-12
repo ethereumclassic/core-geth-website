@@ -23,7 +23,7 @@ lockfile is authoritative.
 - **Fonts** from Fontsource, self-hosted: Noto Sans and Roboto Mono. Nothing is loaded from
   another origin.
 - **pnpm 10.34.5 and Node.js 24.** The pnpm version is pinned in two places that must agree:
-  `packageManager` in `package.json`, and `version` in both workflows' `pnpm/action-setup`
+  `packageManager` in `package.json`, and `version` in every workflow's `pnpm/action-setup`
   step. The action fails the job when they differ, so bump them together.
 - **`pnpm-workspace.yaml`** carries a release-age gate (`minimumReleaseAge: 10080`, strict), so
   it applies in every clone and on every CI runner.
@@ -44,7 +44,7 @@ lockfile is authoritative.
 Everything defined in `package.json`. There is nothing else.
 
 ```bash
-pnpm install --frozen-lockfile   # what both workflows run
+pnpm install --frozen-lockfile   # what every workflow runs
 pnpm dev                         # astro dev on http://localhost:4321
 pnpm build                       # astro check && astro build, into dist/
 pnpm preview                     # serve the built dist/
@@ -59,6 +59,12 @@ report that tests pass. `pnpm lint`, `pnpm format:check` and `pnpm build` are th
 and they are exactly what CI runs. `pnpm build` runs the type check first, so a type error
 fails CI and the deploy.
 
+**The guide workflows run the guides' commands, by hand.** `guides-install.yml` and
+`guides-migration.yml` build the site, then run each command the guide pages show on the systems
+their tabs name, as a reader pastes it. Run them when a guide changes, from the Actions tab or with
+`gh workflow run <workflow> --ref <branch>`, and report a result by its run. They are not part of the
+gate. `tests/guides/README.md` says what each job runs and what it skips.
+
 ## Layout
 
 ```
@@ -70,6 +76,7 @@ src/data/         site.ts is the copy and facts; steps.ts is every install, move
                   discovery.ts read GitHub at build time
 src/styles/       global.css: the design tokens and the shared classes
 public/           served at the domain root, so everything in it is public
+tests/guides/     the guide workflows' scenarios, which run the guides' commands
 ```
 
 - **`src/data/site.ts` is the single source for any fact used more than once.**
@@ -112,6 +119,8 @@ GitHub Pages at **coregeth.com**, deployed by workflow rather than from a branch
   build, then upload and deploy. A failed check fails the deploy rather than publishing a
   broken site.
 - `.github/workflows/ci.yml` runs the same checks on pull requests into `main`.
+- `.github/workflows/guides-install.yml` and `guides-migration.yml` run only by hand and deploy
+  nothing.
 - The custom domain is the repository's Pages setting, with HTTPS enforced there. A workflow
   deploy ignores any `CNAME` file, so `public/CNAME` only records the domain in the tree.
 
@@ -186,7 +195,7 @@ This repository is **public**. Everything not ignored is world-readable once pus
 **Ask first**
 
 - Adding, removing or bumping **any** dependency, and never as a side effect of other work.
-- Changing the pnpm release, which means `packageManager` and both workflows together.
+- Changing the pnpm release, which means `packageManager` and every workflow together.
 - Any change under `.github/workflows/`. These run in the organization's CI.
 - Changing the custom domain, Astro's `site` or `output`, or the head metadata, canonical URL
   or JSON-LD in `src/layouts/BaseLayout.astro`.

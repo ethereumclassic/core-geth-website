@@ -1,0 +1,148 @@
+name: Guides, migration
+
+# Runs the migration and discovery guides' commands, as the built pages give them, on a v1.12.20 node on each
+# system their tabs name: the node takes the v1.13 line's lists and bootnodes, then moves to the v1.13 line,
+# rolls back, moves again and removes what the v1.12 line left. tests/guides/README.md says what each job runs
+# and what it skips. Retire this workflow, with tests/guides/migrate/, once the network is past the v1.12 line.
+#
+# Run it by hand when the guides change, from the Actions tab or with
+#   gh workflow run guides-migration.yml --ref <branch>
+
+on:
+  workflow_dispatch:
+  # A dispatch needs the workflow on the default branch, so its first runs come from this push trigger.
+  # Remove it before the merge.
+  push:
+    branches:
+      - feat/guide-ci
+
+# The jobs download and run what the guides tell a reader to, and need nothing but read access to do it.
+permissions:
+  contents: read
+
+concurrency:
+  group: guides-migration-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  bundle:
+    name: Build the pages and bundle their blocks
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
+        with:
+          version: 10.34.5
+
+      - name: Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "24"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      - name: Bundle the blocks
+        run: python3 tests/guides/blocks.py dist bundle
+
+      - name: Check every address the blocks fetch
+        run: python3 tests/guides/urls.py bundle
+
+      - name: Upload the bundle
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: bundle
+          path: bundle
+          retention-days: 7
+
+  scenario:
+    name: ${{ matrix.name }}
+    needs: bundle
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: "Linux, in a terminal"
+            runner: ubuntu-24.04
+            run: "bash tests/guides/in-container.sh debian:13 migrate/linux.sh terminal"
+          - name: "Linux, as a systemd service"
+            runner: ubuntu-24.04
+            run: "bash tests/guides/migrate/linux.sh systemd"
+          - name: "Containers, data in a volume"
+            runner: ubuntu-24.04
+            run: "bash tests/guides/migrate/containers.sh mounted"
+          - name: "Containers, data inside the container"
+            runner: ubuntu-24.04
+            run: "bash tests/guides/migrate/containers.sh inside"
+          - name: "Containers, discovery with the data copied out"
+            runner: ubuntu-24.04
+            run: "bash tests/guides/migrate/containers.sh discovery-inside"
+          - name: "macOS, Intel, in a terminal"
+            runner: macos-15-intel
+            run: "zsh tests/guides/migrate/macos.sh terminal intel"
+          - name: "macOS, Intel, as a launchd agent"
+            runner: macos-15-intel
+            run: "zsh tests/guides/migrate/macos.sh launchd intel"
+          - name: "macOS, Apple Silicon, in a terminal"
+            runner: macos-15
+            run: "zsh tests/guides/migrate/macos.sh terminal apple-silicon"
+    env:
+      BUNDLE: ${{ github.workspace }}/bundle
+      GH_TOKEN: ${{ github.token }}
+      SCENARIO: ${{ matrix.run }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Download the bundle
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: bundle
+          path: bundle
+
+      - name: Run the scenario
+        run: $SCENARIO
+
+  windows:
+    name: Windows, ${{ matrix.way == 'window' && 'in a PowerShell window' || 'from the Startup folder' }}
+    needs: bundle
+    runs-on: windows-2025
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        way: [window, startup]
+    env:
+      BUNDLE: ${{ github.workspace }}\bundle
+      WAY: ${{ matrix.way }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Download the bundle
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: bundle
+          path: bundle
+
+      - name: Run the scenario in Windows PowerShell 5.1
+        shell: powershell
+        run: |
+          powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests\guides\migrate\windows.ps1 -Way $env:WAY
+          exit $LASTEXITCODE
