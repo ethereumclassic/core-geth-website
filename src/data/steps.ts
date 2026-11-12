@@ -506,7 +506,7 @@ const windowsCheck = {
 git --version
 go version
 gcc --version`,
-  after: `The first line reloads \`PATH\` from Windows' settings, so this window finds what the steps above installed. Each line after it must print a version, and \`go version\` must print \`${go.version}\`. A line saying the term is not recognized names a tool the steps above did not install.`,
+  after: `The first line reloads \`PATH\` from Windows' settings, so this window finds what the steps above installed. Each line after it must print a version, and \`go version\` must print \`${go.version}\`: an older release means a Go installed before comes first in \`PATH\`, so uninstall that one, open a new window and run this step again. A line saying the term is not recognized names a tool the steps above did not install.`,
 };
 
 const windowsBuild = `cd $HOME
@@ -729,9 +729,10 @@ geth --classic attach --exec 'net.peerCount'
 geth --classic attach --exec 'eth.blockNumber'`;
 
 // The service's socket belongs to `geth`, so its attach lines run as `geth`, chained so that a password
-// prompt cannot take the lines after the first.
+// prompt cannot take the lines after the first. They name the binary by its full path, the unit's own, because
+// RHEL's `sudo` searches only its `secure_path`, which leaves out `/usr/local/bin`.
 const asGeth = (exec: string, last = false) =>
-  `sudo -u geth -H geth --classic attach --exec '${exec}' /var/lib/core-geth/geth.ipc${last ? "" : " &&"}`;
+  `sudo -u geth -H /usr/local/bin/geth --classic attach --exec '${exec}' /var/lib/core-geth/geth.ipc${last ? "" : " &&"}`;
 
 const syncLinux: PanelStep = {
   title: "Check that it syncs",
@@ -746,7 +747,7 @@ const syncLinux: PanelStep = {
     {
       label: SYSTEMD,
       before:
-        "The node's socket belongs to `geth`, and only `geth` and root can connect to it, so attach as `geth`. `-H` gives it `geth`'s home directory to write to:",
+        "The node's socket belongs to `geth`, and only `geth` and root can connect to it, so attach as `geth`. `-H` gives it `geth`'s home directory to write to, and the full path finds the binary on RHEL, whose `sudo` does not search `/usr/local/bin`:",
       code: `${asGeth("eth.syncing")}
   ${asGeth("net.peerCount")}
   ${asGeth("eth.blockNumber", true)}`,
@@ -2612,7 +2613,7 @@ export const DARK_PANELS: readonly PlatformPanel[] = [
           {
             label: SYSTEMD,
             before: `A unit cannot run the \`$(...)\` part, so with the unit stopped, run the node from a terminal as the unit's user, with the unit's flags. For the service the documentation's [Linux run guide](${RUN_LINUX}) sets up:`,
-            code: `sudo -u geth -H geth --classic --datadir /var/lib/core-geth --bootnodes ${recordsList()}`,
+            code: `sudo -u geth -H /usr/local/bin/geth --classic --datadir /var/lib/core-geth --bootnodes ${recordsList()}`,
           },
         ],
         then: recordsNote,
