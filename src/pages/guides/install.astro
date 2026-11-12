@@ -8,14 +8,12 @@ import SectionHead from "@/components/SectionHead.astro";
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import { RECORDED_INSTALL, RECORDED_INSTALL_PANELS } from "@/data/recordings";
 import {
-  DARK_LISTS,
   DISCORD_URL,
   DOCS,
   DOCS_URL,
   EXPOSED_LINE,
   GUIDE_PAGES,
   ISSUES_URL,
-  LISTS_REPO,
   RECOMMENDED_LINE,
   REPO,
   SECURITY_POLICY_URL,
@@ -48,20 +46,12 @@ const routes = [
 
 const afterStart = [
   {
-    lead: "Check that it has caught up.",
-    text: `Attach to the node: \`eth.syncing\` returns \`false\` once it has caught up with the network, and \`net.peerCount\` above zero means it holds peers. [How to tell it is done](${DOCS_URL}getting-started/run-classic-node/#how-to-tell-it-is-done) has the commands.`,
-  },
-  {
-    lead: "No peers after five minutes?",
-    text: `[Why does the node have no peers?](${DOCS_URL}operate/troubleshooting/#why-does-the-node-have-no-peers) lists the causes. If the discovery lists and bootnodes have gone dark, [start it once from the node records](${DARK_LISTS}) committed in \`${LISTS_REPO.slug}\`.`,
-  },
-  {
     lead: "Keep it running.",
-    text: `The documentation's run guides set up a node that starts on its own: a systemd unit on [Linux](${DOCS_URL}getting-started/run/linux/), a launchd agent on [macOS](${DOCS_URL}getting-started/run/macos/#6-keep-it-running-a-launchd-agent), and a start at sign-in on [Windows](${DOCS_URL}getting-started/run/windows/#6-keep-it-running-start-it-when-you-sign-in). [Docker](${DOCS_URL}getting-started/run/docker/) has a guide of its own.`,
+    text: `A node started in a terminal stops when the terminal closes. The start step's service tab keeps it running: a systemd service on Linux, a launchd agent on macOS, a command file in the Startup folder on Windows, and the restart policy for a container. On Linux the service keeps its chain in \`/var/lib/core-geth\`, so a node first synced in a terminal syncs again under the service unless its chain moves there; the documentation's [Linux run guide](${DOCS_URL}getting-started/run/linux/#6-keep-it-running-a-systemd-service) says how to keep a chain you already synced.`,
   },
   {
     lead: "Decide MESS.",
-    text: `MESS makes a node resist deep chain reorganizations. \`--mess\` turns it on and \`--mess=false\` turns it off, and without either the node uses the setting its release ships with. [Which setting fits which operator](${DOCS.messSetting.href}) sets out the choice. Give every node you run the same setting.`,
+    text: `MESS makes a node resist deep chain reorganizations. \`--mess\` turns it on and \`--mess=false\` turns it off, and without either the node uses the setting its release ships with. Add your choice where the node takes its flags: the start line, the service's \`ExecStart\` line, the agent's \`ProgramArguments\` or the command file, and start the node again. [Which setting fits which operator](${DOCS.messSetting.href}) sets out the choice. Give every node you run the same setting.`,
   },
   {
     lead: "Open RPC only for what needs it.",
@@ -69,7 +59,7 @@ const afterStart = [
   },
   {
     lead: "Stay on the latest release.",
-    text: `Releases are published from \`${REPO.slug}\`. When a new one ships, [Downloads](/downloads/) has its files and the same steps, and a node that has only ever run \`${RECOMMENDED_LINE}\` keeps its P2P node key.`,
+    text: `Releases are published from \`${REPO.slug}\`. When a new one ships, the last step in your platform's tab updates the node, which keeps its chain and its P2P node key.`,
   },
 ];
 ---
@@ -138,8 +128,9 @@ const afterStart = [
         size="medium"
       >
         <p class="lede">
-          Run each block in order, and read the note under it before the next. Every tab ends with
-          the start step: before you run it, check what you downloaded with{" "}
+          Run each block in order, and read the note under it before the next. Where a step depends
+          on your machine, it has a tab for each distribution, processor or way of running the node.
+          Before the start step, check what you downloaded with{" "}
           <a href="#verify">the commands below</a>.
         </p>
         <p>

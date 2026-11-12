@@ -15,10 +15,47 @@
  * A set can sit inside another set's panel, as the build-from-source tabs sit inside each Source
  * panel: `nested` drops its headings a level. Every rule below reaches only its own set's bar and
  * panels, so a choice in the inner set never shows a panel of the outer one.
+ *
+ * A step that runs differently for some readers carries its ways as tabs of its own: one per
+ * distribution, processor or way the node runs, each with its own blocks (maintainer, 2026-11-12). They
+ * are radio inputs and labels too, a group per step that chooses on its own, beside the labels that use
+ * it. The group is a `div` with `role="radiogroup"`, not a `fieldset`, so a script that reads a panel up
+ * to its set's closing `</fieldset>` still reads every block in it. Without `:has()`, every way shows,
+ * each under its own name.
  */
 import ArrowText from "@/components/ArrowText.astro";
 import InlineCode from "@/components/InlineCode.astro";
 import Recording from "@/components/Recording.astro";
+import StepBlocks from "@/components/StepBlocks.astro";
+
+/** A note to read first, a block to run, and a note on what it leaves: one part of a step. */
+export interface StepBlock {
+  before?: string;
+  code?: string;
+  after?: string;
+}
+
+/** One way to take a step, as a tab of its own. Its blocks run in order. */
+export interface StepVariant extends StepBlock {
+  label: string;
+  more?: readonly StepBlock[];
+  recording?: StepRecording;
+}
+
+/**
+ * What a reader does in order: `before` for what a block needs them to read first, a block to run,
+ * `after` for what it leaves them to do, `more` blocks after it, then `variants` for a step that runs
+ * differently for some readers, `then` for what every way leaves, and a recording of the step being run.
+ */
+export interface PanelStep extends StepBlock {
+  title: string;
+  more?: readonly StepBlock[];
+  variants?: readonly StepVariant[];
+  /** What the variant tabs choose between, for a screen reader, such as "Choose your distribution". */
+  choose?: string;
+  then?: string;
+  recording?: StepRecording;
+}
 
 export interface PlatformPanel {
   /** One of the five the styles below can show: a sixth needs its own rule there. */
@@ -26,14 +63,7 @@ export interface PlatformPanel {
   label: string;
   /** The panel's heading, when it needs more words than its tab's label. */
   heading?: string;
-  /** What a reader does in order: `before` for what a block needs them to read first, a block to run, `after` for what it leaves them to do, and a recording of the step being run. */
-  steps: readonly {
-    title: string;
-    before?: string;
-    code?: string;
-    after?: string;
-    recording?: StepRecording;
-  }[];
+  steps: readonly PanelStep[];
   /** Left out where a set inside the panel links each platform's guide itself. */
   guide?: { label: string; href: string };
 }
@@ -65,6 +95,22 @@ interface Props {
 const { legend, panels, prefix = "", nested = false } = Astro.props;
 const Heading = nested ? "h4" : "h3";
 const Step = nested ? "h5" : "h4";
+
+// The styles below show a step's ways by position, up to six. A seventh would never show.
+for (const panel of panels) {
+  for (const step of panel.steps) {
+    if (step.variants && (step.variants.length < 2 || step.variants.length > 6)) {
+      throw new Error(
+        `"${step.title}" offers ${step.variants.length} ways: between two and six fit`,
+      );
+    }
+    if (step.variants && !step.choose) {
+      throw new Error(
+        `"${step.title}" offers ways with no \`choose\` to name them for a screen reader`,
+      );
+    }
+  }
+}
 ---
 
 <fieldset class:list={["tabs", { "tabs--nested": nested }]}>
@@ -91,22 +137,41 @@ const Step = nested ? "h5" : "h4";
     <div class="panel" id={`${prefix}panel-${panel.id}`} data-platform={panel.id}>
       <Heading class="panel__heading">{panel.heading ?? panel.label}</Heading>
       <slot name={`before-${panel.id}`} />
-      {panel.steps.map((step) => (
+      {panel.steps.map((step, s) => (
         <Fragment>
           <Step class="panel__step">{step.title}</Step>
-          {step.before && (
-            <p class="panel__note">
-              <InlineCode text={step.before} />
-            </p>
-          )}
-          {step.code && (
-            <div class="shell-wrap">
-              <pre class="shell"><code>{step.code}</code></pre>
+          <StepBlocks blocks={[step, ...(step.more ?? [])]} />
+          {step.variants && (
+            <div class="choice">
+              <div class="choice__bar" role="radiogroup" aria-label={step.choose}>
+                {step.variants.map((variant, v) => (
+                  <Fragment>
+                    <input
+                      class="choice__input visually-hidden"
+                      type="radio"
+                      name={`${prefix}${panel.id}-step-${s}`}
+                      id={`${prefix}${panel.id}-step-${s}-${v}`}
+                      data-index={v}
+                      checked={v === 0}
+                    />
+                    <label class="choice__label" for={`${prefix}${panel.id}-step-${s}-${v}`}>
+                      {variant.label}
+                    </label>
+                  </Fragment>
+                ))}
+              </div>
+              {step.variants.map((variant, v) => (
+                <div class="choice__panel" data-index={v}>
+                  <p class="choice__name">{variant.label}</p>
+                  <StepBlocks blocks={[variant, ...(variant.more ?? [])]} />
+                  {variant.recording && <Recording recording={variant.recording} />}
+                </div>
+              ))}
             </div>
           )}
-          {step.after && (
+          {step.then && (
             <p class="panel__note">
-              <InlineCode text={step.after} />
+              <InlineCode text={step.then} />
             </p>
           )}
           {step.recording && <Recording recording={step.recording} />}
@@ -250,6 +315,107 @@ const Step = nested ? "h5" : "h4";
       flex: 1 1 40%;
       padding: 0.7rem 0.75rem;
       border-bottom: 1px solid var(--hairline);
+    }
+  }
+
+  /* A step's ways: a strip quieter than a set's, over the blocks of the one chosen. Without
+     `:has()` the strip stays hidden and every way shows under its own name, so the page loses the
+     tabs, never a command. */
+  .choice {
+    display: grid;
+    gap: 0.9rem;
+    justify-self: stretch;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .choice__bar {
+    display: none;
+  }
+
+  .choice__panel {
+    display: grid;
+    gap: 1.1rem;
+    justify-items: start;
+    min-width: 0;
+  }
+
+  .choice__name {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 700;
+  }
+
+  @supports selector(:has(*)) {
+    .choice__bar {
+      display: flex;
+      flex-wrap: wrap;
+      justify-self: start;
+      max-width: 100%;
+      border: 1px solid var(--hairline);
+      background: var(--surface);
+    }
+
+    .choice__label {
+      padding: 0.45rem 0.9rem;
+      border-right: 1px solid var(--hairline);
+      color: var(--muted);
+      font-size: 0.88rem;
+      font-weight: 650;
+      text-align: center;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+
+    .choice__label:last-of-type {
+      border-right: 0;
+    }
+
+    .choice__label:hover {
+      color: var(--ink);
+      background: var(--ground);
+    }
+
+    .choice__input:checked + .choice__label {
+      color: var(--bar-strong);
+      background: var(--accent);
+    }
+
+    .choice__input:focus-visible + .choice__label {
+      outline: 2px solid var(--accent);
+      outline-offset: -4px;
+    }
+
+    .choice__name,
+    .choice__panel {
+      display: none;
+    }
+
+    .choice:has(> .choice__bar > .choice__input[data-index="0"]:checked)
+      > .choice__panel[data-index="0"],
+    .choice:has(> .choice__bar > .choice__input[data-index="1"]:checked)
+      > .choice__panel[data-index="1"],
+    .choice:has(> .choice__bar > .choice__input[data-index="2"]:checked)
+      > .choice__panel[data-index="2"],
+    .choice:has(> .choice__bar > .choice__input[data-index="3"]:checked)
+      > .choice__panel[data-index="3"],
+    .choice:has(> .choice__bar > .choice__input[data-index="4"]:checked)
+      > .choice__panel[data-index="4"],
+    .choice:has(> .choice__bar > .choice__input[data-index="5"]:checked)
+      > .choice__panel[data-index="5"] {
+      display: grid;
+    }
+
+    @media (max-width: 36rem) {
+      .choice__bar {
+        justify-self: stretch;
+        border-bottom: 0;
+      }
+
+      .choice__label {
+        flex: 1 1 auto;
+        border-bottom: 1px solid var(--hairline);
+      }
     }
   }
 </style>

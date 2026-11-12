@@ -19,14 +19,14 @@ import {
   RECOMMENDED_LINE,
   UPGRADE_COST,
 } from "@/data/site";
-import { MOVE_SOURCE_PANELS, moveSourceIntro } from "@/data/steps";
+import { MOVE_SOURCE_PANELS, moveSourceIntro, NAME_PANELS } from "@/data/steps";
 
 // The migration guide: the move tabs /downloads/ shows, from the same step module, with recordings
 // under the Linux clean stop and start, and what to check, decide and expect around them. Backticks
 // mark code and `[label](href)` a link in the points below.
 const REPORT = DOCS.releaseReport.href;
 
-const checkName = `Ask the running node for its name with \`geth attach --exec 'admin.nodeInfo.name'\` and the node's IPC path, the command the move's last step uses. A name that starts \`CoreGeth/${EXPOSED_LINE}\` is a \`${EXPOSED_LINE}\` release, and this guide is for that node from \`${MOVE_FLOOR}\` on.`;
+const checkName = `Ask the running node for its name, with the command for your platform below. A name that starts \`CoreGeth/${EXPOSED_LINE}\` is a \`${EXPOSED_LINE}\` release, and this guide is for that node from \`${MOVE_FLOOR}\` on.`;
 
 // The case for moving is the security page's, so this guide links it rather than restating it.
 const whyMove = `[Security](/security/) makes the case: what the audits found in every \`${EXPOSED_LINE}\` release, what the \`${RECOMMENDED_LINE}\` line fixes, and which releases the network still runs.`;
@@ -175,6 +175,11 @@ const trouble = [
           <InlineCode text={checkBinary} />
         </p>
       </SectionHead>
+      <PlatformTabs
+        legend="Choose your platform for asking the node its name"
+        panels={NAME_PANELS}
+        prefix="name-"
+      />
     </div>
   </section>
 
@@ -208,7 +213,7 @@ const trouble = [
       >
         <p class="lede">
           <InlineCode
-            text={`Run one block at a time, in order, and read the note under each before the next. In the Linux tab, the clean stop and the first start on the new key carry recordings, made moving \`${RECORDED_MOVE.from}\` to \`${RECORDED_MOVE.to}\`.`}
+            text={`Run one block at a time, in order, and read the note under each before the next. Where a step depends on your machine, it has a tab for each processor or way of running the node: in a terminal, or as the service the documentation's run guide sets up. In the Linux tab, the clean stop and the first start on the new key carry recordings, made moving \`${RECORDED_MOVE.from}\` to \`${RECORDED_MOVE.to}\`, under the terminal tab.`}
           />
         </p>
       </SectionHead>

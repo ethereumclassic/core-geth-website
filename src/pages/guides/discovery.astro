@@ -18,6 +18,7 @@ import {
   MOVE_RECOMMENDATION,
   RECOMMENDED_LINE,
 } from "@/data/site";
+import { NAME_PANELS } from "@/data/steps";
 
 // The guide for a `v1.12` node that cannot move yet: until it moves, it reads the peer discovery lists
 // and bootnodes the recommended line ships (maintainer, 2026-11-08), and a node on either line can start
@@ -54,7 +55,7 @@ const checkLede = `Find how the node starts: the command you run in a terminal, 
 const check = [
   {
     lead: "Its release.",
-    text: `Ask the running node for its name with \`geth attach --exec 'admin.nodeInfo.name'\` and the node's IPC path. These steps are for \`${MOVE_FLOOR}\` and later: a release before \`${MOVE_FLOOR}\` does not schedule the Spiral upgrade, so a node on one has left Ethereum Classic, and the lists carry only nodes on the network's current fork. [${GUIDE_PAGES.migrate.title}](${GUIDE_PAGES.migrate.href}#check) says how such a node resyncs.`,
+    text: `Ask the running node for its name, with the command for your platform below. These steps are for \`${MOVE_FLOOR}\` and later: a release before \`${MOVE_FLOOR}\` does not schedule the Spiral upgrade, so a node on one has left Ethereum Classic, and the lists carry only nodes on the network's current fork. [${GUIDE_PAGES.migrate.title}](${GUIDE_PAGES.migrate.href}#check) says how such a node resyncs.`,
   },
   {
     lead: "A config file.",
@@ -66,7 +67,7 @@ const check = [
   },
 ];
 
-const stepsLede = `Run one block at a time, in order, and read the note under each before the next. In the Linux tab, the clean stop and the start on the new lists carry recordings, made on \`${RECORDED_DISCOVERY.release}\`. [Using the trees](${LISTS_REPO.trees}#core-geth-v112-line) in \`${LISTS_REPO.slug}\` gives the same flags and file.`;
+const stepsLede = `Run one block at a time, in order, and read the note under each before the next. Where a step depends on how the node runs, it has a tab for a node in a terminal and one for the service the documentation's run guide sets up. In the Linux tab, the clean stop and the start on the new lists carry recordings, made on \`${RECORDED_DISCOVERY.release}\`, under the terminal tab. [Using the trees](${LISTS_REPO.trees}#core-geth-v112-line) in \`${LISTS_REPO.slug}\` gives the same flags and file.`;
 
 const darkLede = `Each list is committed in \`${LISTS_REPO.slug}\` exactly as it was published, so its node records stay available from that repository whether DNS answers or not. A node that is already running keeps its peers and goes on finding more through the discovery network, and the bootnodes the \`${RECOMMENDED_LINE}\` line ships, which this guide's steps give a \`${EXPOSED_LINE}\` node too, do not use DNS at all. A node on either line that still cannot find peers can start once from the committed records, then start the usual way again. [DNS hosting and outages](${LISTS_REPO.outage}) explains how the lists are served.`;
 
@@ -138,6 +139,11 @@ const whyMore = `\`${LISTS_REPO.slug}\` tells [the history of the lists](${LISTS
           </li>
         ))}
       </ul>
+      <PlatformTabs
+        legend="Choose your platform for asking the node its name"
+        panels={NAME_PANELS}
+        prefix="name-"
+      />
     </div>
   </section>
 

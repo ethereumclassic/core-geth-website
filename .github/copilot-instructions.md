@@ -88,10 +88,14 @@ tests pass. `pnpm lint`, `pnpm format:check` and `pnpm build` are the whole gate
   JSON-LD and `/llms.txt` use. Never add a static `llms.txt` to `public/`.
 - `src/data/steps.ts` is the only place a command is written. `/downloads/` and the guides render
   the same steps from it, so a command cannot differ between them.
+- A step that runs differently on some machines has a tab for each way: a distribution, a processor,
+  or how the node runs, each with its own blocks. A single word that changes, such as `--mordor` for
+  `--classic`, stays in the step's note. `src/components/PlatformTabs.astro` draws the tabs with no
+  script, and a browser without `:has()` shows every way under its own name.
 - `public/recordings/` holds recordings of the Linux steps that watching makes clearer: a first start,
   a clean stop, and the start from the committed node records. `src/data/recordings.ts` places each
-  under its step on `/guides/install/`, `/guides/migrate/` and `/guides/discovery/`. A step that prints
-  a line or two, or nothing, carries none.
+  under its step on `/guides/install/`, `/guides/migrate/` and `/guides/discovery/`, in the step's
+  terminal tab where it has one. A step that prints a line or two, or nothing, carries none.
   The build fails when a recording names a step its Linux tab no longer has, so renaming a step
   means renaming it there too.
 - `src/data/repository.ts` reads the repository card's description and the latest release's tag

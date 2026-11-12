@@ -12,9 +12,9 @@
  * for documentation, in place of its own. A `v1.12` recording runs `v1.12.20`, the last release
  * `etclabscore/core-geth` published before the client moved to `ethereumclassic/core-geth`.
  */
-import type { PlatformPanel, StepRecording } from "@/components/PlatformTabs.astro";
+import type { PanelStep, PlatformPanel, StepRecording } from "@/components/PlatformTabs.astro";
 import { RECOMMENDED_LINE } from "@/data/site";
-import { DARK_PANELS, DISCOVERY_PANELS, MOVE_PANELS, PANELS } from "@/data/steps";
+import { DARK_PANELS, DISCOVERY_PANELS, IN_TERMINAL, MOVE_PANELS, PANELS } from "@/data/steps";
 
 /** The releases the recordings show, which the steps around them may have moved past. */
 export const RECORDED_INSTALL = { release: "v1.13.0" } as const;
@@ -46,6 +46,24 @@ const discoveryClip = clip(
   `Recorded on Linux, on \`${RECORDED_DISCOVERY.release}\``,
 );
 
+/**
+ * A step with its recording: under the step, or, where the step offers a way per how the node runs,
+ * in its terminal tab, because every recording was made in a terminal. A step whose ways have no
+ * terminal tab fails the build rather than placing the recording under a way it does not show.
+ */
+const recorded = (step: PanelStep, recording: StepRecording): PanelStep => {
+  if (!step.variants) return { ...step, recording };
+  if (!step.variants.some((variant) => variant.label === IN_TERMINAL)) {
+    throw new Error(`a recording names "${step.title}", whose ways have no "${IN_TERMINAL}" tab`);
+  }
+  return {
+    ...step,
+    variants: step.variants.map((variant) =>
+      variant.label === IN_TERMINAL ? { ...variant, recording } : variant,
+    ),
+  };
+};
+
 /** Each panel set with its recordings under the Linux steps they record, by step title. */
 const withRecordings = (
   panels: readonly PlatformPanel[],
@@ -64,7 +82,7 @@ const withRecordings = (
           ...panel,
           steps: panel.steps.map((step) => {
             const recording = byStep.get(step.title);
-            return recording ? { ...step, recording } : step;
+            return recording ? recorded(step, recording) : step;
           }),
         },
   );

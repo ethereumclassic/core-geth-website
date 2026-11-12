@@ -1,0 +1,34 @@
+---
+/**
+ * A step's blocks in order, each a note to read first, a block to run and a note on what it leaves.
+ * PlatformTabs draws a step's own blocks with it, and each of the step's ways.
+ */
+import type { StepBlock } from "@/components/PlatformTabs.astro";
+import InlineCode from "@/components/InlineCode.astro";
+
+interface Props {
+  blocks: readonly StepBlock[];
+}
+
+const { blocks } = Astro.props;
+---
+
+{blocks.map((block) => (
+  <Fragment>
+    {block.before && (
+      <p class="panel__note">
+        <InlineCode text={block.before} />
+      </p>
+    )}
+    {block.code && (
+      <div class="shell-wrap">
+        <pre class="shell"><code>{block.code}</code></pre>
+      </div>
+    )}
+    {block.after && (
+      <p class="panel__note">
+        <InlineCode text={block.after} />
+      </p>
+    )}
+  </Fragment>
+))}
